@@ -2,7 +2,7 @@
 
 Dette repositoryet samler felles regler, kortdesign og prototypearbeid for et kort-, strategi- og områdekontrollspill.
 
-Prosjektet deles i tre hovedområder:
+Prosjektet deles inn i disse områdene:
 
 * `shared/` inneholder felles regelverk, kortlister og grafiske kilder.
 * `godot/` dokumenterer og skal etter hvert inneholde den digitale Godot-versjonen.
