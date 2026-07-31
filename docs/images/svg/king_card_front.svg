@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="750" height="1050" viewBox="0 0 750 1050" role="img" aria-labelledby="title desc">
+  <title id="title">King card front template</title>
+  <desc id="desc">Full-art king card front with royal frame, element focus, and transparent quest box.</desc>
+  <defs>
+    <linearGradient id="art" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2b1748"/>
+      <stop offset="0.48" stop-color="#3f9a5d"/>
+      <stop offset="1" stop-color="#111018"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="55%">
+      <stop offset="0" stop-color="#f5d36b" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#f5d36b" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="20" y="20" width="710" height="1010" rx="48" fill="#111"/>
+  <rect x="38" y="38" width="674" height="974" rx="40" fill="#5b3791" stroke="#f5d36b" stroke-width="16"/>
+  <clipPath id="clip"><rect x="62" y="62" width="626" height="926" rx="30"/></clipPath>
+  <g clip-path="url(#clip)">
+    <rect x="62" y="62" width="626" height="926" fill="url(#art)"/>
+    <rect x="62" y="62" width="626" height="926" fill="url(#glow)"/>
+    <circle cx="375" cy="370" r="128" fill="#f5d36b" opacity="0.95"/>
+    <path d="M255 800 C280 610 320 505 375 505 C430 505 470 610 495 800 Z" fill="#251336" opacity="0.95"/>
+    <path d="M304 365 L334 300 L375 360 L416 300 L446 365 L446 420 L304 420 Z" fill="#2b1748"/>
+    <image href="icons/grass.svg" xlink:href="icons/grass.svg" x="558" y="108" width="84" height="84"/>
+    <rect x="92" y="790" width="566" height="160" rx="26" fill="#0b0810" opacity="0.72"/>
+    <circle cx="142" cy="842" r="28" fill="#f5d36b"/>
+    <text x="142" y="852" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#21132d">6</text>
+    <text x="194" y="854" font-family="Arial, sans-serif" font-size="34" fill="#fff5c7">oppdragstekst</text>
+    <rect x="190" y="875" width="410" height="2" fill="#fff5c7" opacity="0.45"/>
+    <rect x="190" y="912" width="320" height="2" fill="#fff5c7" opacity="0.35"/>
+  </g>
+</svg>

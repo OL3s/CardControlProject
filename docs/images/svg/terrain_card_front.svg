@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="750" height="1050" viewBox="0 0 750 1050" role="img" aria-labelledby="title desc">
+  <title id="title">Terrain card front template</title>
+  <desc id="desc">Full-art terrain card front with fixed resource corners.</desc>
+  <defs>
+    <linearGradient id="art" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b3b22"/>
+      <stop offset="0.55" stop-color="#6aa044"/>
+      <stop offset="1" stop-color="#352411"/>
+    </linearGradient>
+  </defs>
+  <rect x="20" y="20" width="710" height="1010" rx="48" fill="#111"/>
+  <rect x="38" y="38" width="674" height="974" rx="40" fill="#6b4b2a" stroke="#b98b52" stroke-width="16"/>
+  <clipPath id="clip"><rect x="62" y="62" width="626" height="926" rx="30"/></clipPath>
+  <g clip-path="url(#clip)">
+    <rect x="62" y="62" width="626" height="926" fill="url(#art)"/>
+    <circle cx="530" cy="170" r="190" fill="#a2d36a" opacity="0.2"/>
+    <path d="M62 740 L215 505 L330 645 L438 410 L688 740 Z" fill="#32572d"/>
+    <path d="M62 740 L250 610 L392 690 L548 550 L688 740 Z" fill="#182d22" opacity="0.9"/>
+    <path d="M62 740 L688 740 L688 988 L62 988 Z" fill="#172115" opacity="0.35"/>
+    <image href="icons/stone.svg" xlink:href="icons/stone.svg" x="88" y="90" width="82" height="82"/>
+    <image href="icons/stone.svg" xlink:href="icons/stone.svg" x="88" y="156" width="82" height="82"/>
+    <image href="icons/grass.svg" xlink:href="icons/grass.svg" x="580" y="90" width="82" height="82"/>
+    <image href="icons/flame.svg" xlink:href="icons/flame.svg" x="88" y="812" width="82" height="82"/>
+    <image href="icons/water.svg" xlink:href="icons/water.svg" x="580" y="812" width="82" height="82"/>
+  </g>
+</svg>

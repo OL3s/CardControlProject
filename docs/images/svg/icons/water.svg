@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="Water icon">
+  <circle cx="32" cy="32" r="28" fill="#3a8dd8" stroke="#ccecff" stroke-width="5"/>
+  <path d="M32 60 C4 36 30 5 32 0 C35 5 60 36 32 60 Z" fill="#ccecff"/>
+</svg>

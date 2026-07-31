@@ -9,4 +9,6 @@ This repository contains the design notes and working rules for the card-control
 * `docs/king-cards.md` defines the king card deck.
 * `docs/terrain-cards.md` defines the terrain card deck.
 * `docs/monster-cards.md` defines the monster card deck.
-* `docs/images/` contains SVG card front and back templates.
+* `docs/images/svg/` contains SVG card sources.
+* `docs/images/svg/icons/` contains SVG icons used by the card sources.
+* `docs/images/png/` contains generated PNG card previews.

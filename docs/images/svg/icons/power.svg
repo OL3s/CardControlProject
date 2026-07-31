@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="Power icon">
+  <circle cx="32" cy="32" r="28" fill="#f7f0d0" stroke="#1b1510" stroke-width="5"/>
+  <path d="M16 30 C16 24 20 20 26 20 L39 20 C45 20 49 24 49 30 L49 37 C49 48 42 55 32 55 C22 55 15 48 15 37 Z" fill="#1b1510"/>
+  <path d="M20 31 L20 24 C20 20 27 20 27 24 L27 33 M27 31 L27 21 C27 17 34 17 34 21 L34 33 M34 31 L34 22 C34 18 41 18 41 22 L41 33 M41 31 L41 25 C41 21 48 22 48 27 L48 36" fill="none" stroke="#f7f0d0" stroke-width="4" stroke-linecap="round"/>
+  <path d="M20 40 L44 40" fill="none" stroke="#f7f0d0" stroke-width="4" stroke-linecap="round" opacity="0.85"/>
+</svg>

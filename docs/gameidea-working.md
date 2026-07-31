@@ -30,7 +30,6 @@ Spillet har **8 kongekort**.
 Hver konge har:
 
 * 6 liv
-* En unik evne
 * Et offentlig oppdrag
 * Eventuell elementtilknytning
 
@@ -47,10 +46,10 @@ Fordeling:
 
 Foreløpig tierfordeling:
 
-* 8 nøytrale terreng: 4 Tier 1, 3 Tier 2, 1 Tier 3
-* 4 gressterreng: 2 Tier 1, 1 Tier 2, 1 Tier 3
-* 4 flammeterreng: 2 Tier 1, 1 Tier 2, 1 Tier 3
-* 4 vannterreng: 2 Tier 1, 1 Tier 2, 1 Tier 3
+* 8 nøytrale terreng: 5 Tier 1, 3 Tier 2
+* 4 gressterreng: 3 Tier 1, 1 Tier 2
+* 4 flammeterreng: 3 Tier 1, 1 Tier 2
+* 4 vannterreng: 3 Tier 1, 1 Tier 2
 
 ## Monsterkort
 
@@ -152,16 +151,9 @@ Tier 2:
 * Bedre ressurskombinasjoner
 * Mer attraktive kontrollpunkter
 * Kan støtte sterkere monstre
-* Foreløpig totalt 2-3 trykte ressurser
+* Foreløpig totalt 3-4 trykte ressurser
 
-Tier 3:
-
-* Sjeldne eller sterke terreng
-* Viktige strategiske mål
-* Kan ha en enkel spesialeffekt
-* Foreløpig totalt 3-4 trykte ressurser eller en enkel spesialeffekt
-
-Bare Tier 3-kort bør ha spesialeffekter i første prototype.
+Terrengkort har ikke spesialeffekter i første prototype.
 
 ## Monsterkort
 
@@ -171,22 +163,26 @@ Hvert monsterkort har:
 
 * Ett element
 * Ressurskrav som ikoner
-* Baseverdi
+* Baseverdi med styrkeikon
 * Eventuelle kumulative ressursbonuser
 * Et tier
 * Eventuelt en enkel spesialeffekt
 
 For å bruke et monster må spilleren oppfylle kravikonene øverst på kortet.
 
-Monsterets styrke er baseverdien pluss alle bonuslinjer spilleren oppfyller.
+Monsterets styrke er grunnstyrken pluss alle bonuslinjer spilleren oppfyller.
 
 Bonuslinjer er kumulative.
 
+Bonuslinjer leses som:
+
+> Ressursikoner -> styrkeikon
+
 Eksempel:
 
-> Base 1  
-> 2 flamme: +1  
-> 3 flamme: +1
+> Styrkeikon 1  
+> 2 flammeikoner -> 1 styrkeikon  
+> 3 flammeikoner -> 1 styrkeikon
 
 En spiller med 3 flammeressurser får styrke 3 før eventuell elementfordel.
 
@@ -225,9 +221,9 @@ Eksempel:
 
 > Tier 3 flammemonster  
 > Krav: 3 nøytral og 2 flamme  
-> Base 2  
-> 3 flamme: +1  
-> 3 nøytral: +1
+> Styrkeikon 2  
+> 3 flammeikoner -> 1 styrkeikon  
+> 3 nøytralikoner -> 1 styrkeikon
 
 Tier 3-spesialeffekter skal være enkle og små. De skal ikke gi ekstra full kamp, ekstra monsterbruk eller direkte skade på en konge uten kampresultat.
 
@@ -347,6 +343,8 @@ Det nye terrenget må:
 
 * Plasseres inntil et terreng spilleren kontrollerer
 * Dele minst én hel side med et eksisterende terreng
+
+Terrengkort plasseres som sekskanter, med opptil seks naboterreng.
 
 Det nye terrenget starter eierløst.
 
@@ -760,5 +758,5 @@ Følgende punkter er ikke nødvendigvis uavklarte regler, men bør testes fordi 
 * Nøyaktige monsterstyrker
 * Nøyaktige ressurskrav
 * Nøyaktige terrengverdier
-* Antall Tier 3-kort med spesialeffekter
+* Antall Tier 3-monstre med spesialeffekter
 * Balansering av nøytrale monstre mot elementmonstre
