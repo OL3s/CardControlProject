@@ -1,4 +1,12 @@
+[Back](../../README.md)
+
 # Elemental Dominion – Prototype v0.9
+
+## Navigasjon
+
+* [Aktivt regelutkast](gameidea-working.md)
+
+---
 
 Et kompakt kort-, strategi- og områdekontrollspill for **2–4 spillere**.
 
@@ -864,4 +872,3 @@ Følgende regler må ferdigstilles eller spilltestes.
 * Hva skjer dersom de siste kongene ødelegges samtidig?
 * Når starter timeglasset dersom flere konger blir ødelagt samtidig?
 * Skal timeglasset brukes i spill med bare 2 spillere?
-

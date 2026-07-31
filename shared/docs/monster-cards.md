@@ -1,4 +1,14 @@
+[Back](../../README.md)
+
 # Monsterkort
+
+## Navigasjon
+
+* [Aktivt regelutkast](gameidea-working.md)
+* [Kongekort](king-cards.md)
+* [Terrengkort](terrain-cards.md)
+
+---
 
 Monsterkort er kampverktøy. Korttypen leses av monsterrammen og baksiden. Elementet styrer kortets ikon, farge og hvilke ressursbonuser det vanligvis bruker. Intern tier brukes bare i kortlisten og ID-en, ikke på selve kortet.
 

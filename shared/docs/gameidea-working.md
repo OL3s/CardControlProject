@@ -1,4 +1,14 @@
+[Back](../../README.md)
+
 # Elemental Dominion - Prototype v0.11
+
+## Navigasjon
+
+* [Kongekort](king-cards.md)
+* [Terrengkort](terrain-cards.md)
+* [Monsterkort](monster-cards.md)
+
+---
 
 Et kompakt kort-, strategi- og områdekontrollspill for **2-4 spillere**.
 

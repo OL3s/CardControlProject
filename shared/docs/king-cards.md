@@ -1,4 +1,14 @@
+[Back](../../README.md)
+
 # Kongekort
+
+## Navigasjon
+
+* [Aktivt regelutkast](gameidea-working.md)
+* [Terrengkort](terrain-cards.md)
+* [Monsterkort](monster-cards.md)
+
+---
 
 Kongekort viser spillerens konge, liv og offentlig oppdrag. Kortene er primært ikonbaserte: korttypen leses av den kongelige rammen og baksiden, mens elementfokus vises med ikon og fargestemning.
 

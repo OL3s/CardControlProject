@@ -1,4 +1,14 @@
+[Back](../../README.md)
+
 # Terrengkort
+
+## Navigasjon
+
+* [Aktivt regelutkast](gameidea-working.md)
+* [Kongekort](king-cards.md)
+* [Monsterkort](monster-cards.md)
+
+---
 
 Terrengkort bygger kartet og gir ressurskapasitet. Korttypen leses av terrengrammen og baksiden. Elementfokus styrer fargestemning og hvilke ressursikoner som dominerer kortflaten. Intern tier brukes bare i kortlisten og ID-en, ikke på selve kortet.
 
@@ -12,6 +22,7 @@ PNG-bildene under viser kortpreviewene. SVG-kildene ligger i [`images/svg/`](ima
 * Gress: blad
 * Flamme: flamme
 * Vann: dråpe
+
 ## Kortliste
 
 | kort_id | elementfokus | intern_tier | nøytral | gress | flamme | vann |
