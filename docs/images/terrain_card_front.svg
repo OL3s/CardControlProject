@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="750" height="1050" viewBox="0 0 750 1050" role="img" aria-labelledby="title desc">
+  <title id="title">Terrain card front template</title>
+  <desc id="desc">Icon-based terrain card front with earth frame, element focus area, portrait, and resource corners.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b3b22"/>
+      <stop offset="0.55" stop-color="#5f8c3a"/>
+      <stop offset="1" stop-color="#372514"/>
+    </linearGradient>
+  </defs>
+  <rect x="20" y="20" width="710" height="1010" rx="48" fill="#111"/>
+  <rect x="38" y="38" width="674" height="974" rx="40" fill="#6b4b2a"/>
+  <rect x="62" y="62" width="626" height="926" rx="30" fill="url(#bg)" stroke="#b98b52" stroke-width="8"/>
+  <rect x="120" y="160" width="510" height="610" rx="30" fill="#203d27" stroke="#d1b26a" stroke-width="7"/>
+  <path d="M140 700 L245 510 L330 620 L420 430 L610 700 Z" fill="#49783c"/>
+  <path d="M150 700 L280 580 L400 655 L540 520 L620 700 Z" fill="#253d2b" opacity="0.9"/>
+  <circle cx="138" cy="140" r="52" fill="#b8b0a0" stroke="#f0eadb" stroke-width="6"/>
+  <text x="138" y="154" text-anchor="middle" font-family="Arial, sans-serif" font-size="46" fill="#2c2c2c">2</text>
+  <circle cx="612" cy="140" r="52" fill="#57b96a" stroke="#d9ffd9" stroke-width="6"/>
+  <path d="M590 150 C604 102 640 100 651 112 C641 149 611 166 590 150 Z" fill="#d9ffd9"/>
+  <circle cx="138" cy="890" r="52" fill="#e66b25" stroke="#ffd2a8" stroke-width="6"/>
+  <path d="M138 918 C100 880 132 852 138 820 C168 855 178 888 138 918 Z" fill="#ffd2a8"/>
+  <circle cx="612" cy="890" r="52" fill="#3a8dd8" stroke="#ccecff" stroke-width="6"/>
+  <path d="M612 925 C570 892 610 836 612 822 C615 836 655 892 612 925 Z" fill="#ccecff"/>
+</svg>

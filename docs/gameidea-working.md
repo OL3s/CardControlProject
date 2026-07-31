@@ -1,4 +1,4 @@
-# Elemental Dominion - Prototype v0.10
+# Elemental Dominion - Prototype v0.11
 
 Et kompakt kort-, strategi- og områdekontrollspill for **2-4 spillere**.
 
@@ -15,7 +15,7 @@ Spillet kombinerer:
 
 ## Gameplay-loop
 
-> Sjekk kongeoppdrag -> få én bonde -> trekk eventuelt kort -> bytt eventuelt kort -> legg eventuelt ett terreng ved eget territorium -> flytt og fordel bønder -> bygg kontrollveier -> alle fullfører plasseringen -> løs alle konflikter -> registrer samtidige tap -> fordel skade mellom bønder og kongeliv -> beregn kontroll og ressurser -> flytt startspillerbrikken.
+> Sjekk kongeoppdrag -> få én bonde -> trekk/bytt eventuelt kort -> legg eventuelt ett terreng -> flytt bønder og konge -> løs konflikter -> fjern tap og fordel eventuell kongeskade -> beregn kontroll og ressurser -> flytt startspillerbrikken.
 
 ---
 
@@ -33,8 +33,6 @@ Hver konge har:
 * En unik evne
 * Et offentlig oppdrag
 * Eventuell elementtilknytning
-
-Konger bruker ikke tiers.
 
 ## Terrengkort
 
@@ -105,23 +103,15 @@ Elementfordel gir:
 
 > `+1 styrke`
 
-Ved angrep betyr dette én ekstra kampterning.
+Ved angrep betyr dette `+1` på angriperens kampverdi.
 
 Ved forsvar betyr dette ett ekstra statisk forsvar.
 
-Nøytrale monstre får ingen elementfordel, men har heller ingen elementsvakhet.
-
-For å balansere dette skal nøytrale monstre som hovedregel ha enklere ressurskrav enn elementmonstre på samme tier.
+Nøytrale monstre får ingen elementfordel eller elementsvakhet. De bør derfor ha enklere ressurskrav enn elementmonstre på samme tier.
 
 ## Nøytral ressurs
 
-Nøytral er en egen ressurstype.
-
-Nøytrale ressurser:
-
-* Erstatter ikke gress
-* Erstatter ikke flamme
-* Erstatter ikke vann
+Nøytral er en egen ressurstype og erstatter ikke gress, flamme eller vann.
 
 Sterke monsterkort krever vanligvis både nøytral kontroll og elementspesialisering.
 
@@ -131,7 +121,7 @@ Eksempel:
 
 Dette hindrer en spiller i å bruke sterke elementmonstre ved bare å kontrollere noen få spesialiserte ressurser.
 
-Et terreng uten eier kalles **eierløst**, slik at det ikke forveksles med den nøytrale ressurstypen.
+Et terreng uten eier kalles **eierløst**.
 
 ---
 
@@ -139,22 +129,12 @@ Et terreng uten eier kalles **eierløst**, slik at det ikke forveksles med den n
 
 ## Terrengkort
 
-Hvert terrengkort har:
-
-* Et stort bilde i midten
-* Et fast hjørne for nøytral
-* Et fast hjørne for gress
-* Et fast hjørne for flamme
-* Et fast hjørne for vann
-
-Terrengverdier vises alltid i det faste hjørnet til elementet.
+Terrengverdier vises i faste hjørner for nøytral, gress, flamme og vann.
 
 Eksempel:
 
 * `2 nøytral`
 * `1 flamme`
-
-Bondebrikkene plasseres på de relevante ressursområdene.
 
 Et terrengkort trenger ikke ha verdier i alle fire hjørnene.
 
@@ -190,29 +170,30 @@ Monsterkort er spillets viktigste kampverktøy.
 Hvert monsterkort har:
 
 * Ett element
-* Én styrkeverdi
-* Ressurskrav
+* Ressurskrav som ikoner
+* Baseverdi
+* Eventuelle kumulative ressursbonuser
 * Et tier
 * Eventuelt en enkel spesialeffekt
 
-Monsterkort har én styrkeverdi som brukes som statisk kampbonus.
+For å bruke et monster må spilleren oppfylle kravikonene øverst på kortet.
 
-Den samme styrken brukes forskjellig:
+Monsterets styrke er baseverdien pluss alle bonuslinjer spilleren oppfyller.
 
-* Ved angrep: styrken legges til angriperens terningresultat
-* Ved forsvar: styrken er statisk forsvar
+Bonuslinjer er kumulative.
 
 Eksempel:
 
-> Styrke 3
+> Base 1  
+> 2 flamme: +1  
+> 3 flamme: +1
 
-Ved angrep:
+En spiller med 3 flammeressurser får styrke 3 før eventuell elementfordel.
 
-> Legg til 3 på angriperens terningresultat.
+Styrken brukes slik:
 
-Ved forsvar:
-
-> Få 3 statisk forsvar.
+* Ved angrep: styrken legges til angriperens terningresultat
+* Ved forsvar: styrken er statisk forsvar
 
 ## Monstertiers
 
@@ -221,30 +202,32 @@ Tier 1:
 * Lav styrke
 * Enkle krav
 * Fleksible og tilgjengelige monstre
-* Foreløpig styrke 1-2
 * Foreløpig krav på 1-2 ressurser
+* Foreløpig maks styrke 1-2 før elementfordel
 
 Tier 2:
 
 * Middels styrke
 * Krever mer generell kontroll
 * Krever gjerne nøytral og én elementtype
-* Foreløpig styrke 3
 * Foreløpig krav på 3-4 ressurser, ofte minst 1 nøytral
+* Foreløpig maks styrke 2-3 før elementfordel
 
 Tier 3:
 
 * Høy styrke
 * Krever bred kontroll og elementspesialisering
 * Kan ha en enkel spesialeffekt
-* Foreløpig styrke 4
 * Foreløpig krav på 5 ressurser, vanligvis 3 nøytral og 2 av monsterets element
+* Foreløpig maks styrke 3-4 før elementfordel
 
 Eksempel:
 
 > Tier 3 flammemonster  
-> Styrke 4  
-> Krav: 3 nøytral og 2 flamme
+> Krav: 3 nøytral og 2 flamme  
+> Base 2  
+> 3 flamme: +1  
+> 3 nøytral: +1
 
 Tier 3-spesialeffekter skal være enkle og små. De skal ikke gi ekstra full kamp, ekstra monsterbruk eller direkte skade på en konge uten kampresultat.
 
@@ -260,45 +243,26 @@ Eksempler på tillatte Tier 3-effekter:
 
 ## Felles oppsett
 
-1. Bland kongebunken.
-2. Bland terrengbunken.
-3. Bland monsterbunken.
-4. Trekk ett tilfeldig terrengkort.
-5. Legg kortet midt på bordet.
-6. Sentrumsterrenget starter eierløst.
-7. Alle spillerne ruller én kampterning.
-8. Høyeste resultat får startspillerbrikken.
-9. Ved likt resultat rulles det igjen.
+1. Bland konge-, terreng- og monsterbunken.
+2. Trekk ett tilfeldig terrengkort og legg det midt på bordet. Det starter eierløst.
+3. Alle spillerne ruller én kampterning. Høyeste resultat får startspillerbrikken. Ved likt resultat rulles det igjen.
 
 ## Spilleroppsett
 
 Hver spiller gjør deretter følgende:
 
-1. Trekker 2 kongekort.
-2. Velger 1 kongekort.
-3. Legger det andre nederst i kongebunken.
-4. Trekker 3 terrengkort.
-5. Velger 1 terrengkort.
-6. Legger de 2 andre nederst i terrengbunken.
-7. Trekker 3 monsterkort.
-8. Velger 1 monsterkort.
-9. Legger de 2 andre nederst i monsterbunken.
-10. Legger det valgte terrengkortet inntil sentrumsterrenget.
-11. Plasserer kongebrikken på startterrenget.
-12. Plasserer 2 bondebrikker på startterrenget.
-13. Setter kongens liv til 6.
-14. Legger kongekortet synlig foran seg.
+1. Trekk 2 kongekort, velg 1 og legg det andre nederst i kongebunken.
+2. Trekk 3 terrengkort, velg 1 og legg resten nederst i terrengbunken.
+3. Trekk 3 monsterkort, velg 1 og legg resten nederst i monsterbunken.
+4. Legg det valgte terrengkortet inntil sentrumsterrenget.
+5. Plasser kongebrikken og 2 bønder på startterrenget.
+6. Sett kongens liv til 6 og legg kongekortet synlig foran deg.
 
 Uvalgte kort vises ikke til de andre spillerne.
 
 ## Startspillerbrikken
 
-Startspillerbrikken viser hvem som starter runden.
-
-* Turene går mot høyre
-* Etter hver full runde flyttes startspillerbrikken én spiller mot høyre
-
-Dette fordeler fordelen ved å plassere først mellom spillerne.
+Startspilleren starter runden. Turene går mot høyre, og startspillerbrikken flyttes én spiller mot høyre etter hver runde.
 
 ---
 
@@ -310,19 +274,16 @@ Hver runde består av tre faser.
 
 Fase 1: Plassering
 
-* Spillerne gjennomfører hver sin tur fra startspilleren og videre mot høyre
+* Spillerne tar hver sin tur fra startspilleren og videre mot høyre.
 
 Fase 2: Kamp
 
-* Alle terreng som inneholder bønder fra flere spillere løser kamp
+* Konflikter løses.
 
 Fase 3: Avslutning
 
-* Tap fjernes
-* Kontroll over terreng beregnes på nytt
-* Ressurser beregnes på nytt
-* Startspillerbrikken flyttes mot høyre
-* Neste runde starter
+* Tap, kontroll og ressurser oppdateres.
+* Startspillerbrikken flyttes mot høyre.
 
 ## Starten av spillerens tur
 
@@ -330,10 +291,8 @@ Ved starten av turen:
 
 1. Sjekk kongeoppdraget.
 2. Spilleren vinner dersom alle kravene er oppfylt.
-3. Spilleren får 1 ny bonde dersom spilleren har færre enn 6.
+3. Spilleren får 1 ledig bondebrikke.
 4. Spilleren kan trekke 1 terrengkort eller monsterkort dersom spilleren har plass på hånden.
-
-En spiller kan aldri ha mer enn 8 bønder på kartet.
 
 ## Hånden
 
@@ -346,27 +305,11 @@ Spilleren bestemmer selv blandingen av:
 
 Kongekortet teller ikke som et håndkort.
 
-Eksempler på lovlige hender:
+Monsterkort er tilgjengelige så lenge spilleren har dem på hånden.
 
-* 3 monsterkort
-* 2 monsterkort og 1 terrengkort
-* 1 monsterkort og 2 terrengkort
-* 3 terrengkort
-
-Monsterkort er statiske ressurser så lenge spilleren har dem på hånden.
-
-Monsterkort:
-
-* Kastes ikke etter kamp
-* Blir ikke brukt opp
-* Blir ikke utslitt
-* Kan brukes i flere kamper samme runde
-* Kan brukes flere runder på rad
-* Kan brukes så lenge kravene er oppfylt
+Monsterkort kastes ikke etter kamp og kan brukes på nytt så lenge kravene er oppfylt.
 
 ## Trekking
-
-Trekking er valgfritt.
 
 På sin tur kan spilleren trekke:
 
@@ -384,19 +327,13 @@ For å redusere uflaks kan spilleren bytte:
 * eller
 * 2 monsterkort mot 1 nytt monsterkort
 
-De 2 gamle kortene legges nederst i den aktuelle bunken.
-
-Deretter trekkes 1 nytt kort fra samme bunke.
+De 2 gamle kortene legges nederst i den aktuelle bunken. Deretter trekkes 1 nytt kort fra samme bunke.
 
 Terrengkort og monsterkort kan ikke blandes i samme bytte.
 
-En spiller kan både trekke og bruke regelen `to kort mot ett` på samme tur.
-
-Regelen `to kort mot ett` kan brukes flere ganger samme tur så lenge spilleren har nok kort på hånden til å betale for hvert bytte.
+En spiller kan både trekke og bruke regelen `to kort mot ett` på samme tur. Byttet kan brukes flere ganger samme tur så lenge spilleren har nok kort.
 
 Dersom en bunke er tom, kan spilleren ikke trekke eller bytte fra den bunken.
-
-Kort som legges nederst i en bunke blir tilgjengelige igjen senere når bunken sirkulerer.
 
 ---
 
@@ -406,14 +343,10 @@ Kort som legges nederst i en bunke blir tilgjengelige igjen senere når bunken s
 
 På sin egen tur kan spilleren legge maksimalt **1 terrengkort**.
 
-Terrengkortet kan legges når som helst under spillerens plassering.
-
 Det nye terrenget må:
 
-* Dele minst én hel side med et eksisterende terreng
 * Plasseres inntil et terreng spilleren kontrollerer
-
-Et terrengkort kan legges på hvilken som helst ledig side av et terreng spilleren kontrollerer.
+* Dele minst én hel side med et eksisterende terreng
 
 Det nye terrenget starter eierløst.
 
@@ -421,41 +354,25 @@ Spilleren kan plassere bønder der dersom terrenget er et av spillerens målterr
 
 Kartet har ingen fast form eller størrelse.
 
-Det er lov å plassere terreng for å blokkere, presse eller begrense en motstander, så lenge plasseringen ellers er lovlig.
-
 Dersom en levende spiller ikke kontrollerer noe terreng, kan spilleren plassere nytt terreng inntil terrenget der kongen står.
-
-Dersom kongen er ødelagt, er spilleren slått ut og kan ikke plassere terreng.
 
 ## Ekspansjon
 
 Spilleren ekspanderer ved å flytte bønder til opptil 3 målterreng i sin plasseringstur.
 
-For hver flytting må det finnes en sammenhengende sti fra terrenget bøndene flyttes fra til målterrenget.
-
-Stien kan bare gå gjennom terreng spilleren kontrollerer og som ikke er blokkert.
+For hver flytting må det finnes en sammenhengende sti gjennom terreng spilleren kontrollerer og som ikke er blokkert.
 
 Målterrenget kan være kontrollert, eierløst, omstridt eller fiendtlig.
 
-Et terreng er blokkert dersom det inneholder brikker fra mer enn én spiller.
+Et terreng er blokkert dersom det inneholder brikker fra mer enn én spiller. Bønder kan flyttes inn på et blokkert terreng, men ingen brikker kan flyttes ut fra det før konflikten er løst.
 
-Bønder kan flyttes inn på et blokkert terreng, men ingen brikker kan flyttes ut fra det før konflikten er løst.
-
-Kontroll over et terreng med fiendtlige brikker kan ikke brukes som ekspansjonsvei under samme plassering, selv om spilleren har flertall der.
-
-Eksempel:
-
-* Rød har 1 bonde på et terreng
-* Blå flytter 2 bønder inn der
-* Blå har nå flertall
-* Terrenget er fortsatt blokkert fordi Rød har en bonde der
-* Blå kan ikke flytte bønder videre ut fra terrenget før konflikten er løst
+Dersom et nytt terreng blir kontrollert i løpet av plasseringen og ikke inneholder fiendtlige brikker, kan det brukes som del av stien til senere målterreng samme tur.
 
 Alle bønder blir stående frem til kampfasen.
 
 Kongens område kan bli avskåret fra resten av territoriet.
 
-Avskårne områder fungerer som separate kontrollnettverk. Bønder og konge kan bare flyttes gjennom det kontrollnettverket de faktisk er tilkoblet.
+Avskårne områder fungerer som separate kontrollnettverk.
 
 ---
 
@@ -474,44 +391,7 @@ Bønder brukes til:
 
 Bønder gir kampterninger når de angriper, men gir ikke statisk forsvar.
 
-Hver spiller:
-
-* Starter med 2 bønder
-* Får 1 ny bonde hver tur
-* Kan ha maksimalt 8 bønder
-
-## Bondeforflytning
-
-På sin tur kan spilleren flytte og omfordele bøndene sine til opptil 3 målterreng.
-
-Spilleren velger målterrengene under plasseringen. Målterrengene trenger ikke velges samtidig.
-
-For hvert målterreng kan spilleren flytte valgfritt antall egne bønder dit.
-
-Hver gruppe bønder som flyttes må ha en sammenhengende sti fra terrenget de flyttes fra til målterrenget.
-
-Stien kan bare gå gjennom terreng spilleren kontrollerer og som ikke er blokkert.
-
-Målterrenget kan være kontrollert, eierløst, omstridt eller fiendtlig.
-
-Et terreng er blokkert dersom det inneholder brikker fra mer enn én spiller.
-
-Ingen spiller kan flytte bønder eller konge ut fra et blokkert terreng.
-
-Det er lov å flytte bønder inn på et blokkert terreng.
-
-En bonde kan:
-
-* Bli stående
-* Flyttes innenfor eget territorium
-* Flyttes til et eierløst målterreng dersom det finnes lovlig sti dit
-* Flyttes inn på et fiendtlig terreng
-
-Dersom et nytt terreng blir kontrollert i løpet av plasseringen og ikke inneholder fiendtlige brikker, kan det brukes som del av stien til senere målterreng samme tur.
-
-Spilleren kan hente bønder fra flere forskjellige terreng til samme målterreng, så lenge hver flytting har en lovlig sti.
-
-Bønder på et omstridt eller fiendtlig terreng kan ikke trekkes tilbake før konflikten er løst, fordi terrenget er blokkert.
+Hver spiller starter med 2 bønder.
 
 ## Kontroll over terreng
 
@@ -525,23 +405,11 @@ Kontrollverdi:
 
 > Egne bønder + egen kongekontroll - alle fiendtlige bønder - eventuell fiendtlig kongekontroll
 
-Eksempel:
-
-* Rød har 3 bønder
-* Blå har 1 bonde
-* Røds kontrollverdi er 2
-
-Rød kontrollerer terrenget.
+Eksempel: Rød har 3 bønder og Blå har 1. Røds kontrollverdi er 2, så Rød kontrollerer terrenget.
 
 ## Omstridt terreng
 
-Dersom kontrollverdien er 0:
-
-* Ingen kontrollerer terrenget
-* Terrenget gir ingen ressurser
-* Terrenget kan ikke brukes som ekspansjonsvei
-
-Bøndene blir stående frem til kampfasen.
+Dersom kontrollverdien er 0, er terrenget omstridt. Ingen kontrollerer det, det gir ingen ressurser og det kan ikke brukes som ekspansjonsvei.
 
 ## Ressurser
 
@@ -552,8 +420,6 @@ Ressurser brukes til:
 * Monsterkrav
 * Kongeoppdrag
 * Elementrelaterte effekter
-
-Nøytrale ressurser kan ikke brukes som gress, flamme eller vann.
 
 En bonde på et terreng spilleren ikke kontrollerer:
 
@@ -601,37 +467,17 @@ Kongen:
 * Kan flyttes etter samme regler som bønder gjennom kontrollert, ublokkert territorium
 * Kan ikke gå inn på et terreng som inneholder en annen konge
 
-Kongen kan ikke forlate et blokkert terreng.
-
-Dersom kongens tidligere terreng ikke lenger har egne bønder, blir terrengets kontroll beregnet normalt etter at kongen har flyttet.
-
 To konger kan stå på naboterreng.
-
-Konger kan ikke angripe hverandre direkte uten at det finnes bønder som skaper kamp på terrenget.
 
 ## Kongens blokkering
 
-Fiendtlige bønder kan plasseres på kongens terreng.
-
-Fiendtlige spillere kan ikke ekspandere videre gjennom kongens terreng så lenge kongen lever.
-
-Kongen låser dermed ekspansjonsveien gjennom terrenget.
-
-Kongen fortsetter å blokkere så lenge den har minst 1 liv.
+Fiendtlige bønder kan plasseres på kongens terreng. Kongen blokkerer ekspansjonsveien gjennom terrenget så lenge den lever.
 
 ## Kongens liv
 
-Hver konge starter med **6 liv**.
-
 Kongens liv spores på kongekortet.
 
-Kongen kan ikke helbredes.
-
-Når kongen når 0 liv:
-
-* Kongen ødelegges
-* Spilleren taper
-* Kongens terreng blokkerer ikke lenger ekspansjon
+Når kongen når 0 liv, ødelegges kongen og spilleren taper.
 
 ---
 
@@ -641,8 +487,6 @@ Når kongen når 0 liv:
 
 Når alle spillere har fullført plasseringen sin, starter kampfasen.
 
-Kampfasen løses som samlede angrep, ikke som én separat kamp per terreng.
-
 Fra startspilleren og videre mot høyre får hver spiller én angrepsfase.
 
 I sin angrepsfase løser spilleren én samlet kamp mot hver motstander spilleren deler konfliktterreng med.
@@ -650,8 +494,6 @@ I sin angrepsfase løser spilleren én samlet kamp mot hver motstander spilleren
 Et konfliktterreng er et terreng der angriperen og forsvareren begge har minst én bonde eller konge.
 
 Alle konfliktterreng mellom angriperen og den samme forsvareren inngår i én samlet kamp.
-
-Bare bønder på de involverte konfliktterrengene kan fjernes.
 
 Monsterkrav bruker spillerens samlede ressurser fra hele kartet.
 
@@ -678,15 +520,7 @@ Når begge sider har valgt monster, eller valgt å ikke bruke monster, avsløres
 
 Ingen spiller kan endre monster etter avsløring.
 
-Monsterkortet beholdes etter kampen.
-
-Det samme monsterkortet kan:
-
-* Brukes i flere samlede kamper samme runde
-* Brukes både i angrep og forsvar
-* Brukes flere runder på rad
-
-Det finnes ingen straff for gjentatt bruk.
+Monsterkortet beholdes etter kampen og kan brukes igjen.
 
 ## Kamp uten monster
 
@@ -704,13 +538,11 @@ Kongens terreng uten monster:
 * Forsvar: 2 statisk forsvar
 * Angrep: 1 statisk bonus dersom kongen er på et av de involverte konfliktterrengene
 
-Kongens grunnstyrke brukes bare dersom spilleren ikke bruker et monsterkort.
+Kongens grunnstyrke brukes bare uten monsterkort.
 
 ## Kampterningene
 
 Angripende bønder er kampterninger.
-
-Når en spiller angriper, tar spilleren opp alle egne bønder fra de involverte konfliktterrengene i den samlede kampen.
 
 Hver angripende bonde gir én kampterning.
 
@@ -722,11 +554,7 @@ Angriperen ruller én terning per angripende bonde.
 
 Terningresultatene summeres.
 
-Forsvareren ruller ikke.
-
-Forsvareren bruker statisk forsvar fra monsterkort, elementfordel og eventuell grunnverdi.
-
-Det kan aldri rulles flere kampterninger enn angriperen har bønder på de involverte konfliktterrengene.
+Forsvareren ruller ikke, men bruker statisk forsvar fra monsterkort, elementfordel og eventuell grunnverdi.
 
 ## Elementfordel i kamp
 
@@ -737,13 +565,7 @@ Dersom begge sider bruker monsterkort, sammenlignes elementene.
 * Gress slår vann
 * Nøytral har ingen fordel
 
-Monsteret med elementfordel får:
-
-> `+1 styrke`
-
-Ved angrep betyr dette `+1` på angriperens totalverdi.
-
-Ved forsvar betyr dette ett ekstra statisk forsvar.
+Monsteret med elementfordel får `+1 styrke`.
 
 Dersom bare én side bruker monster, finnes det ingen elementfordel.
 
@@ -757,31 +579,15 @@ Forsvarerens kampverdi er:
 
 > Statisk forsvar fra monster + eventuell elementfordel + eventuell grunnverdi
 
-Angriperens kampverdi sammenlignes med forsvarerens kampverdi.
-
-Angrep høyere enn forsvar:
-
-* Forsvareren mottar skade tilsvarende differansen
-
-Forsvar høyere enn angrep:
-
-* Angriperen mottar tap tilsvarende differansen
-
-Lik verdi:
-
-* Ingen mottar skade eller tap
+Angriperens kampverdi sammenlignes med forsvarerens kampverdi. Høyeste verdi gir skade/tap tilsvarende differansen. Ved lik verdi skjer ingenting.
 
 ## Maksimal skade
 
 En spiller kan aldri miste flere bønder enn spilleren har på de involverte konfliktterrengene.
 
-Angriperen kan heller ikke påføre mer skade enn antall angripende bønder i den samlede kampen.
+Angriperen kan ikke påføre mer skade enn antall angripende bønder. Forsvareren kan ikke påføre mer tap enn antall forsvarende bønder.
 
-Forsvareren kan heller ikke påføre mer tap enn antall forsvarende bønder i den samlede kampen.
-
-Når en spiller mottar skade eller tap, velger den spilleren selv hvilke egne bønder som fjernes.
-
-Bønder kan bare fjernes fra de involverte konfliktterrengene.
+Når en spiller mottar skade eller tap, velger den spilleren selv hvilke egne bønder som fjernes fra de involverte konfliktterrengene.
 
 Eksempel:
 
@@ -791,25 +597,17 @@ Eksempel:
 * Angriperen påfører maksimalt 2 skade
 * Forsvareren velger selv hvilke 2 egne bønder som fjernes fra de involverte terrengene
 
-Tre angripende bønder kan maksimalt påføre 3 skade.
-
 Flere bønder gir flere terninger og øker maksimal skade, men setter også flere bønder i fare.
 
 ## Kamp med flere spillere
 
 Dersom en spiller deler konfliktterreng med flere motstandere, løser spilleren én samlet kamp mot hver motstander.
 
-Den aktive spilleren er angriper i alle sine samlede kamper.
-
-Motstanderen er forsvarer i den samlede kampen mot den aktive spilleren.
-
 Samme terreng kan inngå i flere samlede kamper dersom tre eller flere spillere har bønder der.
 
 Tap fjernes etter hver samlet kamp før neste samlet kamp løses.
 
 Bare bønder som fortsatt står på de involverte konfliktterrengene kan brukes eller fjernes i senere samlede kamper.
-
-Dette gjør kampfasen raskere enn separat kamp per terreng, men lar flere spillere fortsatt presse samme front.
 
 ## Kongens terreng i kamp
 
@@ -820,13 +618,7 @@ Når kongens terreng mottar skade, velger kongens eier hvordan skaden fordeles m
 * Bønder på involverte konfliktterreng
 * Kongens liv
 
-Kongens eier kan bare ta skade på kongens liv dersom kongens terreng er blant de involverte konfliktterrengene.
-
 Dersom kongens terreng er involvert og ingen egne bønder står på kongens terreng, må skade som legges på kongens terreng tas fra kongens liv.
-
-Den totale skaden kan ikke overstige antall angripende bønder i den samlede kampen.
-
-Kongen fortsetter å blokkere ekspansjon så lenge den lever.
 
 Eksempel:
 
@@ -843,11 +635,8 @@ Spilleren kan:
 
 Etter hver samlet kamp:
 
-* Fjernes tap umiddelbart
-* Kontroll over de involverte terrengene beregnes på nytt
-* Ressurser beregnes på nytt dersom kontroll endres
-
-Et terreng kan brukes som ekspansjonsvei i neste plasseringsfase dersom en spiller kontrollerer det og det ikke er blokkert.
+* Tap fjernes umiddelbart
+* Kontroll og ressurser beregnes på nytt for de involverte terrengene
 
 Et terreng uten bønder blir eierløst.
 
@@ -878,8 +667,6 @@ En spiller vinner ved å:
 
 Siste levende konge vinner.
 
-For kongeoppdrag må spilleren starte turen med alle oppdragskravene oppfylt.
-
 ## Sluttfase etter første utslåtte spiller
 
 I spill med 2 spillere brukes ikke timeglasset. Spillet slutter straks én konge ødelegges.
@@ -901,12 +688,6 @@ Tiebreakere:
 3. Flest bønder på kartet.
 
 Dersom spillerne fortsatt står likt etter alle tre kriteriene, ender spillet uavgjort.
-
-Denne regelen:
-
-* Begrenser ventetiden for utslåtte spillere
-* Hindrer et fastlåst sluttspill
-* Tvinger gjenværende spillere til å ta risiko
 
 ## Samtidig ødeleggelse av konger
 

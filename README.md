@@ -6,3 +6,7 @@ This repository contains the design notes and working rules for the card-control
 
 * `docs/gameidea.md` is the original game idea document and should not be edited.
 * `docs/gameidea-working.md` is the working copy where rule clarifications, revisions, and unresolved design decisions should be made.
+* `docs/king-cards.md` defines the king card deck.
+* `docs/terrain-cards.md` defines the terrain card deck.
+* `docs/monster-cards.md` defines the monster card deck.
+* `docs/images/` contains SVG card front and back templates.
