@@ -25,7 +25,7 @@ Spillet kombinerer:
 
 ## Gameplay-loop
 
-> Sjekk kongeoppdrag -> få én bonde -> trekk/bytt eventuelt kort -> legg eventuelt ett terreng -> flytt bønder og konge -> løs konflikter -> fjern tap og fordel eventuell kongeskade -> beregn kontroll og ressurser -> flytt startspillerbrikken.
+> Sjekk kongeoppdrag -> få én bonde -> trekk/bytt eventuelt kort -> legg eventuelt ett terreng -> flytt bønder og konge -> løs konflikter -> kast eventuelt kort for å redusere tap -> omplasser kampbønder -> beregn kontroll og ressurser -> flytt startspillerbrikken.
 
 ---
 
@@ -112,9 +112,7 @@ Elementfordel gir:
 
 > `+1 styrke`
 
-Ved angrep betyr dette `+1` på angriperens kampverdi.
-
-Ved forsvar betyr dette ett ekstra statisk forsvar.
+I kamp betyr dette `+1` på spillerens kampverdi.
 
 Nøytrale monstre får ingen elementfordel eller elementsvakhet. De bør derfor ha enklere ressurskrav enn elementmonstre på samme tier.
 
@@ -196,10 +194,7 @@ Eksempel:
 
 En spiller med 3 flammeressurser får styrke 3 før eventuell elementfordel.
 
-Styrken brukes slik:
-
-* Ved angrep: styrken legges til angriperens terningresultat
-* Ved forsvar: styrken er statisk forsvar
+Styrken legges til spillerens kampverdi sammen med terningresultatet fra valgte kampbønder.
 
 ## Monstertiers
 
@@ -300,6 +295,8 @@ Ved starten av turen:
 3. Spilleren får 1 ledig bondebrikke.
 4. Spilleren kan trekke 1 terrengkort eller monsterkort dersom spilleren har plass på hånden.
 
+Kort er også en begrenset beskyttelse i kamp. Siden en spiller vanligvis får 1 bonde og mulighet til 1 nytt kort hver tur, men bare kan ha 3 kort på hånden, kan kort bremse tap uten at en spiller kan samle opp ubegrenset forsvar.
+
 ## Hånden
 
 En spiller kan ha maksimalt **3 kort på hånden totalt**.
@@ -314,6 +311,8 @@ Kongekortet teller ikke som et håndkort.
 Monsterkort er tilgjengelige så lenge spilleren har dem på hånden.
 
 Monsterkort kastes ikke etter kamp og kan brukes på nytt så lenge kravene er oppfylt.
+
+Kort på hånden kan også legges nederst i riktig bunke for å redusere bondetap eller kongeskade fra kamp.
 
 ## Trekking
 
@@ -397,7 +396,7 @@ Bønder brukes til:
 * Ekspansjon
 * Maksimal skade i kamp
 
-Bønder gir kampterninger når de angriper, men gir ikke statisk forsvar.
+Bønder som velges til kamp gir kampterninger. Bønder som ikke velges, blir stående og kan fortsatt bidra til kontroll og ressurser.
 
 Hver spiller starter med 2 bønder.
 
@@ -495,23 +494,53 @@ Når kongen når 0 liv, ødelegges kongen og spilleren taper.
 
 Når alle spillere har fullført plasseringen sin, starter kampfasen.
 
-Fra startspilleren og videre mot høyre får hver spiller én angrepsfase.
+Fra startspilleren og videre mot høyre får hver spiller én konfliktfase.
 
-I sin angrepsfase løser spilleren én samlet kamp mot hver motstander spilleren deler konfliktterreng med.
+I sin konfliktfase løser spilleren én samlet kamp mot hver motstander spilleren deler konfliktterreng med.
 
-Et konfliktterreng er et terreng der angriperen og forsvareren begge har minst én bonde eller konge.
+Et konfliktterreng er et terreng der begge spillerne har minst én bonde eller konge.
 
-Alle konfliktterreng mellom angriperen og den samme forsvareren inngår i én samlet kamp.
+Alle konfliktterreng mellom de to spillerne inngår i én samlet kamp. Det er ikke én kamp per terreng.
 
-Monsterkrav bruker spillerens samlede ressurser fra hele kartet.
+Monsterkrav bruker spillerens samlede ressurser fra hele kartet etter at kampbønder er valgt og ikke lenger krever ressurser.
 
 Eksempel:
 
-* Rød har bønder på 3 terreng der Blå også har bønder
-* Rød har totalt 7 bønder på disse terrengene
-* Blå har 2, 2 og 1 bønder på de samme terrengene
+* Rød og Blå deler konflikt på 3 terreng
 * Dette løses som én samlet Rød-mot-Blå-kamp
-* Tap kan bare tas fra disse 3 terrengene
+* Alle 3 konfliktterreng brukes til å velge kampbønder
+* Selve terningkastet og kampresultatet skjer én gang
+
+## Velge kampbønder
+
+Før terninger rulles velger begge spillerne hvilke bønder fra hvert konfliktterreng som skal delta i kampen.
+
+Valget gjøres per konfliktterreng:
+
+* Dersom spillerne har like mange bønder på terrenget, må begge velge alle sine bønder der.
+* Spilleren med færrest bønder på terrenget må velge alle sine bønder der.
+* Spilleren med flest bønder på terrenget må velge minst like mange bønder som motstanderen har valgt fra samme terreng.
+* Overskytende bønder på terrenget er valgfrie.
+
+Eksempel 1:
+
+* Rød har 1 bonde på et konfliktterreng.
+* Blå har 3 bønder på samme terreng.
+* Rød må velge 1 bonde.
+* Blå må velge minst 1 bonde, men kan velge 1, 2 eller 3.
+
+Eksempel 2:
+
+* Rød har 2 bønder på et annet konfliktterreng.
+* Blå har 1 bonde på samme terreng.
+* Blå må velge 1 bonde.
+* Rød må velge minst 1 bonde, men kan velge 1 eller 2.
+
+Alle valgte bønder fra alle konfliktterreng legges sammen til én kamppool for hver spiller. Deretter løses én samlet kamp.
+
+Valgte kampbønder slutter midlertidig å kreve ressurser fra terrenget de kom fra.
+
+Bønder som ikke velges, blir stående på terrenget og kan fortsatt bidra til kontroll og ressurser.
 
 ## Monsterbruk i kamp
 
@@ -522,11 +551,13 @@ Monsteret må:
 * Være på hånden
 * Oppfylle ressurskravene
 
-Monsterkort velges samtidig og skjult.
+Monsterkort velges i startspillerrekkefølge.
 
-Når begge sider har valgt monster, eller valgt å ikke bruke monster, avsløres valgene.
+Spilleren med startspillerbrikken, eller spilleren nærmest startspillerbrikken i turrekkefølge, velger først om de bruker monsterkort og viser valget. Deretter velger den andre spilleren om de bruker monsterkort.
 
-Ingen spiller kan endre monster etter avsløring.
+Dette gir spilleren som velger senere mulighet til å svare med et element som passer mot det første monsteret.
+
+Ingen spiller kan endre monster etter at neste spiller har valgt.
 
 Monsterkortet beholdes etter kampen og kan brukes igjen.
 
@@ -536,33 +567,29 @@ Dersom en side ikke bruker et monsterkort, brukes grunnverdi.
 
 Vanlig kamp uten monster:
 
-* Forsvar: 1 statisk forsvar
-* Angrep: 0 statisk bonus
+* Statisk bonus: 0
 
-Angriperen får fortsatt terninger fra angripende bønder.
+Spilleren får fortsatt terninger fra valgte kampbønder.
 
 Kongens terreng uten monster:
 
-* Forsvar: 2 statisk forsvar
-* Angrep: 1 statisk bonus dersom kongen er på et av de involverte konfliktterrengene
+* Statisk bonus: 1 dersom kongen er på et av de involverte konfliktterrengene
 
 Kongens grunnstyrke brukes bare uten monsterkort.
 
 ## Kampterningene
 
-Angripende bønder er kampterninger.
+Valgte kampbønder er kampterninger.
 
-Hver angripende bonde gir én kampterning.
+Hver valgt kampbonde gir én kampterning.
 
 Hver kampterning har sidene:
 
 > `0, 0, 1, 1, 2, 2`
 
-Angriperen ruller én terning per angripende bonde.
+Begge spillere ruller én terning per valgt kampbonde.
 
 Terningresultatene summeres.
-
-Forsvareren ruller ikke, men bruker statisk forsvar fra monsterkort, elementfordel og eventuell grunnverdi.
 
 ## Elementfordel i kamp
 
@@ -579,33 +606,54 @@ Dersom bare én side bruker monster, finnes det ingen elementfordel.
 
 ## Kampresultat
 
-Angriperens kampverdi er:
+Hver spillers kampverdi er:
 
 > Terningresultat + monsterstyrke + eventuell elementfordel + eventuell grunnverdi
 
-Forsvarerens kampverdi er:
+Spilleren med høyest kampverdi vinner kampen. Differansen er tapet taperen må ta.
 
-> Statisk forsvar fra monster + eventuell elementfordel + eventuell grunnverdi
+Ved lik verdi er kampen uavgjort. Ingen vinner, og ingen tar tap fra kampresultatet.
 
-Angriperens kampverdi sammenlignes med forsvarerens kampverdi. Høyeste verdi gir skade/tap tilsvarende differansen. Ved lik verdi skjer ingenting.
+Begge sider må fortsatt omplassere valgte kampbønder etter kampen, også ved uavgjort.
 
 ## Maksimal skade
 
-En spiller kan aldri miste flere bønder enn spilleren har på de involverte konfliktterrengene.
+En spiller kan aldri miste flere bønder enn spilleren har valgt som kampbønder.
 
-Angriperen kan ikke påføre mer skade enn antall angripende bønder. Forsvareren kan ikke påføre mer tap enn antall forsvarende bønder.
+Vinneren kan ikke påføre mer tap enn antall egne valgte kampbønder.
 
-Når en spiller mottar skade eller tap, velger den spilleren selv hvilke egne bønder som fjernes fra de involverte konfliktterrengene.
+Når en spiller mottar tap, velger den spilleren selv hvilke egne valgte kampbønder som fjernes.
 
 Eksempel:
 
-* Angriperen har 2 bønder i den samlede kampen
-* Forsvareren har 5 bønder i den samlede kampen
-* Angriperen vinner med forskjell 4
-* Angriperen påfører maksimalt 2 skade
-* Forsvareren velger selv hvilke 2 egne bønder som fjernes fra de involverte terrengene
+* Rød har valgt 2 kampbønder.
+* Blå har valgt 5 kampbønder.
+* Rød vinner med forskjell 4.
+* Rød påfører maksimalt 2 tap.
+* Blå velger selv hvilke 2 egne kampbønder som fjernes.
 
 Flere bønder gir flere terninger og øker maksimal skade, men setter også flere bønder i fare.
+
+## Kort som tap
+
+Når en spiller mottar bondetap eller kongeskade fra kamp, kan spilleren legge kort fra hånden nederst i riktig bunke for å redusere tapet.
+
+Hvert kort reduserer totalt tap eller skade med 1.
+
+Kort kan redusere:
+
+* Bondetap
+* Kongeskade
+* En kombinasjon av bondetap og kongeskade
+
+Eksempel:
+
+* Blå mottar 3 tap.
+* Blå legger 1 monsterkort nederst i monsterbunken.
+* Blå legger 1 terrengkort nederst i terrengbunken.
+* Tapet reduseres fra 3 til 1.
+
+Det finnes ingen egen kastebunke. Et kastet kort legges nederst i bunken det hører til.
 
 ## Kamp med flere spillere
 
@@ -613,9 +661,9 @@ Dersom en spiller deler konfliktterreng med flere motstandere, løser spilleren 
 
 Samme terreng kan inngå i flere samlede kamper dersom tre eller flere spillere har bønder der.
 
-Tap fjernes etter hver samlet kamp før neste samlet kamp løses.
+Tap fjernes og kampbønder omplasseres etter hver samlet kamp før neste samlet kamp løses.
 
-Bare bønder som fortsatt står på de involverte konfliktterrengene kan brukes eller fjernes i senere samlede kamper.
+Bare bønder som fortsatt står på relevante konfliktterreng kan velges i senere samlede kamper.
 
 ## Kongens terreng i kamp
 
@@ -623,7 +671,7 @@ Kongens terreng kan bare ta skade dersom det er et av de involverte konfliktterr
 
 Når kongens terreng mottar skade, velger kongens eier hvordan skaden fordeles mellom:
 
-* Bønder på involverte konfliktterreng
+* Gjenværende valgte kampbønder
 * Kongens liv
 
 Dersom kongens terreng er involvert og ingen egne bønder står på kongens terreng, må skade som legges på kongens terreng tas fra kongens liv.
@@ -634,16 +682,31 @@ Kongens terreng er involvert i en samlet kamp, og kongens eier mottar 3 skade.
 
 Spilleren kan:
 
-* Fjerne 3 bønder fra involverte konfliktterreng
+* Fjerne 3 gjenværende valgte kampbønder
 * Fjerne 2 bønder og miste 1 kongeliv
 * Fjerne 1 bonde og miste 2 kongeliv
 * Miste 3 kongeliv dersom kongens terreng kan ta hele skaden
 
+Spilleren kan legge kort nederst i riktig bunke for å redusere denne skaden før bønder fjernes eller kongeliv mistes.
+
 ## Etter kamp
 
-Etter hver samlet kamp:
+Etter hver samlet kamp fjernes tap og gjenværende valgte kampbønder omplasseres.
 
-* Tap fjernes umiddelbart
+Omplassering:
+
+* Vinneren omplasserer først.
+* Taperen omplasserer etterpå.
+* Ved uavgjort omplasserer spillerne i startspillerrekkefølge. Spilleren med startspillerbrikken, eller spilleren nærmest startspillerbrikken i turrekkefølge, omplasserer først.
+* Hver spiller kan omplassere sine gjenværende kampbønder til opptil 3 terreng.
+* Terrengene må være ikke-fiendtlige for spilleren som omplasserer.
+* Et opprinnelig konfliktterreng er et lovlig mål dersom det ikke lenger er fiendtlig.
+* Omplassering kan ikke skape en ny konflikt mellom de to spillerne som nettopp løste kampen.
+
+Målet er at den samlede kampen rydder konflikten mellom de to spillerne. Når omplasseringen er ferdig, skal de to spillerne ikke lenger dele konfliktterreng fra denne kampen.
+
+Etter omplassering:
+
 * Kontroll og ressurser beregnes på nytt for de involverte terrengene
 
 Et terreng uten bønder blir eierløst.
@@ -731,14 +794,18 @@ Følgende punkter er ikke nødvendigvis uavklarte regler, men bør testes fordi 
 
 ## Flerspillerkamp
 
-* Er én samlet kamp per angriper mot hver forsvarer rask nok i praksis?
-* Blir det tydelig hvilke terreng som inngår i en samlet kamp?
+* Er én samlet kamp per spillerpar rask nok i praksis?
+* Blir det tydelig hvilke terreng som inngår i en samlet kamp mellom to spillere?
+* Er valg av kampbønder per konfliktterreng lett å gjennomføre fysisk?
+* Fungerer det at overskytende bønder kan bli stående og fortsatt kreve ressurser?
+* Rydder omplassering etter kamp konflikt mellom spillerne uten å skape nye uklare situasjoner?
 * Fungerer det at samme terreng kan inngå i flere samlede kamper når tre eller flere spillere står der?
-* Skaper umiddelbar fjerning av tap for mye fordel til spillere som angriper tidlig i kampfasen?
+* Skaper startspillerrekkefølge riktig og forståelig omplasseringsrekkefølge ved uavgjort?
 
 ## Monsterkamp
 
-* Er skjult monstervalg raskt nok i praksis?
+* Gir monsterchoice i startspillerrekkefølge nok motspill mot startspillerfordel?
+* Blir elementcounter etter første monstervalg taktisk interessant uten å bli for sterkt?
 * Fungerer monsterstyrke bedre som statisk bonus enn som antall terninger?
 * Er nøytrale monstre balansert når de mangler elementfordel men har enklere krav?
 * Hvor sterke kan Tier 3-spesialeffekter være før de tar over kampene?
@@ -753,6 +820,8 @@ Følgende punkter er ikke nødvendigvis uavklarte regler, men bør testes fordi 
 
 * Er håndgrensen på 3 kort riktig?
 * Er fri bruk av `to kort mot ett` innenfor håndgrensen nok til å redusere uflaks uten å gi for mye kortfiltrering?
+* Bremser kort som tapserstatning snowballing uten å gjøre kamp for ufarlig?
+* Gir valget mellom å beholde monsterkort og bruke kort som beskyttelse interessant spenning?
 * Bør tomme bunker ha en egen omstokking, eller holder det at kort legges nederst?
 
 ## Terrengplassering
