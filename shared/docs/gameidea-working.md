@@ -20,12 +20,11 @@ Spillet kombinerer:
 * Ressursspesialisering
 * Elementbasert kamp
 * Tilfeldige kampterninger
-* Offentlige kongeoppdrag
 * Direkte angrep mot motstandernes konger
 
 ## Gameplay-loop
 
-> Sjekk kongeoppdrag -> få én bonde -> trekk/bytt eventuelt kort -> legg eventuelt ett terreng -> flytt bønder og konge -> løs konflikter -> kast eventuelt kort for å redusere tap -> omplasser kampbønder -> beregn kontroll og ressurser -> flytt startspillerbrikken.
+> Sjekk kongens oppdrag -> få én bonde -> trekk/bytt eventuelt kort -> legg eventuelt ett terreng -> flytt bønder og konge -> løs konflikter -> kast eventuelt kort for å redusere tap -> omplasser kampbønder -> beregn kontroll og ressurser -> flytt startspillerbrikken.
 
 ---
 
@@ -40,8 +39,9 @@ Spillet har **8 kongekort**.
 Hver konge har:
 
 * 6 liv
-* Et offentlig oppdrag
 * Eventuell elementtilknytning
+
+Hver konge har et enkelt oppdrag basert på kontroll av terrengtyper. Første målverdi ligger rundt 6 kontrollerte terreng totalt.
 
 ## Terrengkort
 
@@ -290,8 +290,8 @@ Fase 3: Avslutning
 
 Ved starten av turen:
 
-1. Sjekk kongeoppdraget.
-2. Spilleren vinner dersom alle kravene er oppfylt.
+1. Sjekk kongens oppdrag.
+2. Spilleren vinner dersom kravene på kongekortet er oppfylt.
 3. Spilleren får 1 ledig bondebrikke.
 4. Spilleren kan trekke 1 terrengkort eller monsterkort dersom spilleren har plass på hånden.
 
@@ -394,7 +394,6 @@ Bønder brukes til:
 * Terrengkontroll
 * Ressurser
 * Monsterkrav
-* Kongeoppdrag
 * Ekspansjon
 * Maksimal skade i kamp
 
@@ -425,7 +424,6 @@ Bare bønder på terreng spilleren kontrollerer gir ressurser.
 Ressurser brukes til:
 
 * Monsterkrav
-* Kongeoppdrag
 * Elementrelaterte effekter
 
 En bonde på et terreng spilleren ikke kontrollerer:
@@ -714,24 +712,29 @@ Et terreng uten bønder blir eierløst.
 
 ## Kongeoppdrag
 
-Hver konge har et offentlig oppdrag.
+Hver konge har et enkelt oppdrag på kongekortet.
 
-Eksempel:
+Terrengtypene er:
 
-> Kontroller 4 terreng, ha 3 nøytrale ressurser og 2 flammeressurser.
+* Nøytral
+* Gress
+* Flamme
+* Vann
 
-Spilleren vinner dersom alle oppdragskravene er oppfylt ved starten av spillerens tur.
+Oppdragene bruker enkle kontrollmål, vanligvis rundt 6 kontrollerte terreng totalt, for eksempel:
 
-Motstanderne får dermed resten av runden til å stoppe oppdraget.
+* Kontroller 6 terreng, minst 2 flammeterreng og 2 nøytrale terreng.
+* Kontroller 6 terreng, minst 3 gressterreng og 1 nøytralt terreng.
+* Kontroller 6 terreng, minst 4 nøytrale terreng.
 
-Dersom flere spillere oppfyller kongeoppdraget i samme runde, vinner den spilleren som først starter sin tur med oppdraget oppfylt.
+Spilleren vinner dersom oppdraget på kongekortet er oppfylt ved starten av spillerens tur.
 
 ## Vanlige vinnemåter
 
 En spiller vinner ved å:
 
 * Ødelegge motstandernes konger
-* Fullføre kongeoppdraget
+* Fullføre kongens oppdrag
 
 Siste levende konge vinner.
 

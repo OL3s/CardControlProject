@@ -10,7 +10,7 @@
 
 ---
 
-Kongekort viser spillerens konge, liv og offentlig oppdrag. Kortene er primært ikonbaserte: korttypen leses av den kongelige rammen og baksiden, mens elementfokus vises med ikon og fargestemning.
+Kongekort viser spillerens konge, liv og oppdrag. Oppdragene er enkle kontrollmål som kan justeres direkte på kortene etter playtest. Første målverdi ligger rundt 6 kontrollerte terreng totalt, slik at oppdragene krever tydelig ekspansjon uten å dra spillet for langt ut. Kortene er primært ikonbaserte: korttypen leses av den kongelige rammen og baksiden, mens elementfokus vises med ikon og fargestemning.
 
 PNG-bildene under viser kortpreviewene. SVG-kildene ligger i [`images/svg/`](images/svg/), og ikonene ligger i [`images/svg/icons/`](images/svg/icons/).
 
@@ -28,11 +28,11 @@ PNG-bildene under viser kortpreviewene. SVG-kildene ligger i [`images/svg/`](ima
 
 | kort_id | elementfokus | liv | offentlig_oppdrag | kortnotat |
 |---|---|---:|---|---|
-| `king_neutral_0_a` | nøytral | 6 | Ødelegg en motstanders konge. | Direkte kongejakt. |
-| `king_neutral_0_b` | nøytral | 6 | Kontroller 5 terreng. | Bred områdekontroll. |
-| `king_grass_0_a` | gress | 6 | Kontroller 3 gressressurser og 4 terreng. | Gressbasert kontrollmål. |
-| `king_grass_0_b` | gress | 6 | Ha minst 5 bønder på kontrollerte terreng og kontroller 2 gressressurser. | Bonde- og ressursmål. |
-| `king_flame_0_a` | flamme | 6 | Vinn 2 kamper som angriper og kontroller 2 flammeressurser. | Aggressivt kampmål. |
-| `king_flame_0_b` | flamme | 6 | Ha påført minst 3 skade på kongeliv totalt og kontroller 3 flammeressurser. | Presser konger. |
-| `king_water_0_a` | vann | 6 | Kontroller 3 vannressurser og ha kongen på et terreng uten fiendtlige bønder. | Trygg sluttposisjon. |
-| `king_water_0_b` | vann | 6 | Kontroller 2 vannressurser, 2 nøytrale ressurser og minst 4 terreng. | Balansert kontrollmål. |
+| `king_neutral_0_a` | nøytral | 6 | Kontroller 6 terreng, minst 4 nøytrale. | Kontrollmål. |
+| `king_neutral_0_b` | nøytral | 6 | Kontroller 6 terreng, minst 3 nøytrale. | Kontrollmål. |
+| `king_grass_0_a` | gress | 6 | Kontroller 6 terreng, minst 2 gress og 2 nøytrale. | Kontrollmål. |
+| `king_grass_0_b` | gress | 6 | Kontroller 6 terreng, minst 3 gress og 1 nøytralt. | Kontrollmål. |
+| `king_flame_0_a` | flamme | 6 | Kontroller 6 terreng, minst 2 flamme og 2 nøytrale. | Kontrollmål. |
+| `king_flame_0_b` | flamme | 6 | Kontroller 6 terreng, minst 3 flamme og 1 nøytralt. | Kontrollmål. |
+| `king_water_0_a` | vann | 6 | Kontroller 6 terreng, minst 2 vann og 2 nøytrale. | Kontrollmål. |
+| `king_water_0_b` | vann | 6 | Kontroller 6 terreng, minst 3 vann og 1 nøytralt. | Kontrollmål. |

@@ -12,10 +12,12 @@ Formatmål: fire sider/paneler på ett foldbart ark.
 
 Vinn ved å:
 
-* Fullføre kongens offentlige oppdrag ved starten av din tur.
+* Fullføre kongens oppdrag ved starten av din tur.
 * Ødelegge motstandernes konger.
 
 Siste levende konge vinner.
+
+Oppdrag er enkle kontrollmål på kongekortet, vanligvis rundt 6 kontrollerte terreng totalt.
 
 ## Elementer
 
@@ -46,7 +48,7 @@ Elementfordel i kamp gir `+1` kampverdi.
 
 ## Starten Av Din Tur
 
-1. Sjekk kongeoppdraget. Du vinner dersom kravene er oppfylt.
+1. Sjekk kongens oppdrag. Du vinner hvis kravene på kongekortet er oppfylt.
 2. Få 1 ledig bondebrikke.
 3. Trekk 1 terrengkort eller 1 monsterkort hvis du har færre enn 3 kort på hånden.
 
