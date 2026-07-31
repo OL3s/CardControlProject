@@ -263,7 +263,7 @@ Uvalgte kort vises ikke til de andre spillerne.
 
 ## Startspillerbrikken
 
-Startspilleren starter runden. Turene går mot høyre, og startspillerbrikken flyttes én spiller mot høyre etter hver runde.
+Startspilleren starter runden. Turene går i fast turrekkefølge, og startspillerbrikken flyttes til neste spiller etter hver runde.
 
 ---
 
@@ -275,7 +275,7 @@ Hver runde består av tre faser.
 
 Fase 1: Plassering
 
-* Spillerne tar hver sin tur fra startspilleren og videre mot høyre.
+* Spillerne tar hver sin tur fra startspilleren og videre i turrekkefølge.
 
 Fase 2: Kamp
 
@@ -284,7 +284,7 @@ Fase 2: Kamp
 Fase 3: Avslutning
 
 * Tap, kontroll og ressurser oppdateres.
-* Startspillerbrikken flyttes mot høyre.
+* Startspillerbrikken flyttes til neste spiller.
 
 ## Starten av spillerens tur
 
@@ -312,7 +312,9 @@ Monsterkort er tilgjengelige så lenge spilleren har dem på hånden.
 
 Monsterkort kastes ikke etter kamp og kan brukes på nytt så lenge kravene er oppfylt.
 
-Kort på hånden kan også legges nederst i riktig bunke for å redusere bondetap eller kongeskade fra kamp.
+Å kaste et kort betyr å legge kortet nederst i riktig trekkbunke. Det finnes ingen egen kastebunke.
+
+Kort på hånden kan også kastes for å redusere bondetap eller kongeskade fra kamp.
 
 ## Trekking
 
@@ -396,7 +398,7 @@ Bønder brukes til:
 * Ekspansjon
 * Maksimal skade i kamp
 
-Bønder som velges til kamp gir kampterninger. Bønder som ikke velges, blir stående og kan fortsatt bidra til kontroll og ressurser.
+Bønder som velges til kamp er kampterninger. Bønder som ikke velges, blir stående og kan fortsatt bidra til kontroll og ressurser.
 
 Hver spiller starter med 2 bønder.
 
@@ -405,8 +407,6 @@ Hver spiller starter med 2 bønder.
 En spiller kontrollerer et terreng dersom spilleren har flere bønder der enn alle motstanderne til sammen.
 
 Kongen teller som 1 kontrollstyrke på terrenget den står på.
-
-Kongen produserer ikke ressurser.
 
 Kontrollverdi:
 
@@ -469,7 +469,6 @@ Kongen:
 * Har 6 liv
 * Kan ikke helbredes
 * Teller som 1 kontrollstyrke
-* Produserer ikke ressurser
 * Kan flyttes til ett av spillerens målterreng under plasseringen
 * Kan flyttes etter samme regler som bønder gjennom kontrollert, ublokkert territorium
 * Kan ikke gå inn på et terreng som inneholder en annen konge
@@ -494,7 +493,7 @@ Når kongen når 0 liv, ødelegges kongen og spilleren taper.
 
 Når alle spillere har fullført plasseringen sin, starter kampfasen.
 
-Fra startspilleren og videre mot høyre får hver spiller én konfliktfase.
+Fra startspilleren og videre i turrekkefølge får hver spiller én konfliktfase.
 
 I sin konfliktfase løser spilleren én samlet kamp mot hver motstander spilleren deler konfliktterreng med.
 
@@ -581,7 +580,7 @@ Kongens grunnstyrke brukes bare uten monsterkort.
 
 Valgte kampbønder er kampterninger.
 
-Hver valgt kampbonde gir én kampterning.
+Hver valgt kampbonde brukes som én kampterning.
 
 Hver kampterning har sidene:
 
@@ -636,9 +635,9 @@ Flere bønder gir flere terninger og øker maksimal skade, men setter også fler
 
 ## Kort som tap
 
-Når en spiller mottar bondetap eller kongeskade fra kamp, kan spilleren legge kort fra hånden nederst i riktig bunke for å redusere tapet.
+Når en spiller mottar bondetap eller kongeskade fra kamp, kan spilleren kaste kort fra hånden for å redusere tapet.
 
-Hvert kort reduserer totalt tap eller skade med 1.
+Hvert kastede kort reduserer totalt tap eller skade med 1.
 
 Kort kan redusere:
 
@@ -649,11 +648,9 @@ Kort kan redusere:
 Eksempel:
 
 * Blå mottar 3 tap.
-* Blå legger 1 monsterkort nederst i monsterbunken.
-* Blå legger 1 terrengkort nederst i terrengbunken.
+* Blå kaster 1 monsterkort.
+* Blå kaster 1 terrengkort.
 * Tapet reduseres fra 3 til 1.
-
-Det finnes ingen egen kastebunke. Et kastet kort legges nederst i bunken det hører til.
 
 ## Kamp med flere spillere
 
@@ -687,7 +684,7 @@ Spilleren kan:
 * Fjerne 1 bonde og miste 2 kongeliv
 * Miste 3 kongeliv dersom kongens terreng kan ta hele skaden
 
-Spilleren kan legge kort nederst i riktig bunke for å redusere denne skaden før bønder fjernes eller kongeliv mistes.
+Spilleren kan kaste kort for å redusere denne skaden før bønder fjernes eller kongeliv mistes.
 
 ## Etter kamp
 
@@ -750,27 +747,18 @@ Når timeglasset starter:
 2. Spillet fortsetter med vanlige regler.
 3. Vanlige seierskrav gjelder fortsatt under nedtellingen.
 4. Når tiden går ut, fullføres den aktive runden.
-5. Dersom ingen har vunnet, avgjøres vinneren etter tiebreakere.
+5. Dersom ingen har vunnet, vinner spilleren med mest gjenværende kongeliv.
 
-Tiebreakere:
+Dersom spillerne har like mye kongeliv, ender spillet uavgjort.
 
-1. Mest gjenværende kongeliv.
-2. Flest kontrollerte terreng.
-3. Flest bønder på kartet.
-
-Dersom spillerne fortsatt står likt etter alle tre kriteriene, ender spillet uavgjort.
 
 ## Samtidig ødeleggelse av konger
 
 Dersom flere konger ødelegges samtidig og bare én konge står igjen, vinner spilleren med den siste levende kongen.
 
-Dersom alle gjenværende konger ødelegges i samme kampfase, avgjøres vinneren etter følgende rekkefølge:
+Dersom alle gjenværende konger ødelegges i samme kampfase, vinner spilleren som hadde mest kongeliv ved starten av kampfasen.
 
-1. Mest kongeliv ved starten av kampfasen.
-2. Flest kontrollerte terreng etter kampfasen.
-3. Flest bønder på kartet etter kampfasen.
-
-Dersom spillerne fortsatt står likt, ender spillet uavgjort.
+Dersom spillerne hadde like mye kongeliv ved starten av kampfasen, ender spillet uavgjort.
 
 ---
 
