@@ -1,12 +1,150 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
 using CardGeneration.App;
+using CardGeneration.Rendering;
 using CardGeneration.Resources;
+using CardGeneration.Resources.Enums;
+using Godot;
 
 namespace CardGeneration.Services;
 
 public sealed class SheetExportService
 {
+    private const double Dpi = 600.0;
+    private const double MillimetersPerInch = 25.4;
+    private const double CardWidthMillimeters = 63.0;
+    private const double CardHeightMillimeters = 88.0;
+
     public ToolResult ExportSheet(CardDeckResource deck, string outputPath, string paper)
     {
-        return ToolResult.Ok($"ExportSheet is not implemented yet for '{deck.Id}' on {paper} -> {outputPath}.");
+        if (!TryGetPaperSpec(paper, out var paperSpec))
+        {
+            return ToolResult.Fail($"Paper '{paper}' is not supported. Use a4 or a3.");
+        }
+
+        var cards = ExpandDeckCards(deck);
+        if (cards.Count == 0)
+        {
+            return ToolResult.Fail($"Deck '{deck.Id}' has no cards to export.");
+        }
+
+        var outputDirectory = ProjectPaths.ToGlobalPath(outputPath);
+        if (Path.GetExtension(outputDirectory).Equals(".png", StringComparison.OrdinalIgnoreCase))
+        {
+            return ToolResult.Fail("Sheet export requires an output directory, not a .png file path.");
+        }
+
+        Directory.CreateDirectory(outputDirectory);
+
+        var sheetWidth = MillimetersToPixels(paperSpec.WidthMillimeters);
+        var sheetHeight = MillimetersToPixels(paperSpec.HeightMillimeters);
+        var cardWidth = MillimetersToPixels(CardWidthMillimeters);
+        var cardHeight = MillimetersToPixels(CardHeightMillimeters);
+        var columns = Math.Max(1, sheetWidth / cardWidth);
+        var rows = Math.Max(1, sheetHeight / cardHeight);
+        var cardsPerSheet = columns * rows;
+        var xGap = (sheetWidth - columns * cardWidth) / (columns + 1);
+        var yGap = (sheetHeight - rows * cardHeight) / (rows + 1);
+        var sheetCount = (int)Math.Ceiling(cards.Count / (double)cardsPerSheet);
+        var deckBackType = ResolveDeckCardType(deck, cards);
+        var backImage = CardImageRenderer.RenderBackResized(deckBackType, deck.BackImageTexture, cardWidth, cardHeight);
+
+        for (var sheetIndex = 0; sheetIndex < sheetCount; sheetIndex++)
+        {
+            var frontSheet = CreatePrintSheet(sheetWidth, sheetHeight);
+            var backSheet = CreatePrintSheet(sheetWidth, sheetHeight);
+            var firstCardIndex = sheetIndex * cardsPerSheet;
+            var lastCardIndexExclusive = Math.Min(firstCardIndex + cardsPerSheet, cards.Count);
+
+            for (var cardIndex = firstCardIndex; cardIndex < lastCardIndexExclusive; cardIndex++)
+            {
+                var slotIndex = cardIndex - firstCardIndex;
+                var column = slotIndex % columns;
+                var row = slotIndex / columns;
+                var position = new Vector2I(
+                    xGap + column * (cardWidth + xGap),
+                    yGap + row * (cardHeight + yGap));
+
+                var frontImage = CardImageRenderer.RenderResized(cards[cardIndex], cardWidth, cardHeight);
+                frontSheet.BlendRect(frontImage, new Rect2I(Vector2I.Zero, frontImage.GetSize()), position);
+                backSheet.BlendRect(backImage, new Rect2I(Vector2I.Zero, backImage.GetSize()), position);
+            }
+
+            var frontPath = Path.Combine(outputDirectory, $"{deck.Id}_{paperSpec.Name}_front_{sheetIndex + 1:000}.png");
+            var backPath = Path.Combine(outputDirectory, $"{deck.Id}_{paperSpec.Name}_back_{sheetIndex + 1:000}.png");
+            var frontError = frontSheet.SavePng(frontPath);
+            if (frontError != Error.Ok)
+            {
+                return ToolResult.Fail($"Failed to save front sheet {frontPath}: {frontError}.");
+            }
+
+            var backError = backSheet.SavePng(backPath);
+            if (backError != Error.Ok)
+            {
+                return ToolResult.Fail($"Failed to save back sheet {backPath}: {backError}.");
+            }
+        }
+
+        return ToolResult.Ok($"Exported {sheetCount} {paperSpec.Name.ToUpperInvariant()} front/back sheet pair(s) for deck '{deck.Id}' to {outputDirectory}.");
     }
+
+    private static Image CreatePrintSheet(int width, int height)
+    {
+        var sheet = Image.CreateEmpty(width, height, false, Image.Format.Rgba8);
+        sheet.Fill(new Color(1, 1, 1, 1));
+        return sheet;
+    }
+
+    private static IReadOnlyList<CardResource> ExpandDeckCards(CardDeckResource deck)
+    {
+        var cards = new List<CardResource>();
+        foreach (var entry in deck.Entries)
+        {
+            if (entry.Card is null)
+            {
+                continue;
+            }
+
+            for (var copyIndex = 0; copyIndex < entry.Count; copyIndex++)
+            {
+                cards.Add(entry.Card);
+            }
+        }
+
+        return cards;
+    }
+
+    private static CardType ResolveDeckCardType(CardDeckResource deck, IReadOnlyList<CardResource> cards)
+    {
+        if (deck.DeckCardType != CardType.Unknown)
+        {
+            return deck.DeckCardType;
+        }
+
+        return cards.Count > 0 ? cards[0].CardType : CardType.Unknown;
+    }
+
+    private static int MillimetersToPixels(double millimeters)
+    {
+        return (int)Math.Round(millimeters * Dpi / MillimetersPerInch);
+    }
+
+    private static bool TryGetPaperSpec(string paper, out PaperSpec paperSpec)
+    {
+        switch (paper.ToLowerInvariant())
+        {
+            case "a4":
+                paperSpec = new PaperSpec("a4", 210, 297);
+                return true;
+            case "a3":
+                paperSpec = new PaperSpec("a3", 297, 420);
+                return true;
+            default:
+                paperSpec = default;
+                return false;
+        }
+    }
+
+    private readonly record struct PaperSpec(string Name, double WidthMillimeters, double HeightMillimeters);
 }

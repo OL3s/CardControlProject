@@ -39,10 +39,10 @@ Status:
 * `validate-cards`: implementert.
 * `validate-deck`: implementert for lagrede deckresources.
 * `render-card`: implementert for PNG.
-* `export-deck`: implementert for PNG.
-* `export-sheet`: stub.
+* `export-deck`: implementert for PNG-layoutene `individual`, `grid` og `strip`.
+* `export-sheet`: implementert for A4 og A3 PNG-printark med front/back.
 * `export-diy`: stub.
-* `export-showcase`: stub.
+* `export-showcase`: implementert som grid-output.
 
 ## Eksempler
 
@@ -64,6 +64,24 @@ Eksportere en kortstokk som bilder:
 godot --headless --path godot/godot_cardgeneration -- --command export-deck --deck monster_cards --format png --output output/decks
 ```
 
+Eksportere en kortstokk som ett gridbilde:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command export-deck --deck monster_cards --format png --layout grid --columns 4 --output output/decks/monster_cards_grid.png
+```
+
+Eksportere en kortstokk som ett langt vertikalt bilde:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command export-deck --deck monster_cards --format png --layout strip --output output/decks/monster_cards_strip.png
+```
+
+Eksportere en kortstokk som ett bilde per kort i en mappe:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command export-deck --deck monster_cards --format png --layout individual --output output/decks/monster_cards
+```
+
 Sample-deck som finnes i prosjektet nå:
 
 ```sh
@@ -75,6 +93,23 @@ Eksportere printark:
 ```sh
 godot --headless --path godot/godot_cardgeneration -- --command export-sheet --deck monster_cards --paper a4 --output output/sheets
 ```
+
+A3 bruker samme kommando med `--paper a3`:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command export-sheet --deck monster_cards --paper a3 --output output/sheets
+```
+
+Printark eksporteres som nummererte PNG-par:
+
+```text
+monster_cards_a4_front_001.png
+monster_cards_a4_back_001.png
+monster_cards_a4_front_002.png
+monster_cards_a4_back_002.png
+```
+
+Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, ved `600 DPI`. Baksiden bestemmes av `DeckCardType` på kortstokken, ikke av hvert enkelt kort.
 
 Eksportere DIY-pakke:
 

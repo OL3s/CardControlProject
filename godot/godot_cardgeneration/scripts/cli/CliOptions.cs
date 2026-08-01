@@ -10,6 +10,9 @@ public sealed class CliOptions
     public string OutputPath { get; private set; } = "res://output";
     public string Format { get; private set; } = "png";
     public string Paper { get; private set; } = "a4";
+    public string Layout { get; private set; } = "individual";
+    public int Columns { get; private set; }
+    public int Spacing { get; private set; } = 24;
     public bool ShowHelp { get; private set; }
 
     public static CliOptions Parse(string[] args)
@@ -42,6 +45,15 @@ public sealed class CliOptions
                     break;
                 case "--paper":
                     options.Paper = ReadValue(args, ref index, "--paper");
+                    break;
+                case "--layout":
+                    options.Layout = ReadValue(args, ref index, "--layout");
+                    break;
+                case "--columns":
+                    options.Columns = int.Parse(ReadValue(args, ref index, "--columns"));
+                    break;
+                case "--spacing":
+                    options.Spacing = int.Parse(ReadValue(args, ref index, "--spacing"));
                     break;
                 case "--list-cards":
                     options.Command = "list-cards";

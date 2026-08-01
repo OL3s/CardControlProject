@@ -56,23 +56,29 @@ Merk: `SubViewport`-basert rendering er fortsatt mulig senere, men første rende
 
 ## Fase 5: Kortstokker Og Showcase
 
-Status: startet.
+Status: delvis gjennomført.
 
 Mål:
 
 * Rendre alle kort i en kortstokk. Gjort for enkel PNG-eksport.
-* Eksportere kortstokk som enkeltbilder.
-* Lage showcase-visning for kort og kortstokker.
-* Eksportere showcase som bilde eller bildeserie.
+* Eksportere kortstokk som enkeltbilder. Gjort med `--layout individual`.
+* Eksportere kortstokk som samlet grid. Gjort med `--layout grid`.
+* Eksportere kortstokk som lang strip. Gjort med `--layout strip`.
+* Lage showcase-visning for kort og kortstokker. GUI-visning gjenstår.
+* Eksportere showcase som bilde eller bildeserie. Første grid-output er koblet til `export-showcase`.
 
 ## Fase 6: Printark Og DIY
 
+Status: delvis gjennomført.
+
 Mål:
 
-* Eksportere A4-printark med fronter.
-* Eksportere A4-printark med baksider.
-* Legge inn safe margin, bleed og kuttemerker.
-* Lage DIY-eksport med kortbilder, printark og måleinformasjon.
+* Eksportere A4-printark med fronter. Gjort som PNG.
+* Eksportere A4-printark med baksider. Gjort som PNG.
+* Eksportere A3-printark med fronter og baksider. Gjort som PNG.
+* Sikre pokerkortstørrelse `63 x 88 mm` ved print. Gjort ved 600 DPI-pikselberegning.
+* Legge inn safe margin, bleed og kuttemerker. Gjenstår.
+* Lage DIY-eksport med kortbilder, printark og måleinformasjon. Gjenstår.
 
 ## Fase 7: Dataintegrasjon
 

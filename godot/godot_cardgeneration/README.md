@@ -161,9 +161,10 @@ Første implementerte CLI-funksjoner:
 * `list-decks` laster lagrede deckresources.
 * `validate-cards` validerer lagrede kortresources.
 * `render-card` renderer ett kort til PNG.
-* `export-deck` renderer alle kort i en kortstokk til PNG.
+* `export-deck` renderer en kortstokk til PNG som enkeltbilder, samlet grid eller lang strip.
+* `export-sheet` renderer A4/A3-printark med egne front- og baksideark.
 
-`export-sheet`, `export-diy` og `export-showcase` finnes foreløpig som service-/CLI-stubber.
+`export-diy` finnes foreløpig som service-/CLI-stub. `export-showcase` bruker foreløpig samme grid-output som `export-deck --layout grid`.
 
 ## Mappestruktur
 
@@ -223,6 +224,8 @@ godot/godot_cardgeneration/output/
     preview/
   decks/
   sheets/
+    sample_monster_deck_a4_front_001.png
+    sample_monster_deck_a4_back_001.png
   diy/
   showcase/
 ```

@@ -13,5 +13,6 @@ Count = 1
 script = ExtResource("1_deck")
 Id = "sample_monster_deck"
 DisplayName = "Sample Monster Deck"
+DeckCardType = 1
 Description = "A minimal deck used to test card loading and deck export."
 Entries = Array[Resource]([SubResource("CardDeckEntry_monster_flame_1_a")])

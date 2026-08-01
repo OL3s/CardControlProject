@@ -46,6 +46,8 @@ Elementikonene skal normalt peke til importerte textures fra SVG-er under `asset
 
 `CardDeckResource` lagrer en kortstokk som en liste med `CardDeckEntryResource`, slik at samme kort kan ha antall kopier uten å duplisere kortdata.
 
+`CardDeckResource` har også `DeckCardType` og `BackImageTexture`. Baksiden bestemmes på deck-nivå, ikke per kort, slik at en monsterstokk får fast monsterbakside, en terrengstokk får fast terrengbakside og en kongestokk får fast kongebakside.
+
 ## Service-Lag
 
 Felles funksjoner ligger i `scripts/services/`.
@@ -75,7 +77,15 @@ Validators skal sjekke at kort og kortstokker er gyldige før preview, lagring o
 
 Render- og export-services skal eie all outputlogikk.
 
-Første `CardRenderService` renderer PNG direkte fra `CardResource`. Første `DeckExportService` eksporterer en kortstokk som flere PNG-filer ved å bruke samme `CardRenderService`.
+Første `CardRenderService` renderer PNG direkte fra `CardResource`.
+
+`DeckExportService` støtter tre PNG-layouts for vanlig kortstokkeksport:
+
+* `individual`: ett PNG-bilde per kort i egen mappe.
+* `grid`: ett samlet PNG-bilde med kortene i rutenett.
+* `strip`: ett langt vertikalt PNG-bilde.
+
+`SheetExportService` støtter A4 og A3 som printark. Den lager nummererte front- og baksideark. Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, beregnet ved `600 DPI`. Dersom kortstokken ikke får plass på ett ark, genereres flere ark rekursivt som `front_001`, `back_001`, `front_002`, `back_002` osv.
 
 ## Ikoner
 

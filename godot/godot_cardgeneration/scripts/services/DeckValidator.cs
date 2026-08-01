@@ -1,5 +1,6 @@
 using CardGeneration.App;
 using CardGeneration.Resources;
+using CardGeneration.Resources.Enums;
 
 namespace CardGeneration.Services;
 
@@ -22,6 +23,11 @@ public sealed class DeckValidator
             if (entry.Count < 1)
             {
                 return ToolResult.Fail($"Deck '{deck.Id}' has an entry with count below 1.");
+            }
+
+            if (deck.DeckCardType != CardType.Unknown && entry.Card.CardType != deck.DeckCardType)
+            {
+                return ToolResult.Fail($"Deck '{deck.Id}' has card '{entry.Card.Id}' with type '{entry.Card.CardType}', but deck type is '{deck.DeckCardType}'.");
             }
         }
 

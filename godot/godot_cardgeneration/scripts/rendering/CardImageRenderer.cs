@@ -15,17 +15,42 @@ public static class CardImageRenderer
         var image = Image.CreateEmpty(PreviewWidth, PreviewHeight, false, Image.Format.Rgba8);
         image.Fill(new Color(0, 0, 0, 0));
 
-        DrawCardBase(image, card);
+        DrawCardBase(image, card.CardType);
         DrawCardImage(image, card);
         DrawCardPanels(image, card);
 
         return image;
     }
 
-    private static void DrawCardBase(Image image, CardResource card)
+    public static Image RenderBack(CardType cardType, Texture2D? backImageTexture = null)
+    {
+        var image = Image.CreateEmpty(PreviewWidth, PreviewHeight, false, Image.Format.Rgba8);
+        image.Fill(new Color(0, 0, 0, 0));
+
+        DrawCardBase(image, cardType);
+        DrawCardBackImage(image, cardType, backImageTexture);
+
+        return image;
+    }
+
+    public static Image RenderResized(CardResource card, int width, int height)
+    {
+        var image = Render(card);
+        image.Resize(width, height, Image.Interpolation.Lanczos);
+        return image;
+    }
+
+    public static Image RenderBackResized(CardType cardType, Texture2D? backImageTexture, int width, int height)
+    {
+        var image = RenderBack(cardType, backImageTexture);
+        image.Resize(width, height, Image.Interpolation.Lanczos);
+        return image;
+    }
+
+    private static void DrawCardBase(Image image, CardType cardType)
     {
         FillRoundedRect(image, new Rect2I(20, 20, 710, 1010), 48, new Color(0.02f, 0.02f, 0.025f));
-        FillRoundedRect(image, new Rect2I(38, 38, 674, 974), 40, GetBaseColor(card.CardType));
+        FillRoundedRect(image, new Rect2I(38, 38, 674, 974), 40, GetBaseColor(cardType));
         FillRoundedRect(image, new Rect2I(58, 58, 634, 934), 30, new Color(0.035f, 0.03f, 0.035f));
     }
 
@@ -39,6 +64,26 @@ public static class CardImageRenderer
         }
 
         DrawTexture(image, card.CardImageTexture, cardImageRect);
+    }
+
+    private static void DrawCardBackImage(Image image, CardType cardType, Texture2D? backImageTexture)
+    {
+        var backImageRect = new Rect2I(62, 62, 626, 926);
+        if (backImageTexture is not null)
+        {
+            DrawTexture(image, backImageTexture, backImageRect);
+            return;
+        }
+
+        FillRoundedRect(image, backImageRect, 28, GetMutedBaseColor(cardType));
+
+        var center = new Vector2I(375, 525);
+        var accentColor = GetBaseColor(cardType);
+        FillRoundedRect(image, new Rect2I(center.X - 170, center.Y - 170, 340, 340), 170, new Color(0.02f, 0.015f, 0.018f, 0.88f));
+        FillRoundedRect(image, new Rect2I(center.X - 135, center.Y - 135, 270, 270), 135, new Color(accentColor.R, accentColor.G, accentColor.B, 0.32f));
+        FillRoundedRect(image, new Rect2I(center.X - 74, center.Y - 230, 148, 460), 74, new Color(0.04f, 0.018f, 0.02f, 0.92f));
+        FillRoundedRect(image, new Rect2I(center.X - 92, center.Y - 92, 184, 184), 92, GetBaseColor(cardType));
+        FillRoundedRect(image, new Rect2I(center.X - 64, center.Y - 64, 128, 128), 64, new Color(0.03f, 0.02f, 0.025f));
     }
 
     private static void DrawCardPanels(Image image, CardResource card)

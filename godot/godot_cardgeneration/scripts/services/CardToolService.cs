@@ -99,7 +99,7 @@ public sealed class CardToolService
             : _cardRenderService.RenderCard(card, outputPath);
     }
 
-    public ToolResult ExportDeck(string? deckId, string outputPath, string format)
+    public ToolResult ExportDeck(string? deckId, string outputPath, string format, string layout, int columns, int spacing)
     {
         if (string.IsNullOrWhiteSpace(deckId))
         {
@@ -109,7 +109,7 @@ public sealed class CardToolService
         var deck = _deckRepository.LoadDeckById(deckId);
         return deck is null
             ? ToolResult.Fail($"Deck '{deckId}' was not found.")
-            : _deckExportService.ExportDeck(deck, outputPath, format);
+            : _deckExportService.ExportDeck(deck, outputPath, format, layout, columns, spacing);
     }
 
     public ToolResult ExportSheet(string? deckId, string outputPath, string paper)
