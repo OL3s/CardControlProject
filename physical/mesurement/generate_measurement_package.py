@@ -989,7 +989,7 @@ def diagram_03():
 
 
 # ============================================================
-# 04 — Internal stack production section
+# 04 — Internal stack production section, long side
 # ============================================================
 def diagram_04():
     fig, ax = plt.subplots(figsize=(13, 7))
@@ -997,7 +997,7 @@ def diagram_04():
         ax,
         (-8, 112),
         (-6, 52),
-        "ELEMENT WAR — produksjonssnitt, innvendig stack",
+        "ELEMENT WAR — produksjonssnitt, innvendig stack, lang side",
     )
 
     outer_w = SPEC["base_outer"][0]
@@ -1178,14 +1178,186 @@ def diagram_04():
 
     save_dual(
         fig,
-        "04_internal_stack_production_section",
+        "04_internal_stack_long_side_production_section",
     )
 
 
 # ============================================================
-# 05 — Finished dimensions per component
+# 05 — Internal stack production section, short side
 # ============================================================
 def diagram_05():
+    fig, ax = plt.subplots(figsize=(11, 7))
+    setup(
+        ax,
+        (-8, 87),
+        (-6, 52),
+        "ELEMENT WAR — produksjonssnitt, innvendig stack, kort side",
+    )
+
+    outer_w = SPEC["base_outer"][1]
+    outer_h = SPEC["base_outer"][2]
+    inner_w = SPEC["base_inner"][1]
+    inner_h = SPEC["base_inner"][2]
+    board = SPEC["board"]
+
+    ax.add_patch(
+        FancyBboxPatch(
+            (0, 0),
+            outer_w,
+            outer_h,
+            boxstyle="round,pad=0,rounding_size=1",
+            fill=False,
+            lw=2.0,
+        )
+    )
+    ax.add_patch(
+        Rectangle(
+            (0, 0),
+            outer_w,
+            board,
+            facecolor="#333333",
+            edgecolor="black",
+            lw=0.8,
+        )
+    )
+    ax.add_patch(
+        Rectangle(
+            (0, board),
+            board,
+            inner_h,
+            facecolor="#333333",
+            edgecolor="black",
+            lw=0.8,
+        )
+    )
+    ax.add_patch(
+        Rectangle(
+            (outer_w - board, board),
+            board,
+            inner_h,
+            facecolor="#333333",
+            edgecolor="black",
+            lw=0.8,
+        )
+    )
+
+    card_x = board + (inner_w - SPEC["cards"][1]) / 2
+    ax.add_patch(
+        Rectangle(
+            (card_x, board),
+            SPEC["cards"][1],
+            SPEC["cards"][2],
+            facecolor="#d8d8d8",
+            edgecolor="black",
+            lw=1.0,
+        )
+    )
+    for index in range(1, 10):
+        y = board + SPEC["cards"][2] * index / 10
+        ax.add_line(
+            Line2D(
+                [card_x, card_x + SPEC["cards"][1]],
+                [y, y],
+                lw=0.35,
+                alpha=0.5,
+            )
+        )
+    ax.text(
+        card_x + SPEC["cards"][1] / 2,
+        board + SPEC["cards"][2] / 2,
+        "52 kort\n88 × 63 × 17",
+        ha="center",
+        va="center",
+        fontsize=9,
+    )
+
+    rule_x = board + (inner_w - SPEC["rules"][1]) / 2
+    rule_y = board + SPEC["cards"][2]
+    ax.add_patch(
+        Rectangle(
+            (rule_x, rule_y),
+            SPEC["rules"][1],
+            SPEC["rules"][2],
+            facecolor="#f1e2c0",
+            edgecolor="black",
+            lw=0.8,
+        )
+    )
+    ax.text(
+        rule_x + SPEC["rules"][1] / 2,
+        rule_y + 1.6,
+        "foldet regelark 89 × 64 × 1",
+        ha="center",
+        fontsize=8,
+    )
+
+    tray_x = board + (inner_w - SPEC["tray_outer"][1]) / 2
+    tray_y = rule_y + SPEC["rules"][2]
+    ax.add_patch(
+        Rectangle(
+            (tray_x, tray_y),
+            SPEC["tray_outer"][1],
+            SPEC["tray_outer"][2],
+            facecolor="#c6a573",
+            alpha=0.75,
+            edgecolor="black",
+            lw=1.0,
+        )
+    )
+    ax.text(
+        tray_x + SPEC["tray_outer"][1] / 2,
+        tray_y + SPEC["tray_outer"][2] / 2,
+        "spillerbrett + komponenter\n92 × 67 × 21.5",
+        ha="center",
+        va="center",
+        fontsize=9,
+    )
+
+    liner_y = board + inner_h - SPEC["compression_liner"]
+    ax.add_patch(
+        Rectangle(
+            (board, liner_y),
+            inner_w,
+            SPEC["compression_liner"],
+            facecolor="#eeeeee",
+            edgecolor="black",
+            lw=0.7,
+            hatch="//",
+        )
+    )
+    ax.text(
+        board + inner_w / 2,
+        liner_y + 0.5,
+        "valgfri 1 mm kompresjonsliner",
+        ha="center",
+        va="center",
+        fontsize=7,
+    )
+
+    dim_h(ax, 0, outer_w, -3, "72 mm")
+    dim_v(ax, 0, outer_h, 78, "43 mm base")
+    dim_v(ax, board, board + inner_h, 83, "41 mm innvendig")
+    ax.text(
+        36,
+        48,
+        f"Stack: {STACK_H:.1f} mm | "
+        f"fri høyde: {FREE_H:.1f} mm | "
+        f"med liner: {FREE_H_AFTER_LINER:.1f} mm",
+        ha="center",
+        va="top",
+        fontsize=9,
+    )
+
+    save_dual(
+        fig,
+        "05_internal_stack_short_side_production_section",
+    )
+
+
+# ============================================================
+# 06 — Finished dimensions per component
+# ============================================================
+def diagram_06():
     fig, axes = plt.subplots(3, 2, figsize=(14, 13))
     fig.suptitle(
         "ELEMENT WAR — produksjonsmål per del",
@@ -1390,14 +1562,14 @@ def diagram_05():
 
     save_dual(
         fig,
-        "05_component_finished_dimensions",
+        "06_component_finished_dimensions",
     )
 
 
 # ============================================================
-# 06 — Full assembly, top grouping
+# 07 — Full assembly, top grouping
 # ============================================================
-def diagram_06():
+def diagram_07():
     fig, ax = plt.subplots(figsize=(14, 9))
     setup(
         ax,
@@ -1531,14 +1703,14 @@ def diagram_06():
 
     save_dual(
         fig,
-        "06_full_assembly_top_grouping",
+        "07_full_assembly_top_grouping",
     )
 
 
 # ============================================================
-# 07 — Full assembly, long side
+# 08 — Full assembly, long side
 # ============================================================
-def diagram_07():
+def diagram_08():
     fig, ax = plt.subplots(figsize=(14, 7))
     setup(
         ax,
@@ -1635,6 +1807,24 @@ def diagram_07():
     )
 
     component_y = tray_y + SPEC["tray_floor"]
+    for rel_x, width in (
+        (0, SPEC["tray_side_wall"]),
+        (
+            SPEC["tray_outer"][0] - SPEC["tray_side_wall"],
+            SPEC["tray_side_wall"],
+        ),
+    ):
+        ax.add_patch(
+            Rectangle(
+                (tray_x + rel_x, component_y),
+                width,
+                SPEC["tray_wall"],
+                facecolor="#c6ad83",
+                edgecolor="black",
+                lw=0.6,
+            )
+        )
+
     for index, color in enumerate(PLAYER_COLORS):
         player_x = (
             tray_x
@@ -1736,14 +1926,14 @@ def diagram_07():
 
     save_dual(
         fig,
-        "07_full_assembly_long_side_grouping",
+        "08_full_assembly_long_side_grouping",
     )
 
 
 # ============================================================
-# 08 — Exploded assembly
+# 10 — Exploded assembly
 # ============================================================
-def diagram_08():
+def diagram_10():
     fig, ax = plt.subplots(figsize=(15, 12))
     setup(
         ax,
@@ -1950,14 +2140,14 @@ def diagram_08():
 
     save_dual(
         fig,
-        "08_exploded_assembly_grouping",
+        "10_exploded_assembly_grouping",
     )
 
 
 # ============================================================
-# 09 — Per-player group detail
+# 11 — Per-player group detail
 # ============================================================
-def diagram_09():
+def diagram_11():
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
     fig.suptitle(
         "ELEMENT WAR — spillergruppe detalj",
@@ -2114,20 +2304,20 @@ def diagram_09():
 
     save_dual(
         fig,
-        "09_player_group_detail",
+        "11_player_group_detail",
     )
 
 
 # ============================================================
-# 10 — Short-side complete grouping
+# 09 — Full assembly, short side
 # ============================================================
-def diagram_10():
+def diagram_09():
     fig, ax = plt.subplots(figsize=(11, 8))
     setup(
         ax,
         (-8, 90),
         (-6, 55),
-        "ELEMENT WAR — full gruppering, kort side",
+        "ELEMENT WAR — full gruppering, kort sideprofil",
     )
 
     depth = SPEC["base_outer"][1]
@@ -2255,14 +2445,14 @@ def diagram_10():
                 component_y,
             ),
             SPEC["front_name_zone_d"],
-            8,
+            SPEC["tray_wall"],
             facecolor="#ead8b5",
             edgecolor="black",
         )
     )
     ax.text(
         tray_x + SPEC["tray_front_wall"] + SPEC["front_name_zone_d"] / 2,
-        component_y + 4,
+        component_y + SPEC["tray_wall"] / 2,
         "navn",
         ha="center",
         va="center",
@@ -2338,14 +2528,14 @@ def diagram_10():
 
     save_dual(
         fig,
-        "10_short_side_complete_grouping",
+        "09_full_assembly_short_side_grouping",
     )
 
 
 # ============================================================
-# 11 — Isolated removable player separator, multiple views
+# 12 — Isolated removable player separator, multiple views
 # ============================================================
-def diagram_11():
+def diagram_12():
     fig = plt.figure(figsize=(15, 11))
     top_ax = fig.add_axes([0.05, 0.50, 0.62, 0.43])
     long_ax = fig.add_axes([0.05, 0.08, 0.62, 0.28])
@@ -2460,7 +2650,7 @@ def diagram_11():
         Rectangle(
             (SPEC["tray_front_wall"], tray_floor),
             SPEC["front_name_zone_d"],
-            8,
+            wall_h,
             facecolor="#ead8b5",
             edgecolor="black",
             lw=0.8,
@@ -2468,7 +2658,7 @@ def diagram_11():
     )
     short_ax.text(
         SPEC["tray_front_wall"] + SPEC["front_name_zone_d"] / 2,
-        tray_floor + 4,
+        tray_floor + wall_h / 2,
         "navn",
         ha="center",
         va="center",
@@ -2527,7 +2717,7 @@ def diagram_11():
     )
 
     fig.suptitle("ELEMENT WAR — lukket avtakbar spillertray", fontsize=17, y=0.98)
-    save_dual(fig, "11_player_separator_top_and_sides")
+    save_dual(fig, "12_player_separator_top_and_sides")
     return
 
     tray_w = SPEC["tray_outer"][0]
@@ -3091,14 +3281,14 @@ def diagram_11():
 
     save_dual(
         fig,
-        "11_player_separator_top_and_sides",
+        "12_player_separator_top_and_sides",
     )
 
 
 # ============================================================
-# 12 — Shared-wall tray versus four caddies
+# 13 — Shared-wall tray versus four caddies
 # ============================================================
-def diagram_12():
+def diagram_13():
     fig, axes = plt.subplots(2, 1, figsize=(14, 9))
     fig.suptitle(
         "ELEMENT WAR — lukket tray, bredde og dybde",
@@ -3187,7 +3377,7 @@ def diagram_12():
         fontsize=9,
     )
 
-    save_dual(fig, "12_separator_wall_options_math")
+    save_dual(fig, "13_separator_wall_options_math")
     return
 
     ax = axes[0]
@@ -3369,7 +3559,7 @@ def diagram_12():
 
     save_dual(
         fig,
-        "12_separator_wall_options_math",
+        "13_separator_wall_options_math",
     )
 
 
@@ -3387,6 +3577,7 @@ def main():
     diagram_10()
     diagram_11()
     diagram_12()
+    diagram_13()
 
     print(f"Generated PNG files in: {PNG_DIR}")
     print(f"Generated SVG files in: {SVG_DIR}")
