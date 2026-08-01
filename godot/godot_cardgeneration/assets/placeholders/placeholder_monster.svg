@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="750" height="1050" viewBox="0 0 750 1050" role="img" aria-labelledby="title desc">
+  <title id="title">Monster card image placeholder</title>
+  <desc id="desc">Placeholder image for monster cards until final artwork exists.</desc>
+  <rect width="750" height="1050" fill="#2a0d0d"/>
+  <circle cx="375" cy="390" r="215" fill="#d6472d" opacity="0.22"/>
+  <path d="M220 790 C242 550 308 360 375 220 C442 360 508 550 530 790 Z" fill="#120707" opacity="0.9"/>
+  <circle cx="318" cy="455" r="32" fill="#ffd3ad"/>
+  <circle cx="432" cy="455" r="32" fill="#ffd3ad"/>
+  <path d="M292 575 C340 628 410 628 458 575" fill="none" stroke="#ffd3ad" stroke-width="18" stroke-linecap="round"/>
+  <text x="375" y="930" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" fill="#ffd3ad">MONSTER PLACEHOLDER</text>
+</svg>

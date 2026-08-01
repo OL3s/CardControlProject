@@ -1,0 +1,21 @@
+# Godot generated/editor state for this project
+.godot/
+.import/
+imported/
+
+# Godot/C# generated files
+.mono/
+.csharp/
+bin/
+obj/
+
+# Local exports and generated card output
+builds/
+exports/
+output/
+*.translation
+
+# Local editor files
+*.tmp
+*.temp
+*.log

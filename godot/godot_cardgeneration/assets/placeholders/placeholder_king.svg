@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="750" height="1050" viewBox="0 0 750 1050" role="img" aria-labelledby="title desc">
+  <title id="title">King card image placeholder</title>
+  <desc id="desc">Placeholder image for king cards until final artwork exists.</desc>
+  <rect width="750" height="1050" fill="#241832"/>
+  <circle cx="375" cy="360" r="175" fill="#f0d26f" opacity="0.22"/>
+  <path d="M250 760 C285 565 320 495 375 495 C430 495 465 565 500 760 Z" fill="#120b1f" opacity="0.86"/>
+  <path d="M270 360 L322 275 L375 350 L428 275 L480 360 L480 430 L270 430 Z" fill="#f0d26f" opacity="0.9"/>
+  <text x="375" y="930" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" fill="#fff1b8">KING PLACEHOLDER</text>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Godot Card Generation icon</title>
+  <desc id="desc">A simple stacked-card tool icon.</desc>
+  <rect width="128" height="128" rx="24" fill="#17151f"/>
+  <rect x="30" y="22" width="58" height="82" rx="9" fill="#2a2036" stroke="#d5c28b" stroke-width="6" transform="rotate(-8 59 63)"/>
+  <rect x="42" y="22" width="58" height="82" rx="9" fill="#31243f" stroke="#f1d98b" stroke-width="6"/>
+  <circle cx="71" cy="53" r="15" fill="#d84b35"/>
+  <rect x="56" y="76" width="30" height="7" rx="3.5" fill="#f1d98b"/>
+  <rect x="61" y="88" width="20" height="6" rx="3" fill="#f1d98b" opacity="0.75"/>
+</svg>
