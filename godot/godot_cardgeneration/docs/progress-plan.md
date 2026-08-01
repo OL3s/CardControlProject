@@ -27,6 +27,7 @@ Mål:
 
 * Implementere `CardRepository`. Gjort for rekursiv lasting og enkel saving.
 * Implementere `DeckRepository`. Gjort for rekursiv lasting og enkel saving.
+* Implementere config-lagring for verktøyinnstillinger. Gjort med `CardToolConfigResource` og `ConfigRepository`.
 * Lage første `ElementResource`-filer. Gjort.
 * Lage første eksempelressurser for monsterkort, terrengkort og kongekort. Monsterkort er gjort; terreng og konge gjenstår.
 * Lage første eksempelressurs for kortstokk. Gjort med `sample_monster_deck`.
@@ -99,3 +100,15 @@ Mål:
 * Legge til bedre feilmeldinger.
 * Legge til testbare service-funksjoner der det er nyttig.
 * Dokumentere eksportformat og produksjonsflyt tydeligere.
+
+## Fase 9: Innstillinger
+
+Status: delvis gjennomført.
+
+Mål:
+
+* Lagre langvarige CLI-/eksportinnstillinger i redigerbar Godot resource. Gjort med `resources/config/card_tool_config.tres`.
+* La CLI bruke configverdier som defaults når flagg ikke oppgis. Gjort.
+* La CLI endre config uten å åpne GUI. Gjort med `set-config`.
+* Lage GUI for å redigere samme config. Gjort med `SettingsPanel`.
+* Koble Settings-panelet til endelige export-/preview-skjermer når de finnes. Gjenstår.

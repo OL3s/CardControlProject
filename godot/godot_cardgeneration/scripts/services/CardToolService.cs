@@ -1,5 +1,7 @@
 using System.Linq;
+using System.Text;
 using CardGeneration.App;
+using CardGeneration.Resources;
 
 namespace CardGeneration.Services;
 
@@ -13,6 +15,7 @@ public sealed class CardToolService
     private readonly DeckExportService _deckExportService;
     private readonly SheetExportService _sheetExportService;
     private readonly DiyExportService _diyExportService;
+    private readonly ConfigRepository _configRepository;
 
     public CardToolService()
         : this(CreateDefaultServices())
@@ -28,7 +31,8 @@ public sealed class CardToolService
             services.CardRenderService,
             services.DeckExportService,
             services.SheetExportService,
-            services.DiyExportService)
+            services.DiyExportService,
+            services.ConfigRepository)
     {
     }
 
@@ -40,7 +44,8 @@ public sealed class CardToolService
         CardRenderService cardRenderService,
         DeckExportService deckExportService,
         SheetExportService sheetExportService,
-        DiyExportService diyExportService)
+        DiyExportService diyExportService,
+        ConfigRepository configRepository)
     {
         _cardRepository = cardRepository;
         _deckRepository = deckRepository;
@@ -50,6 +55,116 @@ public sealed class CardToolService
         _deckExportService = deckExportService;
         _sheetExportService = sheetExportService;
         _diyExportService = diyExportService;
+        _configRepository = configRepository;
+    }
+
+    public CardToolConfigResource LoadConfig()
+    {
+        return _configRepository.LoadConfig();
+    }
+
+    public ToolResult ShowConfig()
+    {
+        var config = _configRepository.LoadConfig();
+        var message = new StringBuilder();
+        message.AppendLine("Card tool config:");
+        message.AppendLine($"- default_card: {config.DefaultCardId}");
+        message.AppendLine($"- default_deck: {config.DefaultDeckId}");
+        message.AppendLine($"- output: {config.DefaultOutputPath}");
+        message.AppendLine($"- format: {config.DefaultFormat}");
+        message.AppendLine($"- paper: {config.DefaultPaper}");
+        message.AppendLine($"- dpi: {config.DefaultDpi}");
+        message.AppendLine($"- deck_layout: {config.DefaultDeckLayout}");
+        message.AppendLine($"- grid_columns: {config.DefaultGridColumns}");
+        message.AppendLine($"- spacing: {config.DefaultSpacing}");
+        return ToolResult.Ok(message.ToString().TrimEnd());
+    }
+
+    public ToolResult SetConfig(CardToolConfigUpdate update)
+    {
+        var config = _configRepository.LoadConfig();
+
+        if (!string.IsNullOrWhiteSpace(update.DefaultCardId))
+        {
+            config.DefaultCardId = update.DefaultCardId;
+        }
+
+        if (!string.IsNullOrWhiteSpace(update.DefaultDeckId))
+        {
+            config.DefaultDeckId = update.DefaultDeckId;
+        }
+
+        if (!string.IsNullOrWhiteSpace(update.DefaultOutputPath))
+        {
+            config.DefaultOutputPath = update.DefaultOutputPath;
+        }
+
+        if (!string.IsNullOrWhiteSpace(update.DefaultFormat))
+        {
+            if (update.DefaultFormat != "png")
+            {
+                return ToolResult.Fail($"Format '{update.DefaultFormat}' is not supported. Use png.");
+            }
+
+            config.DefaultFormat = update.DefaultFormat;
+        }
+
+        if (!string.IsNullOrWhiteSpace(update.DefaultPaper))
+        {
+            if (update.DefaultPaper != "a4" && update.DefaultPaper != "a3")
+            {
+                return ToolResult.Fail($"Paper '{update.DefaultPaper}' is not supported. Use a4 or a3.");
+            }
+
+            config.DefaultPaper = update.DefaultPaper;
+        }
+
+        if (update.DefaultDpi.HasValue)
+        {
+            if (!IsSupportedDpi(update.DefaultDpi.Value))
+            {
+                return ToolResult.Fail($"DPI '{update.DefaultDpi.Value}' is not supported. Use one of: 150, 300, 600, 1200.");
+            }
+
+            config.DefaultDpi = update.DefaultDpi.Value;
+        }
+
+        if (!string.IsNullOrWhiteSpace(update.DefaultDeckLayout))
+        {
+            if (update.DefaultDeckLayout != "individual" && update.DefaultDeckLayout != "grid" && update.DefaultDeckLayout != "strip")
+            {
+                return ToolResult.Fail($"Deck layout '{update.DefaultDeckLayout}' is not supported. Use individual, grid, or strip.");
+            }
+
+            config.DefaultDeckLayout = update.DefaultDeckLayout;
+        }
+
+        if (update.DefaultGridColumns.HasValue)
+        {
+            if (update.DefaultGridColumns.Value < 0)
+            {
+                return ToolResult.Fail("Grid columns must be 0 or higher.");
+            }
+
+            config.DefaultGridColumns = update.DefaultGridColumns.Value;
+        }
+
+        if (update.DefaultSpacing.HasValue)
+        {
+            if (update.DefaultSpacing.Value < 0)
+            {
+                return ToolResult.Fail("Spacing must be 0 or higher.");
+            }
+
+            config.DefaultSpacing = update.DefaultSpacing.Value;
+        }
+
+        return _configRepository.SaveConfig(config);
+    }
+
+    private static bool IsSupportedDpi(int dpi)
+    {
+        return dpi is 150 or 300 or 600 or 1200;
     }
 
     public ToolResult ListCards()
@@ -161,6 +276,7 @@ public sealed class CardToolService
         var deckExportService = new DeckExportService(cardRenderService);
         var sheetExportService = new SheetExportService();
         var diyExportService = new DiyExportService();
+        var configRepository = new ConfigRepository();
 
         return new DefaultServices(
             cardRepository,
@@ -170,7 +286,8 @@ public sealed class CardToolService
             cardRenderService,
             deckExportService,
             sheetExportService,
-            diyExportService);
+            diyExportService,
+            configRepository);
     }
 
     private sealed record DefaultServices(
@@ -181,5 +298,6 @@ public sealed class CardToolService
         CardRenderService CardRenderService,
         DeckExportService DeckExportService,
         SheetExportService SheetExportService,
-        DiyExportService DiyExportService);
+        DiyExportService DiyExportService,
+        ConfigRepository ConfigRepository);
 }

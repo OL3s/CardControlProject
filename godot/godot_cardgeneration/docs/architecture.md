@@ -28,6 +28,7 @@ Godot Resource
   ResourceAmount
   PowerBonusResource
   CardEffectResource
+  CardToolConfigResource
   CardDeckResource
   CardDeckEntryResource
 ```
@@ -48,6 +49,10 @@ Elementikonene skal normalt peke til importerte textures fra SVG-er under `asset
 
 `CardDeckResource` har også `DeckCardType` og `BackImageTexture`. Baksiden bestemmes på deck-nivå, ikke per kort, slik at en monsterstokk får fast monsterbakside, en terrengstokk får fast terrengbakside og en kongestokk får fast kongebakside.
 
+`CardToolConfigResource` lagrer langvarige verktøyinnstillinger som default card, deck, output, format, papir, DPI, deck layout, gridkolonner og spacing. Denne ligger som redigerbar Godot resource i `resources/config/card_tool_config.tres`.
+
+Configen er felles for GUI og CLI. GUI Settings-panelet og CLI-kommandoene `show-config`/`set-config` leser og skriver samme resource.
+
 ## Service-Lag
 
 Felles funksjoner ligger i `scripts/services/`.
@@ -62,6 +67,7 @@ CardToolService
   DeckExportService
   SheetExportService
   DiyExportService
+  ConfigRepository
 ```
 
 `CardToolService` er fasaden som GUI og CLI skal kalle. Den skal samle vanlige operasjoner som lasting, lagring, validering, rendering og eksport.
@@ -72,6 +78,8 @@ Første repository-implementasjon laster `.tres` og `.res` rekursivt fra:
 
 * `res://resources/cards`
 * `res://resources/decks`
+
+`ConfigRepository` laster og lagrer `res://resources/config/card_tool_config.tres`.
 
 Validators skal sjekke at kort og kortstokker er gyldige før preview, lagring og eksport.
 
@@ -122,14 +130,19 @@ Første GUI er en enkel hovedmeny med disse valgene:
 * `New Card`
 * `New Deck`
 * `Export`
+* `Settings`
 
 GUI-kode skal ligge i `scripts/ui/`. UI-kontrollere kan bygge scener, men skal ikke eie kortlogikk eller eksportlogikk.
+
+`SettingsPanel` redigerer `CardToolConfigResource` via `CardToolService.SetConfig()`. Panelet skal ikke skrive config direkte utenom service-laget.
 
 ## CLI
 
 CLI-kode ligger i `scripts/cli/`. CLI skal parse argumenter, kalle `CardToolService` og returnere exit code.
 
 CLI skal ikke ha egne varianter av validering, rendering eller eksport.
+
+CLI bruker lagret config som defaults for repeterende arbeid. Hvis et flagg ikke er oppgitt, hentes verdien fra `CardToolConfigResource`. `set-config` endrer bare feltene som faktisk oppgis i kommandoen.
 
 ## Kortlag
 

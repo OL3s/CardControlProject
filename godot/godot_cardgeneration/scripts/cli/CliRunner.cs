@@ -25,6 +25,11 @@ public sealed class CliRunner
                 return 0;
             }
 
+            if (options.Command != "set-config")
+            {
+                options.ApplyConfigDefaults(_cardToolService.LoadConfig());
+            }
+
             var result = Execute(options);
             if (result.Success)
             {
@@ -50,6 +55,8 @@ public sealed class CliRunner
         {
             "list-cards" => _cardToolService.ListCards(),
             "list-decks" => _cardToolService.ListDecks(),
+            "show-config" => _cardToolService.ShowConfig(),
+            "set-config" => _cardToolService.SetConfig(options.ToConfigUpdate()),
             "validate-cards" => _cardToolService.ValidateCards(),
             "validate-deck" => _cardToolService.ValidateDeck(options.DeckId),
             "render-card" => _cardToolService.RenderCard(options.CardId, options.OutputPath),
@@ -72,6 +79,8 @@ public sealed class CliRunner
         Commands:
           list-cards
           list-decks
+          show-config
+          set-config [options]
           validate-cards
           validate-deck --deck <deck_id>
           render-card --card <card_id> --output <path>
@@ -82,6 +91,8 @@ public sealed class CliRunner
 
         Shortcut flags are also supported:
           --validate-cards
+          --show-config
+          --set-config
           --render-card <card_id>
           --export-deck <deck_id>
           --export-sheet <deck_id>
@@ -98,6 +109,11 @@ public sealed class CliRunner
           300  Standard print quality.
           600  Print-master quality and default.
           1200 High-detail archival quality.
+
+        Config:
+          show-config prints the saved defaults.
+          set-config stores supplied options as future defaults.
+          Export commands use config defaults when flags are omitted.
         """;
     }
 }

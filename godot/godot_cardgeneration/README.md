@@ -31,6 +31,7 @@ Første GUI-retning bruker denne hovedmenyen:
 * `New Card`
 * `New Deck`
 * `Export`
+* `Settings`
 
 `Saved Cards` skal brukes til liste, filter, preview, showcase og eksport av ett eller flere kort.
 
@@ -41,6 +42,8 @@ Første GUI-retning bruker denne hovedmenyen:
 `New Deck` skal lage nye `CardDeckResource`-baserte kortstokker.
 
 `Export` skal være en samlet batch-side for eksportjobber, men de samme eksportfunksjonene skal også kunne startes fra lagrede kort og lagrede kortstokker.
+
+`Settings` redigerer den samme config-resourcen som CLI bruker. Endringer gjort i GUI skal derfor påvirke senere CLI-kjøringer, og `set-config` i CLI skal påvirke GUI-innstillingene.
 
 ## Forventet Flyt
 
@@ -152,6 +155,8 @@ Planlagte kommandoer:
 
 * `list-cards`
 * `list-decks`
+* `show-config`
+* `set-config`
 * `validate-cards`
 * `validate-deck`
 * `render-card`
@@ -166,12 +171,16 @@ Første implementerte CLI-funksjoner:
 
 * `list-cards` laster lagrede kortresources.
 * `list-decks` laster lagrede deckresources.
+* `show-config` viser lagrede CLI-/eksportdefaults.
+* `set-config` lagrer nye CLI-/eksportdefaults.
 * `validate-cards` validerer lagrede kortresources.
 * `render-card` renderer ett kort til PNG.
 * `export-deck` renderer en kortstokk til PNG som enkeltbilder, samlet grid eller lang strip.
 * `export-sheet` renderer A4/A3-printark med egne front- og baksideark og valgbar DPI.
 
 `export-diy` finnes foreløpig som service-/CLI-stub. `export-showcase` bruker foreløpig samme grid-output som `export-deck --layout grid`.
+
+Langvarige innstillinger ligger i `resources/config/card_tool_config.tres`. CLI bruker denne configen som defaults når flagg ikke oppgis. Dette gjør repeterende kommandoer korte, for eksempel kan `--command export-sheet` bruke lagret deck, output, papir, DPI og layout. Den samme configen redigeres i GUI under `Settings`.
 
 ## Mappestruktur
 
@@ -188,6 +197,7 @@ godot/godot_cardgeneration/
       kings/
       monsters/
       terrain/
+    config/
     decks/
     elements/
   scenes/
@@ -198,6 +208,7 @@ godot/godot_cardgeneration/
     resources/
     services/
     ui/
+      SettingsPanel.cs
 ```
 
 `assets/icons/` inneholder SVG-ikoner som brukes på kort og i verktøyet. Nye spillikoner skal legges eller genereres her når kortgeneratoren trenger dem.
@@ -206,9 +217,12 @@ godot/godot_cardgeneration/
 
 `resources/` skal inneholde lagrede Godot resources for elementer, kort og kortstokker.
 
+`resources/config/card_tool_config.tres` inneholder langvarige defaults for CLI og eksport.
+
 Første sample-data ligger i:
 
 * `resources/elements/`
+* `resources/config/card_tool_config.tres`
 * `resources/cards/monsters/monster_flame_1_a.tres`
 * `resources/decks/sample_monster_deck.tres`
 

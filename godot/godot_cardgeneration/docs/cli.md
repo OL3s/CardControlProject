@@ -23,6 +23,8 @@ Kommandoer:
 ```text
 list-cards
 list-decks
+show-config
+set-config
 validate-cards
 validate-deck
 render-card
@@ -36,6 +38,8 @@ Status:
 
 * `list-cards`: implementert.
 * `list-decks`: implementert.
+* `show-config`: implementert.
+* `set-config`: implementert.
 * `validate-cards`: implementert.
 * `validate-deck`: implementert for lagrede deckresources.
 * `render-card`: implementert for PNG.
@@ -45,6 +49,24 @@ Status:
 * `export-showcase`: implementert som grid-output.
 
 ## Eksempler
+
+Vise lagret config:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command show-config
+```
+
+Lagre defaults for repeterende eksport:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command set-config --deck sample_monster_deck --output output/sheets --paper a4 --dpi 600 --layout grid --columns 3 --spacing 24
+```
+
+Etterpå kan mange kommandoer kjøres kortere. Denne bruker lagret deck, output, papir og DPI:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command export-sheet
+```
 
 Validere alle kort:
 
@@ -141,9 +163,37 @@ godot --headless --path godot/godot_cardgeneration -- --validate-cards
 ```
 
 ```sh
+godot --headless --path godot/godot_cardgeneration -- --show-config
+```
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --set-config --deck sample_monster_deck --dpi 300
+```
+
+```sh
 godot --headless --path godot/godot_cardgeneration -- --render-card monster_flame_1_a --output output/cards/preview
 ```
 
 ## Designregel
 
 CLI skal bare være et tynt lag over appens service-lag. Hvis en funksjon finnes både i GUI og CLI, skal begge kalle samme C#-funksjon.
+
+## Lagret Config
+
+Langvarige CLI- og eksportinnstillinger ligger i `resources/config/card_tool_config.tres`.
+
+Felt som brukes som defaults:
+
+* `DefaultCardId`
+* `DefaultDeckId`
+* `DefaultOutputPath`
+* `DefaultFormat`
+* `DefaultPaper`
+* `DefaultDpi`
+* `DefaultDeckLayout`
+* `DefaultGridColumns`
+* `DefaultSpacing`
+
+CLI bruker configverdier når tilsvarende flagg ikke er oppgitt. Direkte CLI-flagg overstyrer config for den ene kjøringen uten å lagre endringen. `set-config` lagrer bare feltene som oppgis.
+
+GUI Settings-panelet bruker samme config-resource. Endringer i GUI og CLI skal derfor være synlige for hverandre.

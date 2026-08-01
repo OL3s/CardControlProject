@@ -1,6 +1,6 @@
+using System;
 using CardGeneration.Cli;
 using CardGeneration.Resources;
-using CardGeneration.Rendering;
 using CardGeneration.Services;
 using Godot;
 
@@ -8,6 +8,8 @@ namespace CardGeneration.Ui;
 
 public partial class MainMenu : Control
 {
+    private readonly CardToolService _cardToolService = new();
+
     public override void _Ready()
     {
         var userArgs = OS.GetCmdlineUserArgs();
@@ -22,13 +24,13 @@ public partial class MainMenu : Control
 
     private void RunCli(string[] userArgs)
     {
-        var service = new CardToolService();
-        var runner = new CliRunner(service);
+        var runner = new CliRunner(_cardToolService);
         GetTree().Quit(runner.Run(userArgs));
     }
 
     private void BuildMenu()
     {
+        ClearChildren();
         SetAnchorsPreset(Control.LayoutPreset.FullRect);
 
         var background = new ColorRect
@@ -87,6 +89,7 @@ public partial class MainMenu : Control
         AddMenuButton(menu, "New Card");
         AddMenuButton(menu, "New Deck");
         AddMenuButton(menu, "Export");
+        AddMenuButton(menu, "Settings", ShowSettings);
 
         var preview = BuildSamplePreview();
         if (preview is not null)
@@ -95,15 +98,36 @@ public partial class MainMenu : Control
         }
     }
 
-    private static void AddMenuButton(VBoxContainer parent, string text)
+    private static void AddMenuButton(VBoxContainer parent, string text, Action? onPressed = null)
     {
         var button = new Button
         {
             Text = text,
             CustomMinimumSize = new Vector2(0, 44)
         };
-        button.Pressed += () => GD.Print($"{text} is not implemented yet.");
+        button.Pressed += onPressed ?? (() => GD.Print($"{text} is not implemented yet."));
         parent.AddChild(button);
+    }
+
+    private void ShowSettings()
+    {
+        ClearChildren();
+        SetAnchorsPreset(Control.LayoutPreset.FullRect);
+
+        var background = new ColorRect
+        {
+            Color = new Color(0.055f, 0.048f, 0.07f)
+        };
+        background.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        AddChild(background);
+
+        var center = new CenterContainer();
+        center.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        AddChild(center);
+
+        var settingsPanel = new SettingsPanel();
+        settingsPanel.BackRequested += BuildMenu;
+        center.AddChild(settingsPanel);
     }
 
     private static TextureRect? BuildSamplePreview()
@@ -122,5 +146,14 @@ public partial class MainMenu : Control
         };
         preview.SetCard(card);
         return preview;
+    }
+
+    private void ClearChildren()
+    {
+        foreach (var child in GetChildren())
+        {
+            RemoveChild(child);
+            child.QueueFree();
+        }
     }
 }
