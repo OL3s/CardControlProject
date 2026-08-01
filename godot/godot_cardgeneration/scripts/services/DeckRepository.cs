@@ -1,7 +1,8 @@
-using System;
 using System.Collections.Generic;
+using System.Linq;
 using CardGeneration.App;
 using CardGeneration.Resources;
+using Godot;
 
 namespace CardGeneration.Services;
 
@@ -11,13 +12,14 @@ public sealed class DeckRepository
 
     public IReadOnlyList<CardDeckResource> LoadAllDecks()
     {
-        return Array.Empty<CardDeckResource>();
+        return ResourceRepository.LoadAll<CardDeckResource>(DecksRootPath)
+            .OrderBy(deck => deck.Id)
+            .ToArray();
     }
 
     public CardDeckResource? LoadDeckById(string deckId)
     {
-        _ = deckId;
-        return null;
+        return LoadAllDecks().FirstOrDefault(deck => deck.Id == deckId);
     }
 
     public ToolResult SaveDeck(CardDeckResource deck)
@@ -27,6 +29,10 @@ public sealed class DeckRepository
             return ToolResult.Fail("Deck must have an id before it can be saved.");
         }
 
-        return ToolResult.Ok($"SaveDeck is not implemented yet for '{deck.Id}'.");
+        var path = $"{DecksRootPath}/{deck.Id}.tres";
+        var error = ResourceSaver.Save(deck, path);
+        return error == Error.Ok
+            ? ToolResult.Ok($"Saved deck '{deck.Id}' to {path}.")
+            : ToolResult.Fail($"Failed to save deck '{deck.Id}' to {path}: {error}.");
     }
 }

@@ -18,7 +18,7 @@ godot --headless --path godot/godot_cardgeneration -- --command validate-cards
 
 ## Kommandoer
 
-Planlagte kommandoer:
+Kommandoer:
 
 ```text
 list-cards
@@ -31,6 +31,18 @@ export-sheet
 export-diy
 export-showcase
 ```
+
+Status:
+
+* `list-cards`: implementert.
+* `list-decks`: implementert.
+* `validate-cards`: implementert.
+* `validate-deck`: implementert for lagrede deckresources.
+* `render-card`: implementert for PNG.
+* `export-deck`: implementert for PNG.
+* `export-sheet`: stub.
+* `export-diy`: stub.
+* `export-showcase`: stub.
 
 ## Eksempler
 
@@ -50,6 +62,12 @@ Eksportere en kortstokk som bilder:
 
 ```sh
 godot --headless --path godot/godot_cardgeneration -- --command export-deck --deck monster_cards --format png --output output/decks
+```
+
+Sample-deck som finnes i prosjektet nå:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command export-deck --deck sample_monster_deck --format png --output output/decks/sample
 ```
 
 Eksportere printark:

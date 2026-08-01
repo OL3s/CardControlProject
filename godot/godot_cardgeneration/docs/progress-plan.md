@@ -6,7 +6,7 @@ Dette dokumentet beskriver planlagt rekkefølge for kortverktøyet.
 
 ## Fase 1: Prosjektgrunnlag
 
-Status: startet.
+Status: gjennomført som første skeleton.
 
 Mål:
 
@@ -21,13 +21,15 @@ Mål:
 
 ## Fase 2: Lagring Og Lasting
 
+Status: delvis gjennomført.
+
 Mål:
 
-* Implementere `CardRepository`.
-* Implementere `DeckRepository`.
-* Lage første `ElementResource`-filer som peker til SVG-ikoner i `assets/icons/elements/`.
-* Lage første eksempelressurser for monsterkort, terrengkort og kongekort.
-* Lage første eksempelressurs for kortstokk.
+* Implementere `CardRepository`. Gjort for rekursiv lasting og enkel saving.
+* Implementere `DeckRepository`. Gjort for rekursiv lasting og enkel saving.
+* Lage første `ElementResource`-filer. Gjort.
+* Lage første eksempelressurser for monsterkort, terrengkort og kongekort. Monsterkort er gjort; terreng og konge gjenstår.
+* Lage første eksempelressurs for kortstokk. Gjort med `sample_monster_deck`.
 
 ## Fase 3: Preview Og Editor
 
@@ -41,18 +43,24 @@ Mål:
 
 ## Fase 4: Rendering
 
+Status: delvis gjennomført.
+
 Mål:
 
-* Bygge kort i lag: basebakgrunn, kortbilde, paneler, ikoner/tekst og eventuelle print guides.
+* Bygge kort i lag: basebakgrunn, kortbilde, paneler, ikoner/tekst og eventuelle print guides. Første basebakgrunn, kortbilde-fallback, paneler og ikoner er gjort.
 * Bruke placeholder-bilder fram til ekte kortbilder finnes.
-* Rendre ett kort til PNG via `SubViewport`.
-* Sikre at GUI-preview og CLI-rendering bruker samme renderer.
+* Rendre ett kort til PNG. Gjort med første `Image`-baserte renderer.
+* Sikre at GUI-preview og CLI-rendering bruker samme renderer. Gjort for første preview/render-service.
+
+Merk: `SubViewport`-basert rendering er fortsatt mulig senere, men første renderer bruker direkte `Image`-bygging for å gjøre headless CLI stabil tidlig.
 
 ## Fase 5: Kortstokker Og Showcase
 
+Status: startet.
+
 Mål:
 
-* Rendre alle kort i en kortstokk.
+* Rendre alle kort i en kortstokk. Gjort for enkel PNG-eksport.
 * Eksportere kortstokk som enkeltbilder.
 * Lage showcase-visning for kort og kortstokker.
 * Eksportere showcase som bilde eller bildeserie.

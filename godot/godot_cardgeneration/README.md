@@ -155,6 +155,16 @@ Planlagte kommandoer:
 
 CLI-kommandoene skal bare parse argumenter og kalle samme service-lag som GUI bruker.
 
+Første implementerte CLI-funksjoner:
+
+* `list-cards` laster lagrede kortresources.
+* `list-decks` laster lagrede deckresources.
+* `validate-cards` validerer lagrede kortresources.
+* `render-card` renderer ett kort til PNG.
+* `export-deck` renderer alle kort i en kortstokk til PNG.
+
+`export-sheet`, `export-diy` og `export-showcase` finnes foreløpig som service-/CLI-stubber.
+
 ## Mappestruktur
 
 ```text
@@ -187,6 +197,12 @@ godot/godot_cardgeneration/
 `assets/placeholders/` inneholder midlertidige kortbilder til faktiske monster-, terreng- og kongebilder finnes.
 
 `resources/` skal inneholde lagrede Godot resources for elementer, kort og kortstokker.
+
+Første sample-data ligger i:
+
+* `resources/elements/`
+* `resources/cards/monsters/monster_flame_1_a.tres`
+* `resources/decks/sample_monster_deck.tres`
 
 `scripts/resources/` inneholder `Resource`-modellene som kortverktøyet lagrer og leser.
 
@@ -225,7 +241,7 @@ SVG-kilder og ikoner brukes som grafiske assets. Spill- og kortikoner skal ligge
 
 ## Framdriftsstatus
 
-Første skeleton inneholder Godot-prosjekt, C# project file, hovedmeny, resource-modell, service-stubber, CLI-runner og placeholder-assets.
+Første skeleton inneholder Godot-prosjekt, C# project file, hovedmeny, resource-modell, service-lag, CLI-runner, placeholder-assets, egne SVG-ikoner, sample resources og PNG-rendering av ett kort eller en enkel kortstokk.
 
 Videre plan ligger i [Framdriftsplan](docs/progress-plan.md).
 

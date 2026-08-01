@@ -1,3 +1,4 @@
+using System.Linq;
 using CardGeneration.App;
 
 namespace CardGeneration.Services;
@@ -14,15 +15,20 @@ public sealed class CardToolService
     private readonly DiyExportService _diyExportService;
 
     public CardToolService()
+        : this(CreateDefaultServices())
+    {
+    }
+
+    private CardToolService(DefaultServices services)
         : this(
-            new CardRepository(),
-            new DeckRepository(),
-            new CardValidator(),
-            new DeckValidator(),
-            new CardRenderService(),
-            new DeckExportService(),
-            new SheetExportService(),
-            new DiyExportService())
+            services.CardRepository,
+            services.DeckRepository,
+            services.CardValidator,
+            services.DeckValidator,
+            services.CardRenderService,
+            services.DeckExportService,
+            services.SheetExportService,
+            services.DiyExportService)
     {
     }
 
@@ -49,13 +55,17 @@ public sealed class CardToolService
     public ToolResult ListCards()
     {
         var cards = _cardRepository.LoadAllCards();
-        return ToolResult.Ok($"Found {cards.Count} saved cards.");
+        return ToolResult.Ok(cards.Count == 0
+            ? "Found 0 saved cards."
+            : $"Found {cards.Count} saved cards:\n{string.Join("\n", cards.Select(card => $"- {card.Id}"))}");
     }
 
     public ToolResult ListDecks()
     {
         var decks = _deckRepository.LoadAllDecks();
-        return ToolResult.Ok($"Found {decks.Count} saved decks.");
+        return ToolResult.Ok(decks.Count == 0
+            ? "Found 0 saved decks."
+            : $"Found {decks.Count} saved decks:\n{string.Join("\n", decks.Select(deck => $"- {deck.Id}"))}");
     }
 
     public ToolResult ValidateCards()
@@ -140,4 +150,36 @@ public sealed class CardToolService
             ? ToolResult.Fail($"Deck '{deckId}' was not found.")
             : _deckExportService.ExportShowcase(deck, outputPath, format);
     }
+
+    private static DefaultServices CreateDefaultServices()
+    {
+        var cardRepository = new CardRepository();
+        var deckRepository = new DeckRepository();
+        var cardValidator = new CardValidator();
+        var deckValidator = new DeckValidator();
+        var cardRenderService = new CardRenderService();
+        var deckExportService = new DeckExportService(cardRenderService);
+        var sheetExportService = new SheetExportService();
+        var diyExportService = new DiyExportService();
+
+        return new DefaultServices(
+            cardRepository,
+            deckRepository,
+            cardValidator,
+            deckValidator,
+            cardRenderService,
+            deckExportService,
+            sheetExportService,
+            diyExportService);
+    }
+
+    private sealed record DefaultServices(
+        CardRepository CardRepository,
+        DeckRepository DeckRepository,
+        CardValidator CardValidator,
+        DeckValidator DeckValidator,
+        CardRenderService CardRenderService,
+        DeckExportService DeckExportService,
+        SheetExportService SheetExportService,
+        DiyExportService DiyExportService);
 }

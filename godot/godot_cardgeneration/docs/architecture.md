@@ -34,7 +34,7 @@ Godot Resource
 
 `ElementResource` representerer både elementdata og elementvisning for kortverktøyet. Den har `ElementType`, `DisplayName`, `IconTexture` og enkle metoder for å sjekke styrke, svakhet og nøytralitet mot andre elementer.
 
-Elementikonene skal normalt peke til SVG-er under `assets/icons/elements/`.
+Elementikonene skal normalt peke til importerte textures fra SVG-er under `assets/icons/elements/`. Første sample-resources lar `IconTexture` være tom slik at headless CLI kan laste og rendere uten å være avhengig av import-cache. Rendereren tegner fallback-symboler når texture mangler.
 
 `CardResource` er felles base for alle kort. Den inneholder felles identitet, korttype, element, intern tier og teksturer for kortbilde og baksidebilde.
 
@@ -66,9 +66,16 @@ CardToolService
 
 Repositories skal eie lasting og lagring av kort og kortstokker.
 
+Første repository-implementasjon laster `.tres` og `.res` rekursivt fra:
+
+* `res://resources/cards`
+* `res://resources/decks`
+
 Validators skal sjekke at kort og kortstokker er gyldige før preview, lagring og eksport.
 
 Render- og export-services skal eie all outputlogikk.
+
+Første `CardRenderService` renderer PNG direkte fra `CardResource`. Første `DeckExportService` eksporterer en kortstokk som flere PNG-filer ved å bruke samme `CardRenderService`.
 
 ## Ikoner
 
@@ -115,12 +122,15 @@ CLI skal ikke ha egne varianter av validering, rendering eller eksport.
 Kortfront bygges nedenfra og opp:
 
 ```text
+transparent_canvas
 base_background
 card_image
 panels
 icons_and_text
 print_guides
 ```
+
+`transparent_canvas` er selve PNG-flaten utenfor kortet. Den skal være transparent, slik at kortet kan legges på andre bakgrunner uten en fast firkant rundt seg.
 
 Kortbakside bygges slik:
 
@@ -133,3 +143,5 @@ optional_print_guides
 Basebakgrunnens farge styres av korttype. Elementet skal påvirke ikonbruk og eventuelt kortbilde, men ikke erstatte korttypens grunnidentitet.
 
 Faktiske monster-, terreng- og kongebilder finnes ikke ennå. `assets/placeholders/` brukes som midlertidige bilder fram til de endelige bildene finnes.
+
+Første renderer kan tegne en enkel fallback dersom `CardImageTexture` ikke er satt. Dette gjør at sample-kort kan rendres i headless-modus før de faktiske kortbildene og importerte textures er klare.

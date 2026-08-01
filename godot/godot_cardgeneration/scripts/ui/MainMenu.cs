@@ -1,4 +1,6 @@
 using CardGeneration.Cli;
+using CardGeneration.Resources;
+using CardGeneration.Rendering;
 using CardGeneration.Services;
 using Godot;
 
@@ -36,15 +38,26 @@ public partial class MainMenu : Control
         background.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         AddChild(background);
 
-        var center = new CenterContainer();
-        center.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        AddChild(center);
+        var margin = new MarginContainer();
+        margin.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        margin.AddThemeConstantOverride("margin_left", 48);
+        margin.AddThemeConstantOverride("margin_right", 48);
+        margin.AddThemeConstantOverride("margin_top", 48);
+        margin.AddThemeConstantOverride("margin_bottom", 48);
+        AddChild(margin);
+
+        var layout = new HBoxContainer
+        {
+            Alignment = BoxContainer.AlignmentMode.Center
+        };
+        layout.AddThemeConstantOverride("separation", 32);
+        margin.AddChild(layout);
 
         var panel = new PanelContainer
         {
             CustomMinimumSize = new Vector2(480, 0)
         };
-        center.AddChild(panel);
+        layout.AddChild(panel);
 
         var menu = new VBoxContainer
         {
@@ -74,6 +87,12 @@ public partial class MainMenu : Control
         AddMenuButton(menu, "New Card");
         AddMenuButton(menu, "New Deck");
         AddMenuButton(menu, "Export");
+
+        var preview = BuildSamplePreview();
+        if (preview is not null)
+        {
+            layout.AddChild(preview);
+        }
     }
 
     private static void AddMenuButton(VBoxContainer parent, string text)
@@ -85,5 +104,23 @@ public partial class MainMenu : Control
         };
         button.Pressed += () => GD.Print($"{text} is not implemented yet.");
         parent.AddChild(button);
+    }
+
+    private static TextureRect? BuildSamplePreview()
+    {
+        var card = new CardRepository().LoadCardById("monster_flame_1_a");
+        if (card is null)
+        {
+            return null;
+        }
+
+        var preview = new CardPreviewControl
+        {
+            CustomMinimumSize = new Vector2(260, 364),
+            ExpandMode = TextureRect.ExpandModeEnum.FitWidthProportional,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered
+        };
+        preview.SetCard(card);
+        return preview;
     }
 }
