@@ -80,7 +80,7 @@ Baksiden bygges også i lag. Nederst ligger samme korttypebaserte basefarge/kant
 
 ## Printkrav
 
-Første printstandard:
+Første printstandard ved print-master-kvalitet:
 
 ```text
 Ferdig kortstørrelse: 63 x 88 mm
@@ -97,11 +97,18 @@ Begreper:
 * Eksportert kortstørrelse er ferdig kortstørrelse pluss bleed på alle sider.
 * Godot jobber i piksler, ikke ekte DPI. `600 DPI` betyr her at `1630 x 2220 px` printes som `69 x 94 mm`.
 
+DPI skal velges fra faste normalverdier i eksportmenyen:
+
+* `150 DPI`: rask draft/preview.
+* `300 DPI`: standard print.
+* `600 DPI`: print-master og default.
+* `1200 DPI`: ekstra høy detaljgrad.
+
 Verktøyet bør støtte:
 
-* Arkstørrelser som A4 først, og andre A-formater senere ved behov.
+* Arkstørrelser som A4 og A3.
 * Kortstørrelse i millimeter.
-* 600 DPI rastereksport for print-mastere.
+* Valgbar DPI for draft, standard print og print-mastere.
 * Marginer og avstand mellom kort.
 * Bleed for klipping.
 * Kuttemerker.
@@ -162,7 +169,7 @@ Første implementerte CLI-funksjoner:
 * `validate-cards` validerer lagrede kortresources.
 * `render-card` renderer ett kort til PNG.
 * `export-deck` renderer en kortstokk til PNG som enkeltbilder, samlet grid eller lang strip.
-* `export-sheet` renderer A4/A3-printark med egne front- og baksideark.
+* `export-sheet` renderer A4/A3-printark med egne front- og baksideark og valgbar DPI.
 
 `export-diy` finnes foreløpig som service-/CLI-stub. `export-showcase` bruker foreløpig samme grid-output som `export-deck --layout grid`.
 
@@ -224,8 +231,8 @@ godot/godot_cardgeneration/output/
     preview/
   decks/
   sheets/
-    sample_monster_deck_a4_front_001.png
-    sample_monster_deck_a4_back_001.png
+    sample_monster_deck_a4_600dpi_front_001.png
+    sample_monster_deck_a4_600dpi_back_001.png
   diy/
   showcase/
 ```
@@ -252,5 +259,4 @@ Videre plan ligger i [Framdriftsplan](docs/progress-plan.md).
 
 * Skal kortdata opprettes manuelt som Godot resources først, eller importeres fra eksisterende Markdown-tabeller først?
 * Skal SVG-kildene importeres som assets i Godot, eller skal verktøyet bruke ferdige PNG-lag i første renderer?
-* Skal A4 være eneste arkformat i første versjon?
 * Skal preview eksporteres i lavere oppløsning enn print-masteren?

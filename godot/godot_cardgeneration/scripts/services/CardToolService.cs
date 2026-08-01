@@ -112,7 +112,7 @@ public sealed class CardToolService
             : _deckExportService.ExportDeck(deck, outputPath, format, layout, columns, spacing);
     }
 
-    public ToolResult ExportSheet(string? deckId, string outputPath, string paper)
+    public ToolResult ExportSheet(string? deckId, string outputPath, string paper, int dpi)
     {
         if (string.IsNullOrWhiteSpace(deckId))
         {
@@ -122,7 +122,7 @@ public sealed class CardToolService
         var deck = _deckRepository.LoadDeckById(deckId);
         return deck is null
             ? ToolResult.Fail($"Deck '{deckId}' was not found.")
-            : _sheetExportService.ExportSheet(deck, outputPath, paper);
+            : _sheetExportService.ExportSheet(deck, outputPath, paper, dpi);
     }
 
     public ToolResult ExportDiy(string? deckId, string outputPath, string paper)

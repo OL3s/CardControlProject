@@ -76,7 +76,9 @@ Mål:
 * Eksportere A4-printark med fronter. Gjort som PNG.
 * Eksportere A4-printark med baksider. Gjort som PNG.
 * Eksportere A3-printark med fronter og baksider. Gjort som PNG.
-* Sikre pokerkortstørrelse `63 x 88 mm` ved print. Gjort ved 600 DPI-pikselberegning.
+* Sikre pokerkortstørrelse `63 x 88 mm` ved print. Gjort ved valgbar DPI-pikselberegning.
+* Støtte normale DPI-valg for printark. Gjort for `150`, `300`, `600` og `1200`.
+* Lage nye nummererte ark automatisk når arket er fullt. Gjort.
 * Legge inn safe margin, bleed og kuttemerker. Gjenstår.
 * Lage DIY-eksport med kortbilder, printark og måleinformasjon. Gjenstår.
 

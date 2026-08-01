@@ -40,7 +40,7 @@ Status:
 * `validate-deck`: implementert for lagrede deckresources.
 * `render-card`: implementert for PNG.
 * `export-deck`: implementert for PNG-layoutene `individual`, `grid` og `strip`.
-* `export-sheet`: implementert for A4 og A3 PNG-printark med front/back.
+* `export-sheet`: implementert for A4 og A3 PNG-printark med front/back og valgbar DPI.
 * `export-diy`: stub.
 * `export-showcase`: implementert som grid-output.
 
@@ -91,25 +91,34 @@ godot --headless --path godot/godot_cardgeneration -- --command export-deck --de
 Eksportere printark:
 
 ```sh
-godot --headless --path godot/godot_cardgeneration -- --command export-sheet --deck monster_cards --paper a4 --output output/sheets
+godot --headless --path godot/godot_cardgeneration -- --command export-sheet --deck monster_cards --paper a4 --dpi 600 --output output/sheets
 ```
 
 A3 bruker samme kommando med `--paper a3`:
 
 ```sh
-godot --headless --path godot/godot_cardgeneration -- --command export-sheet --deck monster_cards --paper a3 --output output/sheets
+godot --headless --path godot/godot_cardgeneration -- --command export-sheet --deck monster_cards --paper a3 --dpi 600 --output output/sheets
 ```
+
+DPI må velges fra faste normalverdier:
+
+* `150`: rask draft/preview.
+* `300`: standard print.
+* `600`: print-master og default.
+* `1200`: ekstra høy detaljgrad.
 
 Printark eksporteres som nummererte PNG-par:
 
 ```text
-monster_cards_a4_front_001.png
-monster_cards_a4_back_001.png
-monster_cards_a4_front_002.png
-monster_cards_a4_back_002.png
+monster_cards_a4_600dpi_front_001.png
+monster_cards_a4_600dpi_back_001.png
+monster_cards_a4_600dpi_front_002.png
+monster_cards_a4_600dpi_back_002.png
 ```
 
-Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, ved `600 DPI`. Baksiden bestemmes av `DeckCardType` på kortstokken, ikke av hvert enkelt kort.
+Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, ved valgt DPI. Baksiden bestemmes av `DeckCardType` på kortstokken, ikke av hvert enkelt kort.
+
+Når et ark er fullt, lager eksporten automatisk neste nummererte front/back-par. Arkdelingen bruker antall kort som får plass på valgt papir og `ceil(cardCount / cardsPerSheet)`.
 
 Eksportere DIY-pakke:
 

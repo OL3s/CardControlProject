@@ -85,7 +85,11 @@ Første `CardRenderService` renderer PNG direkte fra `CardResource`.
 * `grid`: ett samlet PNG-bilde med kortene i rutenett.
 * `strip`: ett langt vertikalt PNG-bilde.
 
-`SheetExportService` støtter A4 og A3 som printark. Den lager nummererte front- og baksideark. Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, beregnet ved `600 DPI`. Dersom kortstokken ikke får plass på ett ark, genereres flere ark rekursivt som `front_001`, `back_001`, `front_002`, `back_002` osv.
+`SheetExportService` støtter A4 og A3 som printark. Den lager nummererte front- og baksideark. Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, beregnet fra valgt DPI.
+
+DPI velges fra faste normalverdier: `150`, `300`, `600` og `1200`. `600 DPI` er default og print-master-kvalitet.
+
+Arkdelingen regnes slik: service-laget regner ut hvor mange `63 x 88 mm`-kort som får plass på valgt arkstørrelse ved valgt DPI, setter `cardsPerSheet = columns * rows`, og bruker `sheetCount = ceil(cardCount / cardsPerSheet)`. Dersom kortstokken ikke får plass på ett ark, genereres flere ark som `front_001`, `back_001`, `front_002`, `back_002` osv.
 
 ## Ikoner
 

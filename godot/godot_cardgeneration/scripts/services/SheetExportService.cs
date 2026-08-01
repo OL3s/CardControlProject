@@ -11,16 +11,21 @@ namespace CardGeneration.Services;
 
 public sealed class SheetExportService
 {
-    private const double Dpi = 600.0;
+    private static readonly int[] SupportedDpiValues = [150, 300, 600, 1200];
     private const double MillimetersPerInch = 25.4;
     private const double CardWidthMillimeters = 63.0;
     private const double CardHeightMillimeters = 88.0;
 
-    public ToolResult ExportSheet(CardDeckResource deck, string outputPath, string paper)
+    public ToolResult ExportSheet(CardDeckResource deck, string outputPath, string paper, int dpi)
     {
         if (!TryGetPaperSpec(paper, out var paperSpec))
         {
             return ToolResult.Fail($"Paper '{paper}' is not supported. Use a4 or a3.");
+        }
+
+        if (!IsSupportedDpi(dpi))
+        {
+            return ToolResult.Fail($"DPI '{dpi}' is not supported. Use one of: {string.Join(", ", SupportedDpiValues)}.");
         }
 
         var cards = ExpandDeckCards(deck);
@@ -37,10 +42,10 @@ public sealed class SheetExportService
 
         Directory.CreateDirectory(outputDirectory);
 
-        var sheetWidth = MillimetersToPixels(paperSpec.WidthMillimeters);
-        var sheetHeight = MillimetersToPixels(paperSpec.HeightMillimeters);
-        var cardWidth = MillimetersToPixels(CardWidthMillimeters);
-        var cardHeight = MillimetersToPixels(CardHeightMillimeters);
+        var sheetWidth = MillimetersToPixels(paperSpec.WidthMillimeters, dpi);
+        var sheetHeight = MillimetersToPixels(paperSpec.HeightMillimeters, dpi);
+        var cardWidth = MillimetersToPixels(CardWidthMillimeters, dpi);
+        var cardHeight = MillimetersToPixels(CardHeightMillimeters, dpi);
         var columns = Math.Max(1, sheetWidth / cardWidth);
         var rows = Math.Max(1, sheetHeight / cardHeight);
         var cardsPerSheet = columns * rows;
@@ -71,8 +76,8 @@ public sealed class SheetExportService
                 backSheet.BlendRect(backImage, new Rect2I(Vector2I.Zero, backImage.GetSize()), position);
             }
 
-            var frontPath = Path.Combine(outputDirectory, $"{deck.Id}_{paperSpec.Name}_front_{sheetIndex + 1:000}.png");
-            var backPath = Path.Combine(outputDirectory, $"{deck.Id}_{paperSpec.Name}_back_{sheetIndex + 1:000}.png");
+            var frontPath = Path.Combine(outputDirectory, $"{deck.Id}_{paperSpec.Name}_{dpi}dpi_front_{sheetIndex + 1:000}.png");
+            var backPath = Path.Combine(outputDirectory, $"{deck.Id}_{paperSpec.Name}_{dpi}dpi_back_{sheetIndex + 1:000}.png");
             var frontError = frontSheet.SavePng(frontPath);
             if (frontError != Error.Ok)
             {
@@ -86,7 +91,7 @@ public sealed class SheetExportService
             }
         }
 
-        return ToolResult.Ok($"Exported {sheetCount} {paperSpec.Name.ToUpperInvariant()} front/back sheet pair(s) for deck '{deck.Id}' to {outputDirectory}.");
+        return ToolResult.Ok($"Exported {sheetCount} {paperSpec.Name.ToUpperInvariant()} {dpi} DPI front/back sheet pair(s) for deck '{deck.Id}' to {outputDirectory}.");
     }
 
     private static Image CreatePrintSheet(int width, int height)
@@ -125,9 +130,22 @@ public sealed class SheetExportService
         return cards.Count > 0 ? cards[0].CardType : CardType.Unknown;
     }
 
-    private static int MillimetersToPixels(double millimeters)
+    private static bool IsSupportedDpi(int dpi)
     {
-        return (int)Math.Round(millimeters * Dpi / MillimetersPerInch);
+        foreach (var supportedDpi in SupportedDpiValues)
+        {
+            if (dpi == supportedDpi)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static int MillimetersToPixels(double millimeters, int dpi)
+    {
+        return (int)Math.Round(millimeters * dpi / MillimetersPerInch);
     }
 
     private static bool TryGetPaperSpec(string paper, out PaperSpec paperSpec)

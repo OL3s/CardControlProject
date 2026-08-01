@@ -54,7 +54,7 @@ public sealed class CliRunner
             "validate-deck" => _cardToolService.ValidateDeck(options.DeckId),
             "render-card" => _cardToolService.RenderCard(options.CardId, options.OutputPath),
             "export-deck" => _cardToolService.ExportDeck(options.DeckId, options.OutputPath, options.Format, options.Layout, options.Columns, options.Spacing),
-            "export-sheet" => _cardToolService.ExportSheet(options.DeckId, options.OutputPath, options.Paper),
+            "export-sheet" => _cardToolService.ExportSheet(options.DeckId, options.OutputPath, options.Paper, options.Dpi),
             "export-diy" => _cardToolService.ExportDiy(options.DeckId, options.OutputPath, options.Paper),
             "export-showcase" => _cardToolService.ExportShowcase(options.DeckId, options.OutputPath, options.Format),
             _ => ToolResult.Fail($"Unknown command '{options.Command}'. Use --help to list commands.")
@@ -76,7 +76,7 @@ public sealed class CliRunner
           validate-deck --deck <deck_id>
           render-card --card <card_id> --output <path>
           export-deck --deck <deck_id> --format png --layout individual --output <path>
-          export-sheet --deck <deck_id> --paper a4 --output <path>
+          export-sheet --deck <deck_id> --paper a4 --dpi 600 --output <path>
           export-diy --deck <deck_id> --paper a4 --output <path>
           export-showcase --deck <deck_id> --format png --output <path>
 
@@ -92,6 +92,12 @@ public sealed class CliRunner
           individual  One PNG per card in the output folder.
           grid        One PNG with all cards in a grid.
           strip       One long vertical PNG with all cards.
+
+        Print DPI choices:
+          150  Draft preview quality.
+          300  Standard print quality.
+          600  Print-master quality and default.
+          1200 High-detail archival quality.
         """;
     }
 }
