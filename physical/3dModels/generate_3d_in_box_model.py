@@ -5,8 +5,9 @@ Run with Blender:
     blender --background --python generate_3d_in_box_model.py
 
 The source dimensions mirror physical/mesurement/data/measurement.txt and
-physical/mesurement/generate_measurement_package.py. Coordinates are authored
-directly in millimetres: X = width, Y = depth, Z = height. The magnetic lid is
+physical/mesurement/generate_measurement_package.py. Dimensions are authored in
+millimetres, then exported as real-world metres so Blender imports 97 mm as
+0.097 m instead of 97 m. X = width, Y = depth, Z = height. The magnetic lid is
 parented to hinge empties so it can be rotated open from the correct rear edge.
 """
 
@@ -21,6 +22,8 @@ from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parent
 OUTPUT_FBX = ROOT / "3DInBoxModel.fbx"
+MM_TO_M = 0.001
+M_TO_MM = 1000.0
 
 
 SPEC = {
@@ -71,8 +74,16 @@ def clear_scene() -> None:
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.object.delete()
     bpy.context.scene.unit_settings.system = "METRIC"
-    bpy.context.scene.unit_settings.scale_length = 0.001
+    bpy.context.scene.unit_settings.scale_length = 1.0
     bpy.context.scene.unit_settings.length_unit = "MILLIMETERS"
+
+
+def mm(value: float) -> float:
+    return value * MM_TO_M
+
+
+def point_mm(values: tuple[float, float, float]) -> tuple[float, float, float]:
+    return tuple(mm(value) for value in values)
 
 
 def material(name: str, color: tuple[float, float, float, float]) -> bpy.types.Material:
@@ -95,14 +106,14 @@ def cube(
     x1, y1, z1 = min_corner
     x2, y2, z2 = max_corner
     verts = [
-        (x1, y1, z1),
-        (x2, y1, z1),
-        (x2, y2, z1),
-        (x1, y2, z1),
-        (x1, y1, z2),
-        (x2, y1, z2),
-        (x2, y2, z2),
-        (x1, y2, z2),
+        point_mm((x1, y1, z1)),
+        point_mm((x2, y1, z1)),
+        point_mm((x2, y2, z1)),
+        point_mm((x1, y2, z1)),
+        point_mm((x1, y1, z2)),
+        point_mm((x2, y1, z2)),
+        point_mm((x2, y2, z2)),
+        point_mm((x1, y2, z2)),
     ]
     faces = [
         (0, 1, 2, 3),
@@ -118,6 +129,40 @@ def cube(
     obj = bpy.data.objects.new(name, mesh)
     obj.data.materials.append(mat)
     bpy.context.collection.objects.link(obj)
+    return obj
+
+
+def beveled_cube(
+    name: str,
+    min_corner: tuple[float, float, float],
+    max_corner: tuple[float, float, float],
+    mat: bpy.types.Material,
+    bevel: float = 0.8,
+    segments: int = 5,
+) -> bpy.types.Object:
+    x1, y1, z1 = min_corner
+    x2, y2, z2 = max_corner
+    bpy.ops.mesh.primitive_cube_add(
+        size=1,
+        location=point_mm(((x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2)),
+    )
+    obj = bpy.context.object
+    obj.name = name
+    obj.data.name = f"{name}_mesh"
+    obj.dimensions = point_mm((x2 - x1, y2 - y1, z2 - z1))
+    obj.data.materials.append(mat)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+
+    bevel_modifier = obj.modifiers.new(f"{name}_edge_rounding", "BEVEL")
+    bevel_modifier.width = mm(bevel)
+    bevel_modifier.segments = segments
+    bevel_modifier.affect = "EDGES"
+    bevel_modifier.profile = 0.5
+    bpy.ops.object.shade_smooth()
+    bpy.context.view_layer.objects.active = obj
+    obj.select_set(True)
+    bpy.ops.object.modifier_apply(modifier=bevel_modifier.name)
+    obj.select_set(False)
     return obj
 
 
@@ -140,8 +185,8 @@ def empty(
 ) -> bpy.types.Object:
     obj = bpy.data.objects.new(name, None)
     obj.empty_display_type = "ARROWS"
-    obj.empty_display_size = 6
-    obj.location = location
+    obj.empty_display_size = mm(6)
+    obj.location = point_mm(location)
     obj.parent = parent
     bpy.context.collection.objects.link(obj)
     return obj
@@ -150,6 +195,66 @@ def empty(
 def parent_to(obj: bpy.types.Object, parent: bpy.types.Object) -> bpy.types.Object:
     obj.parent = parent
     return obj
+
+
+def joined_mesh(
+    name: str,
+    parts: list[bpy.types.Object],
+    parent: bpy.types.Object | None = None,
+) -> bpy.types.Object:
+    bpy.ops.object.select_all(action="DESELECT")
+    for part in parts:
+        part.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    bpy.ops.object.join()
+    obj = bpy.context.object
+    obj.name = name
+    obj.data.name = f"{name}_mesh"
+    obj.parent = parent
+    return obj
+
+
+def joined_throne(
+    name: str,
+    min_corner: tuple[float, float, float],
+    size: tuple[float, float, float],
+    player_mat: bpy.types.Material,
+    parent: bpy.types.Object,
+) -> bpy.types.Object:
+    throne_x, throne_y, throne_z = min_corner
+    throne_w, throne_d, throne_h = size
+    health = SPEC["health_die"][0]
+    wall_thickness = (throne_w - health) / 2
+    base_plate_h = 1.5
+
+    parts = [
+        cube(
+            f"{name}_base_part",
+            (throne_x, throne_y, throne_z),
+            (throne_x + throne_w, throne_y + throne_d, throne_z + base_plate_h),
+            player_mat,
+        ),
+        cube(
+            f"{name}_left_part",
+            (throne_x, throne_y, throne_z + base_plate_h),
+            (throne_x + wall_thickness, throne_y + throne_d, throne_z + throne_h),
+            player_mat,
+        ),
+        cube(
+            f"{name}_right_part",
+            (throne_x + throne_w - wall_thickness, throne_y, throne_z + base_plate_h),
+            (throne_x + throne_w, throne_y + throne_d, throne_z + throne_h),
+            player_mat,
+        ),
+        cube(
+            f"{name}_back_part",
+            (throne_x, throne_y + throne_d - wall_thickness, throne_z + base_plate_h),
+            (throne_x + throne_w, throne_y + throne_d, throne_z + throne_h),
+            player_mat,
+        ),
+    ]
+
+    return joined_mesh(name, parts, parent)
 
 
 def cylinder_y(
@@ -161,9 +266,9 @@ def cylinder_y(
 ) -> bpy.types.Object:
     bpy.ops.mesh.primitive_cylinder_add(
         vertices=48,
-        radius=diameter / 2,
-        depth=depth,
-        location=center,
+        radius=mm(diameter / 2),
+        depth=mm(depth),
+        location=point_mm(center),
         rotation=(math.pi / 2, 0, 0),
     )
     obj = bpy.context.object
@@ -184,8 +289,8 @@ def cylinder_y_local(
 ) -> bpy.types.Object:
     bpy.ops.mesh.primitive_cylinder_add(
         vertices=48,
-        radius=diameter / 2,
-        depth=depth,
+        radius=mm(diameter / 2),
+        depth=mm(depth),
         location=(0, 0, 0),
     )
     obj = bpy.context.object
@@ -193,7 +298,7 @@ def cylinder_y_local(
     obj.data.name = f"{name}_mesh"
     obj.data.materials.append(mat)
     obj.parent = parent
-    obj.location = center
+    obj.location = point_mm(center)
     obj.rotation_euler = (math.pi / 2, 0, 0)
     return obj
 
@@ -204,8 +309,12 @@ def material_name(obj: bpy.types.Object) -> str:
     return obj.data.materials[0].name
 
 
+def material_names(obj: bpy.types.Object) -> list[str]:
+    return [mat.name for mat in obj.data.materials]
+
+
 def dimensions(obj: bpy.types.Object) -> tuple[float, float, float]:
-    return tuple(round(value, 4) for value in obj.dimensions)
+    return tuple(round(value * M_TO_MM, 4) for value in obj.dimensions)
 
 
 def bounds_dimensions(objects: list[bpy.types.Object]) -> tuple[float, float, float]:
@@ -217,7 +326,7 @@ def bounds_dimensions(objects: list[bpy.types.Object]) -> tuple[float, float, fl
             for axis in range(3):
                 mins[axis] = min(mins[axis], world[axis])
                 maxs[axis] = max(maxs[axis], world[axis])
-    return tuple(round(maxs[axis] - mins[axis], 4) for axis in range(3))
+    return tuple(round((maxs[axis] - mins[axis]) * M_TO_MM, 4) for axis in range(3))
 
 
 def build_model() -> dict[str, bpy.types.Object]:
@@ -266,21 +375,17 @@ def build_model() -> dict[str, bpy.types.Object]:
     objects.update(groups)
     objects.update({f"group_{player}": group for player, group in player_groups.items()})
 
-    objects["outer_box_bottom"] = parent_to(cube(
-        "outer_box_bottom", (0, 0, 0), (base_w, base_d, board), mats["base"]
-    ), groups["base"])
-    objects["outer_box_wall_front"] = parent_to(cube(
-        "outer_box_wall_front", (0, 0, board), (base_w, board, base_h), mats["base"]
-    ), groups["base"])
-    objects["outer_box_wall_back"] = parent_to(cube(
-        "outer_box_wall_back", (0, base_d - board, board), (base_w, base_d, base_h), mats["base"]
-    ), groups["base"])
-    objects["outer_box_wall_left"] = parent_to(cube(
-        "outer_box_wall_left", (0, board, board), (board, base_d - board, base_h), mats["base"]
-    ), groups["base"])
-    objects["outer_box_wall_right"] = parent_to(cube(
-        "outer_box_wall_right", (base_w - board, board, board), (base_w, base_d - board, base_h), mats["base"]
-    ), groups["base"])
+    objects["outer_box_base"] = joined_mesh(
+        "outer_box_base",
+        [
+            cube("outer_box_bottom_part", (0, 0, 0), (base_w, base_d, board), mats["base"]),
+            cube("outer_box_wall_front_part", (0, 0, board), (base_w, board, base_h), mats["base"]),
+            cube("outer_box_wall_back_part", (0, base_d - board, board), (base_w, base_d, base_h), mats["base"]),
+            cube("outer_box_wall_left_part", (0, board, board), (board, base_d - board, base_h), mats["base"]),
+            cube("outer_box_wall_right_part", (base_w - board, board, board), (base_w, base_d - board, base_h), mats["base"]),
+        ],
+        groups["base"],
+    )
 
     lid_h = SPEC["lid_panel"][2]
     lid_hinge = empty(
@@ -289,35 +394,40 @@ def build_model() -> dict[str, bpy.types.Object]:
         groups["lid"],
     )
     objects["magnetic_lid_rear_hinge_pivot"] = lid_hinge
-    objects["lid_top_panel_closed"] = cube_local(
-        "lid_top_panel_closed",
-        (-base_w / 2, -base_d, 0),
-        (base_w / 2, 0, lid_h),
-        mats["lid"],
-        lid_hinge,
-    )
-
     edge_t = SPEC["lid_outer_edge_thickness"]
     edge_drop = SPEC["lid_outer_edge_drop"]
-    objects["lid_outer_edge_left"] = cube_local(
-        "lid_outer_edge_left",
-        (-base_w / 2 - edge_t, -base_d, -edge_drop),
-        (-base_w / 2, 0, lid_h),
-        mats["lid"],
-        lid_hinge,
-    )
-    objects["lid_outer_edge_right"] = cube_local(
-        "lid_outer_edge_right",
-        (base_w / 2, -base_d, -edge_drop),
-        (base_w / 2 + edge_t, 0, lid_h),
-        mats["lid"],
-        lid_hinge,
-    )
-    objects["lid_outer_edge_back"] = cube_local(
-        "lid_outer_edge_back",
-        (-base_w / 2, 0, -edge_drop),
-        (base_w / 2, edge_t, lid_h),
-        mats["lid"],
+    objects["lid_top_assembly"] = joined_mesh(
+        "lid_top_assembly",
+        [
+            cube_local(
+                "lid_top_panel_part",
+                (-base_w / 2, -base_d, 0),
+                (base_w / 2, 0, lid_h),
+                mats["lid"],
+                lid_hinge,
+            ),
+            cube_local(
+                "lid_outer_edge_left_part",
+                (-base_w / 2 - edge_t, -base_d, -edge_drop),
+                (-base_w / 2, 0, lid_h),
+                mats["lid"],
+                lid_hinge,
+            ),
+            cube_local(
+                "lid_outer_edge_right_part",
+                (base_w / 2, -base_d, -edge_drop),
+                (base_w / 2 + edge_t, 0, lid_h),
+                mats["lid"],
+                lid_hinge,
+            ),
+            cube_local(
+                "lid_outer_edge_back_part",
+                (-base_w / 2, 0, -edge_drop),
+                (base_w / 2, edge_t, lid_h),
+                mats["lid"],
+                lid_hinge,
+            ),
+        ],
         lid_hinge,
     )
 
@@ -328,13 +438,15 @@ def build_model() -> dict[str, bpy.types.Object]:
     )
     objects["magnetic_front_flap_hinge_pivot"] = flap_hinge
     flap_w, flap_h, flap_t = SPEC["front_flap"]
-    objects["magnetic_front_flap_closed"] = cube_local(
-        "magnetic_front_flap_closed",
-        (-flap_w / 2, -flap_t, -flap_h),
-        (flap_w / 2, 0, 0),
-        mats["lid"],
-        flap_hinge,
-    )
+    front_flap_parts = [
+        cube_local(
+            "magnetic_front_flap_part",
+            (-flap_w / 2, -flap_t, -flap_h),
+            (flap_w / 2, 0, 0),
+            mats["lid"],
+            flap_hinge,
+        )
+    ]
 
     magnet_x_positions = (
         -flap_w / 2 + SPEC["magnet_edge_offset"],
@@ -343,14 +455,19 @@ def build_model() -> dict[str, bpy.types.Object]:
     magnet_y = -flap_t / 2
     magnet_z = -flap_h + SPEC["magnet_vertical_center"]
     for index, magnet_x in enumerate(magnet_x_positions, start=1):
-        objects[f"front_flap_magnet_{index}"] = cylinder_y_local(
+        front_flap_parts.append(cylinder_y_local(
             f"front_flap_magnet_{index}",
             (magnet_x, magnet_y, magnet_z),
             SPEC["magnet_diameter"],
             SPEC["magnet_thickness"],
             mats["magnet"],
             flap_hinge,
-        )
+        ))
+    objects["magnetic_front_flap_assembly"] = joined_mesh(
+        "magnetic_front_flap_assembly",
+        front_flap_parts,
+        flap_hinge,
+    )
 
     liner_h = SPEC["compression_liner"]
     objects["compression_liner_optional"] = parent_to(cube(
@@ -389,34 +506,6 @@ def build_model() -> dict[str, bpy.types.Object]:
     wall_top = tray_z + tray_h
     wall_z = tray_z + floor_h
 
-    objects["tray_floor"] = parent_to(cube(
-        "tray_floor", (tray_x, tray_y, tray_z), (tray_x + tray_w, tray_y + tray_d, wall_z), mats["tray"]
-    ), groups["tray_structure"])
-    objects["tray_wall_front"] = parent_to(cube(
-        "tray_wall_front",
-        (tray_x, tray_y, wall_z),
-        (tray_x + tray_w, tray_y + SPEC["tray_front_wall"], wall_top),
-        mats["tray"],
-    ), groups["tray_structure"])
-    objects["tray_wall_back"] = parent_to(cube(
-        "tray_wall_back",
-        (tray_x, tray_y + tray_d - SPEC["tray_back_wall"], wall_z),
-        (tray_x + tray_w, tray_y + tray_d, wall_top),
-        mats["tray"],
-    ), groups["tray_structure"])
-    objects["tray_wall_left"] = parent_to(cube(
-        "tray_wall_left",
-        (tray_x, tray_y, wall_z),
-        (tray_x + SPEC["tray_side_wall"], tray_y + tray_d, wall_top),
-        mats["tray"],
-    ), groups["tray_structure"])
-    objects["tray_wall_right"] = parent_to(cube(
-        "tray_wall_right",
-        (tray_x + tray_w - SPEC["tray_side_wall"], tray_y, wall_z),
-        (tray_x + tray_w, tray_y + tray_d, wall_top),
-        mats["tray"],
-    ), groups["tray_structure"])
-
     inner_x = tray_x + SPEC["tray_side_wall"]
     name_y = tray_y + SPEC["tray_front_wall"]
     name_h = SPEC["front_name_zone_d"]
@@ -424,32 +513,59 @@ def build_model() -> dict[str, bpy.types.Object]:
     pocket_y = pocket_wall_y + SPEC["pocket_front_wall"]
     pocket_top_y = pocket_y + SPEC["player_zone_d"]
 
-    objects["front_name_field_block"] = parent_to(cube(
-        "front_name_field_block",
-        (inner_x, name_y, wall_z),
-        (inner_x + SPEC["inner_w"], name_y + name_h, wall_top),
-        mats["tray_light"],
-    ), groups["tray_structure"])
-    objects["pocket_front_wall"] = parent_to(cube(
-        "pocket_front_wall",
-        (inner_x, pocket_wall_y, wall_z),
-        (inner_x + SPEC["inner_w"], pocket_wall_y + SPEC["pocket_front_wall"], wall_top),
-        mats["tray"],
-    ), groups["tray_structure"])
-
     player_w = (SPEC["inner_w"] - 3 * SPEC["tray_divider"]) / 4
+    tray_parts = [
+        cube("tray_floor_part", (tray_x, tray_y, tray_z), (tray_x + tray_w, tray_y + tray_d, wall_z), mats["tray"]),
+        cube(
+            "tray_wall_front_part",
+            (tray_x, tray_y, wall_z),
+            (tray_x + tray_w, tray_y + SPEC["tray_front_wall"], wall_top),
+            mats["tray"],
+        ),
+        cube(
+            "tray_wall_back_part",
+            (tray_x, tray_y + tray_d - SPEC["tray_back_wall"], wall_z),
+            (tray_x + tray_w, tray_y + tray_d, wall_top),
+            mats["tray"],
+        ),
+        cube(
+            "tray_wall_left_part",
+            (tray_x, tray_y, wall_z),
+            (tray_x + SPEC["tray_side_wall"], tray_y + tray_d, wall_top),
+            mats["tray"],
+        ),
+        cube(
+            "tray_wall_right_part",
+            (tray_x + tray_w - SPEC["tray_side_wall"], tray_y, wall_z),
+            (tray_x + tray_w, tray_y + tray_d, wall_top),
+            mats["tray"],
+        ),
+        cube(
+            "front_name_field_block_part",
+            (inner_x, name_y, wall_z),
+            (inner_x + SPEC["inner_w"], name_y + name_h, wall_top),
+            mats["tray_light"],
+        ),
+        cube(
+            "pocket_front_wall_part",
+            (inner_x, pocket_wall_y, wall_z),
+            (inner_x + SPEC["inner_w"], pocket_wall_y + SPEC["pocket_front_wall"], wall_top),
+            mats["tray"],
+        ),
+    ]
     divider_positions = [
         inner_x + player_w,
         inner_x + 2 * player_w + SPEC["tray_divider"],
         inner_x + 3 * player_w + 2 * SPEC["tray_divider"],
     ]
     for index, divider_x in enumerate(divider_positions, start=1):
-        objects[f"tray_divider_{index}"] = parent_to(cube(
-            f"tray_divider_{index}",
+        tray_parts.append(cube(
+            f"tray_divider_{index}_part",
             (divider_x, pocket_y, wall_z),
             (divider_x + SPEC["tray_divider"], pocket_top_y, wall_top),
             mats["tray"],
-        ), groups["tray_structure"])
+        ))
+    objects["player_tray"] = joined_mesh("player_tray", tray_parts, groups["tray_structure"])
 
     for player_index, player in enumerate(PLAYER_NAMES):
         pocket_x = inner_x + player_index * (player_w + SPEC["tray_divider"])
@@ -458,45 +574,30 @@ def build_model() -> dict[str, bpy.types.Object]:
         throne_y = pocket_y + 0.6
         throne_z = wall_z
         throne_w, throne_d, throne_h = SPEC["throne"]
-        wall_thickness = (throne_w - SPEC["health_die"][0]) / 2
-        base_plate_h = 1.5
 
         player_group = player_groups[player]
 
-        objects[f"{player}_throne_base"] = parent_to(cube(
-            f"{player}_throne_base",
+        objects[f"{player}_throne"] = joined_throne(
+            f"{player}_throne",
             (throne_x, throne_y, throne_z),
-            (throne_x + throne_w, throne_y + throne_d, throne_z + base_plate_h),
+            (throne_w, throne_d, throne_h),
             mats[player],
-        ), player_group)
-        objects[f"{player}_throne_left"] = parent_to(cube(
-            f"{player}_throne_left",
-            (throne_x, throne_y, throne_z + base_plate_h),
-            (throne_x + wall_thickness, throne_y + throne_d, throne_z + throne_h),
-            mats[player],
-        ), player_group)
-        objects[f"{player}_throne_right"] = parent_to(cube(
-            f"{player}_throne_right",
-            (throne_x + throne_w - wall_thickness, throne_y, throne_z + base_plate_h),
-            (throne_x + throne_w, throne_y + throne_d, throne_z + throne_h),
-            mats[player],
-        ), player_group)
-        objects[f"{player}_throne_back"] = parent_to(cube(
-            f"{player}_throne_back",
-            (throne_x, throne_y + throne_d - wall_thickness, throne_z + base_plate_h),
-            (throne_x + throne_w, throne_y + throne_d, throne_z + throne_h),
-            mats[player],
-        ), player_group)
+            player_group,
+        )
 
+        health = SPEC["health_die"][0]
+        wall_thickness = (throne_w - health) / 2
+        base_plate_h = 1.5
         health_x = throne_x + wall_thickness
         health_y = throne_y + wall_thickness
         health_z = throne_z + base_plate_h
-        die = SPEC["health_die"][0]
-        objects[f"{player}_health_die"] = parent_to(cube(
+        objects[f"{player}_health_die"] = parent_to(beveled_cube(
             f"{player}_health_die",
             (health_x, health_y, health_z),
-            (health_x + die, health_y + die, health_z + die),
+            (health_x + health, health_y + health, health_z + health),
             mats["health"],
+            bevel=0.9,
+            segments=6,
         ), player_group)
 
         stack_x = pocket_x + (player_w - SPEC["farmer_stack"][0]) / 2
@@ -509,11 +610,13 @@ def build_model() -> dict[str, bpy.types.Object]:
                     x1 = stack_x + column * farmer
                     y1 = stack_y + row * farmer
                     z1 = wall_z + layer * farmer
-                    objects[f"{player}_farmer_die_{die_number:02d}"] = parent_to(cube(
+                    objects[f"{player}_farmer_die_{die_number:02d}"] = parent_to(beveled_cube(
                         f"{player}_farmer_die_{die_number:02d}",
                         (x1, y1, z1),
                         (x1 + farmer, y1 + farmer, z1 + farmer),
                         mats[player],
+                        bevel=0.6,
+                        segments=5,
                     ), player_group)
                     die_number += 1
 
@@ -521,35 +624,16 @@ def build_model() -> dict[str, bpy.types.Object]:
 
 
 def validate(objects: dict[str, bpy.types.Object]) -> None:
-    base_parts = [
-        objects["outer_box_bottom"],
-        objects["outer_box_wall_front"],
-        objects["outer_box_wall_back"],
-        objects["outer_box_wall_left"],
-        objects["outer_box_wall_right"],
-    ]
-    tray_parts = [
-        objects["tray_floor"],
-        objects["tray_wall_front"],
-        objects["tray_wall_back"],
-        objects["tray_wall_left"],
-        objects["tray_wall_right"],
-        objects["front_name_field_block"],
-        objects["pocket_front_wall"],
-        objects["tray_divider_1"],
-        objects["tray_divider_2"],
-        objects["tray_divider_3"],
-    ]
     checks = {
-        "base_outer": (bounds_dimensions(base_parts), SPEC["base_outer"]),
-        "closed_total": (bounds_dimensions(base_parts + [objects["lid_top_panel_closed"]]), SPEC["closed_total"]),
-        "lid_top_panel": (dimensions(objects["lid_top_panel_closed"]), SPEC["lid_panel"]),
-        "magnetic_front_flap_closed": (dimensions(objects["magnetic_front_flap_closed"]), (97.0, 2.0, 20.0)),
+        "base_outer": (dimensions(objects["outer_box_base"]), SPEC["base_outer"]),
+        "closed_total": (bounds_dimensions([objects["outer_box_base"], objects["lid_top_assembly"]]), (101.0, 74.0, 45.0)),
+        "lid_top_assembly": (dimensions(objects["lid_top_assembly"]), (101.0, 74.0, 4.0)),
+        "magnetic_front_flap_assembly": (dimensions(objects["magnetic_front_flap_assembly"]), (97.0, 2.0, 20.0)),
         "cards_52_stack": (dimensions(objects["cards_52_stack"]), SPEC["cards"]),
         "folded_rule_sheet": (dimensions(objects["folded_rule_sheet"]), SPEC["rules"]),
-        "tray_outer": (bounds_dimensions(tray_parts), SPEC["tray_outer"]),
-        "front_name_field_block": (dimensions(objects["front_name_field_block"]), (89.0, 11.5, 20.0)),
-        "health_die": (dimensions(objects["gray_health_die"]), SPEC["health_die"]),
+        "tray_outer": (dimensions(objects["player_tray"]), SPEC["tray_outer"]),
+        "gray_throne": (dimensions(objects["gray_throne"]), SPEC["throne"]),
+        "gray_health_die": (dimensions(objects["gray_health_die"]), SPEC["health_die"]),
         "farmer_die": (dimensions(objects["gray_farmer_die_01"]), SPEC["farmer_die"]),
     }
     for label, (actual, expected) in checks.items():
@@ -562,16 +646,33 @@ def validate(objects: dict[str, bpy.types.Object]) -> None:
     flap_hinge = objects["magnetic_front_flap_hinge_pivot"]
     print(
         "validated magnetic lid hinge pivot:",
-        tuple(round(value, 4) for value in lid_hinge.location),
+        tuple(round(value * M_TO_MM, 4) for value in lid_hinge.location),
         "mm",
     )
     print(
         "validated front flap hinge local pivot:",
-        tuple(round(value, 4) for value in flap_hinge.location),
+        tuple(round(value * M_TO_MM, 4) for value in flap_hinge.location),
         "mm from rear hinge",
     )
-    for name in ("lid_top_panel_closed", "magnetic_front_flap_closed", "front_name_field_block", "tray_floor"):
-        print(f"validated material {name}: {material_name(objects[name])}")
+    for name in ("lid_top_assembly", "magnetic_front_flap_assembly", "player_tray", "outer_box_base"):
+        print(f"validated materials {name}: {material_names(objects[name])}")
+    if "front_name_field" not in material_names(objects["player_tray"]):
+        raise RuntimeError("player_tray is missing front_name_field material slot")
+    if "magnet_dark_metal" not in material_names(objects["magnetic_front_flap_assembly"]):
+        raise RuntimeError("magnetic_front_flap_assembly is missing magnet material slot")
+    throne_materials = material_names(objects["gray_throne"])
+    if throne_materials != ["player_gray"]:
+        raise RuntimeError(f"gray throne material mismatch: {throne_materials}")
+    if material_name(objects["gray_health_die"]) != "health_die_ivory":
+        raise RuntimeError(f"gray health die material mismatch: {material_name(objects['gray_health_die'])}")
+    print(f"validated separate throne materials: {throne_materials}")
+    print(f"validated separate health die material: {material_name(objects['gray_health_die'])}")
+
+    for name in ("gray_farmer_die_01", "gray_health_die", "gray_throne"):
+        vertex_count = len(objects[name].data.vertices)
+        if vertex_count <= 8:
+            raise RuntimeError(f"{name} was not bevelled/joined as expected")
+        print(f"validated mesh detail {name}: {vertex_count} vertices")
 
 
 def export_fbx() -> None:
