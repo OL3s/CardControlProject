@@ -37,6 +37,8 @@ Første GUI-retning bruker denne hovedmenyen:
 
 `Saved Decks` skal brukes til liste, redigering, preview, showcase, kortstokkeksport, printark og DIY-eksport.
 
+Hovedmenyen skal ikke vise et tilfeldig kortpreview. Kortpreview hører hjemme i `Saved Cards`, `Saved Decks`, editor- og eksportskjermene.
+
 `New Card` skal lage nye `CardResource`-baserte kort.
 
 `New Deck` skal lage nye `CardDeckResource`-baserte kortstokker.

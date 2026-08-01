@@ -136,6 +136,8 @@ GUI-kode skal ligge i `scripts/ui/`. UI-kontrollere kan bygge scener, men skal i
 
 `SettingsPanel` redigerer `CardToolConfigResource` via `CardToolService.SetConfig()`. Panelet skal ikke skrive config direkte utenom service-laget.
 
+Hovedmenyen skal være navigasjon, ikke previewflate. Kortpreview skal ligge i kortliste, kortstokk, editor eller eksportflyt.
+
 ## CLI
 
 CLI-kode ligger i `scripts/cli/`. CLI skal parse argumenter, kalle `CardToolService` og returnere exit code.

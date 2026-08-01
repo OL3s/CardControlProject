@@ -1,6 +1,5 @@
 using System;
 using CardGeneration.Cli;
-using CardGeneration.Resources;
 using CardGeneration.Services;
 using Godot;
 
@@ -91,11 +90,6 @@ public partial class MainMenu : Control
         AddMenuButton(menu, "Export");
         AddMenuButton(menu, "Settings", ShowSettings);
 
-        var preview = BuildSamplePreview();
-        if (preview is not null)
-        {
-            layout.AddChild(preview);
-        }
     }
 
     private static void AddMenuButton(VBoxContainer parent, string text, Action? onPressed = null)
@@ -128,24 +122,6 @@ public partial class MainMenu : Control
         var settingsPanel = new SettingsPanel();
         settingsPanel.BackRequested += BuildMenu;
         center.AddChild(settingsPanel);
-    }
-
-    private static TextureRect? BuildSamplePreview()
-    {
-        var card = new CardRepository().LoadCardById("monster_flame_1_a");
-        if (card is null)
-        {
-            return null;
-        }
-
-        var preview = new CardPreviewControl
-        {
-            CustomMinimumSize = new Vector2(260, 364),
-            ExpandMode = TextureRect.ExpandModeEnum.FitWidthProportional,
-            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered
-        };
-        preview.SetCard(card);
-        return preview;
     }
 
     private void ClearChildren()
