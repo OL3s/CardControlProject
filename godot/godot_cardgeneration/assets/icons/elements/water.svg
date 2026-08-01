@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Water element icon</title>
+  <desc id="desc">A simple water drop resource icon.</desc>
+  <circle cx="64" cy="64" r="56" fill="#e2f4ff"/>
+  <path d="M64 17 C84 43 98 63 98 82 C98 103 83 116 64 116 C45 116 30 103 30 82 C30 63 44 43 64 17 Z" fill="#3d94d8"/>
+  <path d="M48 80 C49 91 57 98 68 98" fill="none" stroke="#e2f4ff" stroke-width="9" stroke-linecap="round" opacity="0.82"/>
+</svg>

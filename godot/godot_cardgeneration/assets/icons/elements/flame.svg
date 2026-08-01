@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Flame element icon</title>
+  <desc id="desc">A simple flame-shaped resource icon.</desc>
+  <circle cx="64" cy="64" r="56" fill="#fff0d8"/>
+  <path d="M68 14 C88 38 98 57 96 76 C94 102 75 116 55 112 C34 108 22 91 26 70 C29 54 41 42 48 29 C52 43 58 50 67 57 C62 41 62 28 68 14 Z" fill="#f06f2f"/>
+  <path d="M60 56 C73 69 78 80 74 91 C70 101 58 105 49 98 C40 91 42 79 49 69 C53 64 56 60 60 56 Z" fill="#fff0d8" opacity="0.82"/>
+</svg>

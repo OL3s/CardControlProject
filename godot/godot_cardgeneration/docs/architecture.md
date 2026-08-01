@@ -12,6 +12,7 @@ Kortverktøyet er et Godot C#-prosjekt som skal fungere både som GUI-app og CLI
 * Kortdata lagres som Godot `Resource` der det er praktisk.
 * Renderer skal kunne brukes av både live preview og batch-eksport.
 * Generert output skal ligge i `output/` og ikke committes.
+* Spill- og kortikoner skal ligge som SVG under `assets/icons/` når verktøyet trenger dem.
 
 ## Resource-Modell
 
@@ -32,6 +33,8 @@ Godot Resource
 ```
 
 `ElementResource` representerer både elementdata og elementvisning for kortverktøyet. Den har `ElementType`, `DisplayName`, `IconTexture` og enkle metoder for å sjekke styrke, svakhet og nøytralitet mot andre elementer.
+
+Elementikonene skal normalt peke til SVG-er under `assets/icons/elements/`.
 
 `CardResource` er felles base for alle kort. Den inneholder felles identitet, korttype, element, intern tier og teksturer for kortbilde og baksidebilde.
 
@@ -66,6 +69,28 @@ Repositories skal eie lasting og lagring av kort og kortstokker.
 Validators skal sjekke at kort og kortstokker er gyldige før preview, lagring og eksport.
 
 Render- og export-services skal eie all outputlogikk.
+
+## Ikoner
+
+Ikoner er egne SVG-assets under `assets/icons/`.
+
+```text
+assets/icons/
+  elements/
+    neutral.svg
+    grass.svg
+    flame.svg
+    water.svg
+  symbols/
+    arrow_right.svg
+    power.svg
+```
+
+Elementikonene brukes for ressurser, krav og elementvisning. Symbolikonene brukes for generelle kortmarkører som styrke og bonuspiler.
+
+Nye ikoner skal legges eller genereres her når de trengs av kortgeneratoren. Kortdata bør referere til ikonene via `Texture2D`-felter, ikke ved å hardkode SVG-paths i rendering-logikken.
+
+Eksisterende SVG-er kan erstattes med mer polerte versjoner senere uten å endre resource-modellen.
 
 ## GUI
 

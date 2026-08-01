@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Grass element icon</title>
+  <desc id="desc">A simple leaf-shaped resource icon.</desc>
+  <circle cx="64" cy="64" r="56" fill="#edf8de"/>
+  <path d="M98 25 C72 25 43 36 31 58 C20 78 27 99 47 104 C72 111 98 83 98 25 Z" fill="#58a84f"/>
+  <path d="M44 91 C55 70 68 55 91 35" fill="none" stroke="#edf8de" stroke-width="9" stroke-linecap="round"/>
+  <path d="M56 70 C48 64 43 59 36 51" fill="none" stroke="#edf8de" stroke-width="6" stroke-linecap="round" opacity="0.9"/>
+</svg>

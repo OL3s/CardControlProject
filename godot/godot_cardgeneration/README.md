@@ -160,6 +160,9 @@ CLI-kommandoene skal bare parse argumenter og kalle samme service-lag som GUI br
 ```text
 godot/godot_cardgeneration/
   assets/
+    icons/
+      elements/
+      symbols/
     placeholders/
   docs/
   resources/
@@ -178,6 +181,8 @@ godot/godot_cardgeneration/
     services/
     ui/
 ```
+
+`assets/icons/` inneholder SVG-ikoner som brukes på kort og i verktøyet. Nye spillikoner skal legges eller genereres her når kortgeneratoren trenger dem.
 
 `assets/placeholders/` inneholder midlertidige kortbilder til faktiske monster-, terreng- og kongebilder finnes.
 
@@ -216,7 +221,7 @@ Godot-scener brukes til layout og preview. Første versjon bruker ikke GDScript.
 
 Det viktigste er at kortdata og grafiske kilder holdes delt, slik at fysisk print, Tabletop Simulator og senere digital visning ikke divergerer.
 
-SVG-kilder og ikoner kan fortsatt brukes som grafiske assets, men generatoren bør ikke være avhengig av å manipulere SVG/XML direkte for første versjon.
+SVG-kilder og ikoner brukes som grafiske assets. Spill- og kortikoner skal ligge under `assets/icons/`; kortgeneratoren bør ikke være avhengig av å manipulere SVG/XML direkte for første versjon.
 
 ## Framdriftsstatus
 

@@ -17,6 +17,7 @@ Mål:
 * Lage service-stubber som GUI og CLI kan dele.
 * Lage CLI-runner som kan kjøres headless.
 * Legge inn placeholder-bilder for konge, terreng og monster.
+* Legge inn egen ikonmappe med første SVG-ikoner for elementer og kortsymboler.
 
 ## Fase 2: Lagring Og Lasting
 
@@ -24,7 +25,7 @@ Mål:
 
 * Implementere `CardRepository`.
 * Implementere `DeckRepository`.
-* Lage eller importere første `ElementResource`-filer.
+* Lage første `ElementResource`-filer som peker til SVG-ikoner i `assets/icons/elements/`.
 * Lage første eksempelressurser for monsterkort, terrengkort og kongekort.
 * Lage første eksempelressurs for kortstokk.
 
