@@ -111,4 +111,5 @@ Mål:
 * La CLI bruke configverdier som defaults når flagg ikke oppgis. Gjort.
 * La CLI endre config uten å åpne GUI. Gjort med `set-config`.
 * Lage GUI for å redigere samme config. Gjort med `SettingsPanel`.
+* Gjøre Settings-panelet scrollbart for små vinduer. Gjort.
 * Koble Settings-panelet til endelige export-/preview-skjermer når de finnes. Gjenstår.

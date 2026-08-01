@@ -30,11 +30,29 @@ public partial class SettingsPanel : PanelContainer
 
     private void BuildUi()
     {
-        CustomMinimumSize = new Vector2(520, 0);
+        CustomMinimumSize = new Vector2(520, 360);
 
-        var form = new VBoxContainer();
+        var scroll = new ScrollContainer
+        {
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            VerticalScrollMode = ScrollContainer.ScrollMode.Auto
+        };
+        scroll.SetAnchorsPreset(LayoutPreset.FullRect);
+        AddChild(scroll);
+
+        var margin = new MarginContainer();
+        margin.AddThemeConstantOverride("margin_left", 18);
+        margin.AddThemeConstantOverride("margin_right", 18);
+        margin.AddThemeConstantOverride("margin_top", 18);
+        margin.AddThemeConstantOverride("margin_bottom", 18);
+        scroll.AddChild(margin);
+
+        var form = new VBoxContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
         form.AddThemeConstantOverride("separation", 10);
-        AddChild(form);
+        margin.AddChild(form);
 
         var title = new Label
         {

@@ -134,7 +134,7 @@ Første GUI er en enkel hovedmeny med disse valgene:
 
 GUI-kode skal ligge i `scripts/ui/`. UI-kontrollere kan bygge scener, men skal ikke eie kortlogikk eller eksportlogikk.
 
-`SettingsPanel` redigerer `CardToolConfigResource` via `CardToolService.SetConfig()`. Panelet skal ikke skrive config direkte utenom service-laget.
+`SettingsPanel` redigerer `CardToolConfigResource` via `CardToolService.SetConfig()`. Panelet skal ikke skrive config direkte utenom service-laget. Settings-innholdet ligger i en `ScrollContainer` slik at alle felt er tilgjengelige i små vinduer.
 
 Hovedmenyen skal være navigasjon, ikke previewflate. Kortpreview skal ligge i kortliste, kortstokk, editor eller eksportflyt.
 
