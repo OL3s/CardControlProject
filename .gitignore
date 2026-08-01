@@ -1,0 +1,81 @@
+# OS/editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs/temp
+*.log
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Python
+.venv/
+venv/
+.env
+.env/
+.env.*
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+
+# Node/card generation tooling, if added later
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/cache/
+coverage/
+
+# Generated measurement outputs
+physical/mesurement/png/
+physical/mesurement/data/
+physical/mesurement/svg/
+
+# Godot generated/editor state
+**/.godot/
+**/.import/
+**/imported/
+export_presets.cfg
+*.translation
+
+# Godot builds/exports
+godot/builds/
+godot/exports/
+godot/.mono/
+godot/.csharp/
+
+# 3D/DCC generated caches and backups
+*.blend1
+*.blend2
+*.blend@*
+*.bak
+*.autosave
+*.tmp.blend
+
+# 3D print slicer/generated machine output
+*.gcode
+*.bgcode
+*.ctb
+*.photon
+*.fdg
+*.pwmo
+
+# Large packaged/exported archives
+*.zip
+*.tar
+*.tar.gz
+*.7z
+*.rar
