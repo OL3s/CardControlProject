@@ -1,10 +1,9 @@
 [Back](../../README.md)
 
-# Elemental Dominion - Prototype v0.11
+# Elements: Conquora - Prototype v0.12
 
 ## Navigasjon
 
-* [Kongekort](king-cards.md)
 * [Terrengkort](terrain-cards.md)
 * [Monsterkort](monster-cards.md)
 
@@ -24,24 +23,13 @@ Spillet kombinerer:
 
 ## Gameplay-loop
 
-> Sjekk kongens oppdrag -> få én bonde -> trekk/bytt eventuelt kort -> legg eventuelt ett terreng -> flytt bønder og konge -> løs konflikter -> kast eventuelt kort for å redusere tap -> omplasser kampbønder -> beregn kontroll og ressurser -> flytt startspillerbrikken.
+> Sjekk det felles kontrollmålet -> få én bonde -> trekk/bytt eventuelt kort -> legg eventuelt ett terreng -> flytt bønder og konge -> løs konflikter -> kast eventuelt kort for å redusere tap -> omplasser kampbønder -> beregn kontroll og ressurser -> flytt startspillerbrikken.
 
 ---
 
 # 1. Spillinnhold
 
 Spillet har totalt **52 kort**.
-
-## Kongekort
-
-Spillet har **8 kongekort**.
-
-Hver konge har:
-
-* 6 liv
-* Eventuell elementtilknytning
-
-Hver konge har et enkelt oppdrag basert på kontroll av terrengtyper. Første målverdi ligger rundt 6 kontrollerte terreng totalt.
 
 ## Terrengkort
 
@@ -63,19 +51,19 @@ Foreløpig tierfordeling:
 
 ## Monsterkort
 
-Spillet har **24 monsterkort**.
+Spillet har **32 monsterkort**.
 
 Fordeling:
 
-* 6 nøytrale
-* 6 gress
-* 6 flamme
-* 6 vann
+* 8 nøytrale
+* 8 gress
+* 8 flamme
+* 8 vann
 
 Foreløpig tierfordeling per element:
 
-* 3 Tier 1-monstre
-* 2 Tier 2-monstre
+* 4 Tier 1-monstre
+* 3 Tier 2-monstre
 * 1 Tier 3-monster
 
 ## Andre komponenter
@@ -244,7 +232,7 @@ Eksempler på tillatte Tier 3-effekter:
 
 ## Felles oppsett
 
-1. Bland konge-, terreng- og monsterbunken.
+1. Bland terreng- og monsterbunken hver for seg.
 2. Trekk ett tilfeldig terrengkort og legg det midt på bordet. Det starter eierløst.
 3. Alle spillerne ruller én kampterning. Høyeste resultat får startspillerbrikken. Ved likt resultat rulles det igjen.
 
@@ -252,12 +240,11 @@ Eksempler på tillatte Tier 3-effekter:
 
 Hver spiller gjør deretter følgende:
 
-1. Trekk 2 kongekort, velg 1 og legg det andre nederst i kongebunken.
-2. Trekk 3 terrengkort, velg 1 og legg resten nederst i terrengbunken.
-3. Trekk 3 monsterkort, velg 1 og legg resten nederst i monsterbunken.
-4. Legg det valgte terrengkortet inntil sentrumsterrenget.
-5. Plasser kongebrikken og 2 bønder på startterrenget.
-6. Sett kongens liv til 6 og legg kongekortet synlig foran deg.
+1. Trekk 3 terrengkort, velg 1 og legg resten nederst i terrengbunken.
+2. Trekk 3 monsterkort, velg 1 og legg resten nederst i monsterbunken.
+3. Legg det valgte terrengkortet inntil sentrumsterrenget.
+4. Plasser kongebrikken og 2 bønder på startterrenget.
+5. Sett kongens livmarkør til 6.
 
 Uvalgte kort vises ikke til de andre spillerne.
 
@@ -290,8 +277,8 @@ Fase 3: Avslutning
 
 Ved starten av turen:
 
-1. Sjekk kongens oppdrag.
-2. Spilleren vinner dersom kravene på kongekortet er oppfylt.
+1. Sjekk det felles kontrollmålet.
+2. Spilleren vinner dersom spilleren kontrollerer minst 6 terreng.
 3. Spilleren får 1 ledig bondebrikke.
 4. Spilleren kan trekke 1 terrengkort eller monsterkort dersom spilleren har plass på hånden.
 
@@ -305,8 +292,6 @@ Spilleren bestemmer selv blandingen av:
 
 * Terrengkort
 * Monsterkort
-
-Kongekortet teller ikke som et håndkort.
 
 Monsterkort er tilgjengelige så lenge spilleren har dem på hånden.
 
@@ -458,8 +443,8 @@ Eksempel:
 
 Kongen representeres av:
 
-* Ett kongekort
 * Én fysisk kongebrikke
+* Én markør for kongens liv
 
 Kongen:
 
@@ -479,7 +464,7 @@ Fiendtlige bønder kan plasseres på kongens terreng. Kongen blokkerer ekspansjo
 
 ## Kongens liv
 
-Kongens liv spores på kongekortet.
+Kongens liv spores med livmarkøren ved kongebrikken.
 
 Når kongen når 0 liv, ødelegges kongen og spilleren taper.
 
@@ -710,31 +695,20 @@ Et terreng uten bønder blir eierløst.
 
 # 10. Seier og sluttspill
 
-## Kongeoppdrag
+## Felles kontrollmål
 
-Hver konge har et enkelt oppdrag på kongekortet.
+Alle spillerne bruker det samme offentlige kontrollmålet:
 
-Terrengtypene er:
+* Kontroller 6 terreng.
 
-* Nøytral
-* Gress
-* Flamme
-* Vann
-
-Oppdragene bruker enkle kontrollmål, vanligvis rundt 6 kontrollerte terreng totalt, for eksempel:
-
-* Kontroller 6 terreng, minst 2 flammeterreng og 2 nøytrale terreng.
-* Kontroller 6 terreng, minst 3 gressterreng og 1 nøytralt terreng.
-* Kontroller 6 terreng, minst 4 nøytrale terreng.
-
-Spilleren vinner dersom oppdraget på kongekortet er oppfylt ved starten av spillerens tur.
+Spilleren vinner dersom målet er oppfylt ved starten av spillerens tur. Målet er en felles regel og har ikke et eget kort.
 
 ## Vanlige vinnemåter
 
 En spiller vinner ved å:
 
 * Ødelegge motstandernes konger
-* Fullføre kongens oppdrag
+* Oppfylle det felles kontrollmålet
 
 Siste levende konge vinner.
 

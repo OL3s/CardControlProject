@@ -1,8 +1,8 @@
 [Back](../README.md)
 
-# Tabletop Simulator
+# Elements: Conquora - Tabletop Simulator
 
-Denne mappen dokumenterer Tabletop Simulator-versjonen av spillet. Formålet er å gjøre spillet raskt spillbart og testbart digitalt uten å vente på full Godot-implementering eller fysisk print.
+Denne mappen dokumenterer Tabletop Simulator-versjonen av defaultutgaven **Elements: Conquora**. Formålet er å gjøre spillet raskt spillbart og testbart digitalt uten å vente på full Godot-implementering eller fysisk print.
 
 ## Navigasjon
 

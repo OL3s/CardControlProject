@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using CardGeneration.Resources;
@@ -16,17 +17,12 @@ public static class CardFactory
             {
                 ProducedResources = [Amount(element, 1)]
             },
-            CardType.King => new KingCardResource
-            {
-                ElementFocus = element,
-                Health = 6,
-                QuestText = "Control 6 terrain."
-            },
-            _ => new MonsterCardResource
+            CardType.Monster => new MonsterCardResource
             {
                 Requirements = [Amount(element, 1)],
                 BasePower = 1
-            }
+            },
+            _ => throw new ArgumentOutOfRangeException(nameof(cardType), cardType, "Only monster and terrain cards are supported.")
         };
     }
 

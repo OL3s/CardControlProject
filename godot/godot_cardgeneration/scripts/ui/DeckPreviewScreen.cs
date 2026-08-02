@@ -48,7 +48,6 @@ public partial class DeckPreviewScreen : CardToolScreen
 
         AddBackPreview(backs, "Monster", new MonsterCardResource { Id = "monster_back_preview" });
         AddBackPreview(backs, "Terrain", new TerrainCardResource { Id = "terrain_back_preview" });
-        AddBackPreview(backs, "King", new KingCardResource { Id = "king_back_preview" });
     }
 
     private void AddBackPreview(HBoxContainer parent, string title, CardResource card)

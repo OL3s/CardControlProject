@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="750" height="1050" viewBox="0 0 750 1050" role="img" aria-labelledby="title desc">
+  <title id="title">Card image not found placeholder</title>
+  <desc id="desc">Neutral graphite placeholder with a crossed-out image symbol for an invalid image path.</desc>
+  <rect width="750" height="1050" fill="#2a282e"/>
+  <rect x="225" y="385" width="300" height="280" rx="22" fill="#b8ab8a"/>
+  <rect x="239" y="399" width="272" height="252" rx="16" fill="#131216"/>
+  <circle cx="296" cy="456" r="22" fill="#b8ab8a"/>
+  <path d="M260 425 L490 625 M490 425 L260 625" fill="none" stroke="#b8ab8a" stroke-width="16" stroke-linecap="round"/>
+</svg>

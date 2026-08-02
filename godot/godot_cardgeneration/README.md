@@ -1,8 +1,10 @@
 [Back](../../README.md)
 
-# Kortgenerering
+# Conquora Card Generation
 
-Denne mappen inneholder Godot-prosjektet for kortverktøyet. Verktøyet skal brukes til å lage, lagre, vise og eksportere kort og kortstokker for fysisk prototype, Tabletop Simulator og senere digital bruk.
+Denne mappen inneholder Godot-prosjektet for Conquora Card Generation. Verktøyet skal brukes til å lage, lagre, vise og eksportere kort og kortstokker for fysisk prototype, Tabletop Simulator og senere digital bruk. Den innebygde default-preseten representerer førsteutgaven **Elements: Conquora**.
+
+Applikasjonsversjonen ligger i `project.godot` som `application/config/version` og vises nederst til høyre på hovedmenyen.
 
 ## Navigasjon
 
@@ -13,6 +15,7 @@ Denne mappen inneholder Godot-prosjektet for kortverktøyet. Verktøyet skal bru
 * [Arkitektur](docs/architecture.md)
 * [CLI](docs/cli.md)
 * [Framdriftsplan](docs/progress-plan.md)
+* [Conquora-logokonsept](../../shared/docs/logo-concept.md)
 
 ## Formål
 
@@ -31,21 +34,21 @@ Første GUI-retning bruker en smal hovedmeny:
 * `Export`
 * `Settings`
 
-`Cards` viser kort fra default resources og brukerbiblioteket, preview, edit, duplicate og delete. Nye kort opprettes med `+` inne på denne skjermen. Før editoren åpnes velges korttype, fordi monster-, terreng- og kongekort har ulik data og oppsett.
+`Cards` viser kort fra default resources og brukerbiblioteket, preview, edit, duplicate og delete. Nye kort opprettes med `+` inne på denne skjermen. Før editoren åpnes velges korttype, fordi monster- og terrengkort har ulik data og oppsett.
 
 `Decks` viser kortstokker fra default resources og brukerbiblioteket, korttelling, preview, edit, duplicate og delete. Nye kortstokker opprettes med `+` inne på denne skjermen. `+` kan starte en tom kortstokk eller en default 52-korts preset fra `shared/docs`. Ved oppstart sjekker appen om decken `default_deck` og alle kortene fra den finnes i default- eller brukerressurser, og genererer manglende resources til `user://`.
 
-Default deck er `default_deck`. Den lages av `DefaultDeckFactory` fra `shared/docs`. Ved oppstart lagres manglende defaultkort med `default_`-prefix til `user://resources/cards/default/...` og manglende defaultdeck til `user://resources/decks/default/default_deck.tres`, slik at de kommer tilbake etter sletting og ny appstart. `sample_monster_deck` er bare en liten smoke-test resource.
+Default deck er `default_deck` og representerer **Elements: Conquora**. Korttabellene i `shared/docs` er source of truth, og `DefaultDeckFactory` speiler dem som 20 terreng og 32 monstre. Hvert monsterelement har fordelingen 4 Tier 1, 3 Tier 2 og 1 Tier 3. Ved oppstart lagres manglende defaultkort med `default_`-prefix til `user://resources/cards/default/...` og manglende defaultdeck til `user://resources/decks/default/default_deck.tres`, slik at de kommer tilbake etter sletting og ny appstart. En intern innholdsversjon erstatter automatisk eldre genererte defaults når presetformatet endres, uten å slette vanlige brukerkort eller bruker-decks. `sample_monster_deck` er bare en liten smoke-test resource.
 
 Packaged default resources under `res://` er read-only i appen. Genererte defaultkort/decks under `user://resources/.../default` kan slettes, og manglende defaultkort/decks lages på nytt ved neste oppstart. Defaults kan åpnes i editoren for inspeksjon og som utgangspunkt, men `Save` nekter å overskrive dem. Bruk `Save as new` eller duplicate for å lage en vanlig user resource før endringer lagres.
 
 Hovedmenyen skal ikke vise et tilfeldig kortpreview og skal ikke ha egne `New Card`/`New Deck` valg. Kortpreview hører hjemme i `Cards`, `Decks`, editor- og eksportskjermene. Preview viser både front og bakside der det er relevant, og dobbelklikk på preview åpner større visning.
 
-Korteditoren støtter felles kortfelt, image source path, preview, lagring og PNG-eksport. Korttypen er valgt før editoren åpnes. Monsterkort lagrer ikke element direkte; elementet utledes fra ikke-nøytralt ressurskrav. Terrengkort har ikke elementfokus og viser bare hvilke ressurser de produserer. Kongekort er eneste korttype som lagrer eksplisitt `ElementFocus`, fordi kongen skal vise elementikon øverst til venstre.
+Korteditoren støtter felles kortfelt, image source path, preview, lagring og PNG-eksport. Korttypen er valgt før editoren åpnes. Monsterkort lagrer ikke element direkte; elementet utledes fra ikke-nøytralt ressurskrav. Terrengkort har ikke elementfokus og viser bare hvilke ressurser de produserer.
 
-Deckeditoren støtter deck-ID, tilgjengelige kort på tvers av korttyper, deck entries med antall, `Save` og `Save New`. Venstre side viser lagrede kort som preview-fliser i en horisontal scrollrad med ikonknapper for å legge til én kopi eller velge flere kort. Høyre side viser deckinnhold som preview-fliser med ikonknapper for slett, dupliser og multiselect. Eksport gjøres bare fra `Export`-skjermen. En deck er et ferdig produkt med alle relevante korttyper, ikke en separat monster-/terreng-/kongebunke.
+Deckeditoren støtter deck-ID, tilgjengelige kort på tvers av korttyper, deck entries med antall, `Save` og `Save New`. Venstre side viser lagrede kort som preview-fliser i en horisontal scrollrad med ikonknapper for å legge til én kopi eller velge flere kort. Høyre side viser deckinnhold som preview-fliser med ikonknapper for slett, dupliser og multiselect. Eksport gjøres bare fra `Export`-skjermen. En deck er et ferdig produkt med både monster- og terrengkort.
 
-`Export` er eneste eksportflate og har to eksporttyper: `Images` og `Print`. Images lager ett kortbilde eller eksporterer en deck som individuelle bilder, grid eller strip, og kan forhåndsvises uten å skrive filer. `Back Images` kan utelate baksider, legge til baksiden for hver korttype som faktisk brukes, eller legge til alle tre baksidetypene. Baksidene kommer først i rekkefølgen Monster, Terrain og King. Print lager nummererte A4- eller A3-ark med for- og baksider for fysisk utskrift og kutting. Normal print beholder samme kortplassering foran og bak. `Easy backs` grupperer forsidene etter korttype og fyller alle plassene på det tilhørende baksidearket; dette bruker mer papir og blekk, men krever ikke speiling eller nøyaktig slot-alignment. Preview genereres asynkront med fremdriftslinje og viser resultatet i en scrollbar visning. Verdiene starter fra lagrede defaults, men kan endres direkte i Export for den ene eksporten uten å lagres som nye defaults.
+`Export` er eneste eksportflate og har to eksporttyper: `Images` og `Print`. Images lager ett kortbilde eller eksporterer en deck som individuelle bilder, grid eller strip, og kan forhåndsvises uten å skrive filer. `Back Images` kan utelate baksider, legge til baksiden for hver korttype som faktisk brukes, eller legge til begge baksidetypene. Baksidene kommer først i rekkefølgen Monster og Terrain. Print lager nummererte A4- eller A3-ark med for- og baksider for fysisk utskrift og kutting. Normal print beholder samme kortplassering foran og bak. `Easy backs` grupperer forsidene etter korttype og fyller alle plassene på det tilhørende baksidearket; dette bruker mer papir og blekk, men krever ikke speiling eller nøyaktig slot-alignment. Preview genereres asynkront med fremdriftslinje og viser resultatet i en scrollbar visning. Verdiene starter fra lagrede defaults, men kan endres direkte i Export for den ene eksporten uten å lagres som nye defaults.
 
 Export-knappen åpner Godots file dialog i valgt/default exportmappe. Cancel avbryter eksporten, og Save eller mappevalg starter eksporten.
 
@@ -74,19 +77,21 @@ card
   print_guides
 ```
 
-`base_background` er et heldekkende fargelag nederst. Fargen styres av korttypen, ikke av elementet. Målet er at spilleren raskt skal se om kortet er monsterkort, terrengkort eller kongekort når kortet ligger med riktig side opp.
+`base_background` er et heldekkende fargelag nederst. Rammen har separate, dempede nøytraltoner for monster og terreng, men skal ikke konkurrere med elementfargene i kortbildet og ressursikonene. Målet er at spilleren skal kunne skille korttypene uten at for eksempel et gressmonster får en kraftig rød ramme.
 
-`card_image` ligger oppå basebakgrunnen. For monsterkort er dette monsterbildet. For terrengkort er det terrengbildet. For kongekort er det konge-/bakgrunnsbildet. De endelige bildene finnes ikke ennå, så prosjektet bruker placeholder-bilder i første versjon.
+`card_image` ligger oppå basebakgrunnen. For monsterkort er dette monsterbildet, og for terrengkort er det terrengbildet. De endelige bildene finnes ikke ennå, så prosjektet bruker én felles grafittfarget placeholder for begge korttyper. Placeholderen skal ikke kunne tolkes som gress, flamme, vann eller nøytral.
+
+Et tomt image source path viser den vanlige, ensfargede placeholderen og betyr at kortet ikke har fått bilde ennå. Et path som er satt, men ikke kan finnes eller lastes, viser i stedet en egen crossed-image-placeholder. Dermed er det synlig i både editor og eksport om bildet mangler med vilje eller pathen er ugyldig.
 
 `panels` ligger oppå kortbildet og samler spillinformasjon. Panelene skal gjøre ikoner og eventuell tekst lesbare uavhengig av hvor detaljert kortbildet er.
 
 `icons_and_text` inneholder ressursikoner, styrkeikoner, piler, korttekst og annen spillinformasjon. Elementresources peker til SVG-ikonene under `assets/icons/elements/`, og renderer faller tilbake til enkle symboler dersom en texture ikke kan lastes.
 
-Monsterets elementvisning følger kravlisten: dersom kravlisten har ett ikke-nøytralt element, brukes dette som monsterets element. Hvis kravlisten bare har nøytral, blir monsteret nøytralt. Terrengkort har ingen egen elementvisning utover ressursikonene de produserer. Kongekort viser `ElementFocus` som ikon øverst til venstre.
+Monsterets elementvisning følger kravlisten: dersom kravlisten har ett ikke-nøytralt element, brukes dette som monsterets element. Hvis kravlisten bare har nøytral, blir monsteret nøytralt. Terrengkort har ingen egen elementvisning utover ressursikonene de produserer.
 
 `print_guides` er kun for fysisk produksjon, for eksempel kuttemerker, bleed eller hjelpelinjer. Slike lag skal ikke være del av vanlig preview med mindre brukeren eksplisitt velger det.
 
-Baksiden bygges også i lag. Nederst ligger samme korttypebaserte basefarge/kant som skiller korttypen. Oppå den ligger baksidebildet for korttypen. Baksiden skal ikke avsløre kortspesifikke data som element, krav, styrke eller effekt. Printark bruker korttypen til hvert enkelt kort, siden én ferdig deck kan inneholde konger, terreng og monstre.
+Baksiden bygges også i lag. Nederst ligger samme korttypebaserte basefarge/kant som skiller korttypen. Oppå den ligger baksidebildet for korttypen. Baksiden skal ikke avsløre kortspesifikke data som element, krav, styrke eller effekt. Printark bruker korttypen til hvert enkelt kort, siden én ferdig deck kan inneholde både terreng og monstre.
 
 Kortbaksidene ligger som SVG under `assets/card_backs/` og er kopiert fra `shared/docs/images/svg/`. Monsterbaksiden er tonet litt ned i rødfargen for å fungere bedre med gress- og vannmonstre.
 
@@ -235,7 +240,6 @@ godot/godot_cardgeneration/
   docs/
   resources/
     cards/
-      kings/
       monsters/
       terrain/
     config/
@@ -260,7 +264,7 @@ godot/godot_cardgeneration/
 
 `assets/icons/` inneholder SVG-ikoner som brukes på kort og i verktøyet. Nye spillikoner skal legges eller genereres her når kortgeneratoren trenger dem.
 
-`assets/placeholders/` inneholder midlertidige kortbilder til faktiske monster-, terreng- og kongebilder finnes.
+`assets/placeholders/` inneholder midlertidige kortbilder til faktiske monster- og terrengbilder finnes.
 
 `resources/` skal inneholde lagrede Godot resources for elementer, kort og kortstokker.
 
@@ -322,5 +326,5 @@ Videre plan ligger i [Framdriftsplan](docs/progress-plan.md).
 ## Åpne Punkter
 
 * Skal kortdata opprettes manuelt som Godot resources først, eller importeres fra eksisterende Markdown-tabeller først?
-* Skal type-spesifikke editorfelt for monster, terreng og konge prioriteres før importflyt?
+* Skal flere type-spesifikke editorfelt for monster og terreng prioriteres før importflyt?
 * Skal safe margin, bleed og kuttemerker inn i printark før DIY-eksporten?

@@ -4,6 +4,5 @@ public enum CardType
 {
     Unknown = 0,
     Monster = 1,
-    Terrain = 2,
-    King = 3
+    Terrain = 2
 }

@@ -23,7 +23,6 @@ Godot Resource
   ElementResource
   CardResource
     TerrainCardResource
-    KingCardResource
     MonsterCardResource
   ResourceAmount
   PowerBonusResource
@@ -43,13 +42,11 @@ Elementikonene peker til importerte textures fra SVG-er under `assets/icons/elem
 
 `TerrainCardResource` har produserte ressurser. Terreng har ikke elementfokus som metadata.
 
-`KingCardResource` har `ElementFocus`, liv, oppdragstekst og eventuelle oppdragskrav. Konger er eneste korttype som lagrer elementfokus direkte.
-
 `CardDeckResource` lagrer en ferdig produktdeck som ID og en liste med `CardDeckEntryResource`, slik at samme kort kan ha antall kopier uten å duplisere kortdata. Deck-beskrivelse og displaynavn er bevisst utelatt.
 
 `CardElementResolver.GetSingleNonNeutralElementType(ResourceAmount[])` er delt API for å utlede monster-element fra kost-/ressursliste. Nøytrale krav gir nøytralt monster; ett ikke-nøytralt krav gir dette elementet. Terreng bruker ikke resolveren som elementfokus.
 
-En deck kan inneholde flere korttyper samtidig, for eksempel konger, terreng og monstre i samme 52-korts produkt. Printark renderer derfor bakside per korttype for hvert kort. `MonsterBackImageTexture`, `TerrainBackImageTexture` og `KingBackImageTexture` kan brukes som deck-spesifikke overrides per korttype.
+En deck kan inneholde både terreng og monstre i samme 52-korts produkt. Printark renderer derfor bakside per korttype for hvert kort. `MonsterBackImageTexture` og `TerrainBackImageTexture` kan brukes som deck-spesifikke overrides per korttype.
 
 `CardToolConfigResource` lagrer langvarige verktøyinnstillinger som default card, deck, output, format, papir, DPI, bakside-speiling, deck layout, gridkolonner og spacing. Default card er tom etter fabrikkreset; default deck er `default_deck`. Configen ligger som redigerbar Godot resource i `resources/config/card_tool_config.tres`.
 
@@ -76,7 +73,7 @@ CardToolService
 
 `CardToolService` er fasaden som GUI og CLI skal kalle. Den skal samle vanlige operasjoner som lasting, lagring, validering, rendering og eksport.
 
-`CardFactory` lager nye tomme kort basert på valgt korttype. Den setter startverdier som matcher modellforskjellene mellom monster, terreng og konge.
+`CardFactory` lager nye tomme kort basert på valgt korttype. Den setter startverdier som matcher modellforskjellene mellom monster og terreng.
 
 Repositories skal eie lasting og lagring av kort og kortstokker. Vanlig GUI-listing leser curated/default resources under `res://resources/...` og brukerbiblioteket under `user://resources/...`, der user resources overstyrer default resources med samme ID.
 
@@ -109,7 +106,7 @@ Første `CardRenderService` renderer PNG direkte fra `CardResource`.
 
 `DiyExportService` bruker samme printarkexport og lager både A4- og A3-varianter i egne undermapper.
 
-`DefaultDeckFactory` lager deck-startpunkter for GUI: tom deck og default 52-korts deck basert på tabellene i `shared/docs/king-cards.md`, `shared/docs/terrain-cards.md` og `shared/docs/monster-cards.md`. Factoryen bruker eksisterende lagrede kortresources når `default_`-ID finnes, og lager ellers preset-kort med `default_`-prefix. De manglende preset-kortene lagres som card resources før decken `default_deck` lagres.
+`shared/docs/terrain-cards.md` og `shared/docs/monster-cards.md` er source of truth for defaultkortene i **Elements: Conquora**. `DefaultDeckFactory` speiler disse tabellene og lager deck-startpunkter for GUI: tom deck og en default 52-korts deck med 20 terreng og 32 monstre. Hvert av de fire monsterelementene har 4 Tier 1-, 3 Tier 2- og 1 Tier 3-monster. Factoryen bruker eksisterende lagrede kortresources når `default_`-ID finnes, og lager ellers preset-kort med `default_`-prefix. De manglende preset-kortene lagres som card resources før decken `default_deck` lagres. En innholdsversjon rydder og regenererer bare genererte defaults når presetformatet endres.
 
 DPI velges fra faste normalverdier: `150`, `300`, `600` og `1200`. `600 DPI` er default og print-master-kvalitet.
 
@@ -137,9 +134,8 @@ Kortbaksider ligger under `assets/card_backs/`:
 
 ```text
 assets/card_backs/
-  king_card_back.svg
-  monster_card_back.svg
-  terrain_card_back.svg
+    monster_card_back.svg
+    terrain_card_back.svg
 ```
 
 Elementikonene brukes for ressurser, krav og elementvisning. `ElementResource`-filene peker til SVG-textures under `assets/icons/elements/`. Symbolikonene brukes for generelle kortmarkører som styrke og bonuspiler.
@@ -161,18 +157,18 @@ GUI-kode skal ligge i `scripts/ui/`. UI-kontrollere kan bygge scener, men skal i
 
 `CardToolScreen` er felles base for vanlige appskjermer. Den bygger bakgrunn, header, back-knapp, scrollbart innhold og statuslinje. `MainMenu` eier navigasjon mellom skjermene og injiserer samme `CardToolService` i hver skjerm.
 
-Opprettelse av nye kort og kortstokker skal ligge inne i `Cards` og `Decks` som en kompakt `+`-handling. Hovedmenyen skal være smidig og bare vise de øverste arbeidsområdene. I `Cards` går `+` først til valg av `Monster`, `Terrain` eller `King`. I `Decks` gir `+` valg mellom tom deck og default 52-korts preset.
+Opprettelse av nye kort og kortstokker skal ligge inne i `Cards` og `Decks` som en kompakt `+`-handling. Hovedmenyen skal være smidig og bare vise de øverste arbeidsområdene. I `Cards` går `+` først til valg av `Monster` eller `Terrain`. I `Decks` gir `+` valg mellom tom deck og default 52-korts preset.
 
 Implementerte skjermer:
 
 * `SavedCardsScreen`: driver `Cards`-skjermen, laster lagrede kort via `CardToolService`, viser preview, edit, duplicate og delete.
 * `SavedDecksScreen`: driver `Decks`-skjermen, laster lagrede deckresources, viser korttelling, korttypesammensetning, full preview, edit, duplicate, delete og deckoppretting fra tom/preset.
 * `CardTypePickerScreen`: velger korttype før nytt kort åpnes i editor.
-* `CardEditorScreen`: lager eller redigerer kort med ID, image source path, front/back preview, fullscreen preview, save og PNG-export. Korttypen er låst etter typevalg. Bare kongekort har eksplisitt elementvalg.
+* `CardEditorScreen`: lager eller redigerer kort med ID, image source path, front/back preview, fullscreen preview, save og PNG-export. Korttypen er låst etter typevalg.
 * `DeckEditorScreen`: lager eller redigerer kortstokk med deck-ID, tilgjengelige kort, entries med count, `Save` og `Save New`. Tilgjengelige kort vises som horisontalt scrollbare preview-fliser med kompakte ikonknapper for add og select. Deckinnhold vises som preview-fliser med count-badge og ikonknapper for delete, duplicate og select. Multiselect brukes for batch add/remove. Skjermen eksporterer ikke.
 * `ExportCenterScreen`: eneste eksportflate. Den tilbyr `Images` for enkeltkort, individuelle deckbilder, grid og strip, og `Print` for A4/A3-ark til fysisk utskrift og kutting. Begge typene har preview. Print kan bruke vanlig slot-alignment eller `Easy backs`, som grupperer forsider etter korttype og fyller hele det tilhørende baksidearket.
 
-Første editor dekker fellesfeltene i kortmodellen. Type-spesifikke felt som monsterkrav, terrengproduksjon og kongeoppdrag kan legges inn senere uten å endre service-regelen.
+Første editor dekker fellesfeltene i kortmodellen og type-spesifikke felt for monsterkrav og terrengproduksjon.
 
 `SettingsPanel` redigerer `CardToolConfigResource` via `CardToolService.SetConfig()`. Panelet skal ikke skrive config direkte utenom service-laget. Settings-innholdet ligger i en `ScrollContainer` slik at alle felt er tilgjengelige i små vinduer.
 
@@ -209,8 +205,8 @@ card_type_back_image
 optional_print_guides
 ```
 
-Basebakgrunnens farge styres av korttype. Monsterets element utledes fra kost og påvirker ikonbruk. Kongekort bruker lagret `ElementFocus` for toppikonet. Terrengkort har ikke eget elementfokus.
+Basebakgrunnen bruker separate, dempede nøytraltoner for monster og terreng. Kort uten image source path bruker samme grafittfargede placeholder for begge korttyper, slik at placeholderen ikke signaliserer et element. Et ikke-tomt path som ikke kan finnes eller lastes bruker en separat crossed-image-placeholder. Monsterets element utledes fra kost og påvirker ikonbruk. Terrengkort har ikke eget elementfokus.
 
-Faktiske monster-, terreng- og kongebilder finnes ikke ennå. `assets/placeholders/` brukes som midlertidige bilder fram til de endelige bildene finnes.
+Faktiske monster- og terrengbilder finnes ikke ennå. `assets/placeholders/` brukes som midlertidige bilder fram til de endelige bildene finnes.
 
 Første renderer kan tegne en enkel fallback dersom `CardImageTexture` ikke er satt. Dette gjør at sample-kort kan rendres i headless-modus før de faktiske kortbildene og importerte textures er klare.

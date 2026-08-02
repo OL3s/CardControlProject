@@ -192,7 +192,7 @@ public sealed class DeckExportService
     private static IReadOnlyList<DeckImageItem> BuildImageItems(CardDeckResource deck, IReadOnlyList<CardResource> cards, ImageBackMode backMode)
     {
         var items = new List<DeckImageItem>();
-        foreach (var cardType in new[] { CardType.Monster, CardType.Terrain, CardType.King })
+        foreach (var cardType in new[] { CardType.Monster, CardType.Terrain })
         {
             if (backMode == ImageBackMode.All || backMode == ImageBackMode.Used && ContainsCardType(cards, cardType))
             {

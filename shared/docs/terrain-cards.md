@@ -5,10 +5,11 @@
 ## Navigasjon
 
 * [Aktivt regelutkast](gameidea-working.md)
-* [Kongekort](king-cards.md)
 * [Monsterkort](monster-cards.md)
 
 ---
+
+Denne kortlisten er source of truth for terrengkortene i defaultutgaven **Elements: Conquora**.
 
 Terrengkort bygger kartet og gir ressurskapasitet. Korttypen leses av terrengrammen og baksiden. Elementfokus styrer fargestemning og hvilke ressursikoner som dominerer kortflaten. Intern tier brukes bare i kortlisten og ID-en, ikke på selve kortet.
 

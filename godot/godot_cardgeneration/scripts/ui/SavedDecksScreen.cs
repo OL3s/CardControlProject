@@ -164,7 +164,6 @@ public partial class SavedDecksScreen : CardToolScreen
         AddIconCount(stats, CardCountIconPath, "Cards", GetCardCount(deck));
         AddIconCount(stats, MonsterTypeIconPath, "Monsters", GetCardTypeCount(deck, CardType.Monster));
         AddIconCount(stats, TerrainTypeIconPath, "Terrain", GetCardTypeCount(deck, CardType.Terrain));
-        AddIconCount(stats, KingTypeIconPath, "Kings", GetCardTypeCount(deck, CardType.King));
     }
 
     private static void AddIconCount(HBoxContainer parent, string iconPath, string tooltip, int count)

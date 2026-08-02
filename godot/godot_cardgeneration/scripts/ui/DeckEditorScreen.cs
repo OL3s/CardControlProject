@@ -625,7 +625,6 @@ public partial class DeckEditorScreen : CardToolScreen
     {
         _editingDeck.MonsterBackImageTexture = null;
         _editingDeck.TerrainBackImageTexture = null;
-        _editingDeck.KingBackImageTexture = null;
         RefreshBackPreview();
         SetStatus("Using default backs.");
     }
@@ -640,7 +639,6 @@ public partial class DeckEditorScreen : CardToolScreen
         ClearContainer(_backPreviewRow);
         AddBackPreview(_backPreviewRow, "Monster", CardType.Monster);
         AddBackPreview(_backPreviewRow, "Terrain", CardType.Terrain);
-        AddBackPreview(_backPreviewRow, "King", CardType.King);
     }
 
     private void AddBackPreview(HBoxContainer parent, string title, CardType cardType)
@@ -670,9 +668,9 @@ public partial class DeckEditorScreen : CardToolScreen
     {
         CardResource card = cardType switch
         {
+            CardType.Monster => new MonsterCardResource { Id = "monster_back_preview" },
             CardType.Terrain => new TerrainCardResource { Id = "terrain_back_preview" },
-            CardType.King => new KingCardResource { Id = "king_back_preview" },
-            _ => new MonsterCardResource { Id = "monster_back_preview" }
+            _ => throw new ArgumentOutOfRangeException(nameof(cardType), cardType, "Only monster and terrain cards are supported.")
         };
         card.BackImageTexture = _editingDeck.GetBackImageTexture(cardType);
         return card;
@@ -690,7 +688,6 @@ public partial class DeckEditorScreen : CardToolScreen
             Id = source.Id,
             MonsterBackImageTexture = source.MonsterBackImageTexture,
             TerrainBackImageTexture = source.TerrainBackImageTexture,
-            KingBackImageTexture = source.KingBackImageTexture,
             Entries = (source.Entries ?? Array.Empty<CardDeckEntryResource>())
                 .Select(entry => new CardDeckEntryResource
                 {

@@ -130,6 +130,11 @@ public sealed class DeckRepository
         return DeleteResourceFiles(UserDecksRootPath);
     }
 
+    public int DeleteGeneratedDefaultDecks()
+    {
+        return DeleteResourceFiles(UserDefaultDecksRootPath);
+    }
+
     public ToolResult DeleteDeck(string deckId)
     {
         if (string.IsNullOrWhiteSpace(deckId))

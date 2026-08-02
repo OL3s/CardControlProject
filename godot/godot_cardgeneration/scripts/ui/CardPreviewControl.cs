@@ -121,7 +121,7 @@ public partial class CardPreviewControl : TextureRect
 
         if (_deferRender)
         {
-            Texture ??= CreatePlaceholderTexture(_card.CardType, _renderSize);
+            Texture ??= CreatePlaceholderTexture(_renderSize);
             RequestVisibleRender();
             return;
         }
@@ -265,16 +265,10 @@ public partial class CardPreviewControl : TextureRect
         return new Vector2I(Mathf.RoundToInt(minimumSize.Value.X), Mathf.RoundToInt(minimumSize.Value.Y));
     }
 
-    private static ImageTexture CreatePlaceholderTexture(CardType cardType, Vector2I size)
+    private static ImageTexture CreatePlaceholderTexture(Vector2I size)
     {
         var image = Image.CreateEmpty(Mathf.Max(1, size.X), Mathf.Max(1, size.Y), false, Image.Format.Rgba8);
-        image.Fill(cardType switch
-        {
-            CardType.Monster => new Color(0.18f, 0.08f, 0.09f),
-            CardType.Terrain => new Color(0.13f, 0.16f, 0.10f),
-            CardType.King => new Color(0.15f, 0.11f, 0.20f),
-            _ => new Color(0.10f, 0.10f, 0.12f)
-        });
+        image.Fill(CardImageRenderer.PlaceholderColor);
         return ImageTexture.CreateFromImage(image);
     }
 

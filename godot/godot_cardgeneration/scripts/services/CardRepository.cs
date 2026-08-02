@@ -98,6 +98,11 @@ public sealed class CardRepository
         return DeleteResourceFiles(UserCardsRootPath);
     }
 
+    public int DeleteGeneratedDefaultCards()
+    {
+        return DeleteResourceFiles(UserDefaultCardsRootPath);
+    }
+
     public ToolResult DeleteCard(string cardId)
     {
         if (string.IsNullOrWhiteSpace(cardId))
@@ -164,7 +169,6 @@ public sealed class CardRepository
         {
             CardType.Monster => $"{rootPath}/monsters",
             CardType.Terrain => $"{rootPath}/terrain",
-            CardType.King => $"{rootPath}/kings",
             _ => rootPath
         };
     }

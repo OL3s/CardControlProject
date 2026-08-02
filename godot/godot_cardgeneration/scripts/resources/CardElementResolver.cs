@@ -11,7 +11,6 @@ public static class CardElementResolver
         return card switch
         {
             MonsterCardResource monster => GetSingleNonNeutralElementType(monster.Requirements) ?? ElementType.Neutral,
-            KingCardResource king => king.ElementFocus?.ElementType ?? ElementType.Neutral,
             _ => ElementType.Neutral
         };
     }

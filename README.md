@@ -1,6 +1,10 @@
-# Card Control Project
+# Elements: Conquora
 
-Dette repositoryet samler felles regler, kortdesign og prototypearbeid for et kort-, strategi- og områdekontrollspill.
+**Conquora** er systemnavnet for spillet. **Elements: Conquora** er den første og foreløpige default-utgaven, med nøytral, gress, flamme og vann som ressurser og monsterelementer.
+
+Navnestrukturen er `<utgave eller univers>: Conquora`, slik at samme spillsystem senere kan brukes i andre selvstendige utgaver uten å låse systemnavnet til elementtemaet.
+
+Dette repositoryet samler felles regler, kortdesign og prototypearbeid for Conquora, et kort-, strategi- og områdekontrollspill.
 
 Prosjektet deles inn i disse områdene:
 
@@ -19,10 +23,9 @@ Dokumentasjonen skrives på norsk. Kode, filnavn, mappenavn, kort-ID-er og tekni
 * [Fysisk versjon](physical/README.md)
 * [Tabletop Simulator](tabletop_simulator/README.md)
 * [Aktivt regelutkast](shared/docs/gameidea-working.md)
-* [Original spillide](shared/docs/gameidea.md)
-* [Kongekort](shared/docs/king-cards.md)
 * [Terrengkort](shared/docs/terrain-cards.md)
 * [Monsterkort](shared/docs/monster-cards.md)
+* [Logokonsept](shared/docs/logo-concept.md)
 
 ## Versjoner
 
@@ -33,11 +36,10 @@ Dokumentasjonen skrives på norsk. Kode, filnavn, mappenavn, kort-ID-er og tekni
 
 ## Felles Dokumenter
 
-* `shared/docs/gameidea.md` er originalt idedokument og skal normalt ikke redigeres.
 * `shared/docs/gameidea-working.md` er arbeidsdokumentet for regelavklaringer, revisjoner og åpne designvalg.
-* `shared/docs/king-cards.md` definerer kongekortene.
 * `shared/docs/terrain-cards.md` definerer terrengkortene.
 * `shared/docs/monster-cards.md` definerer monsterkortene.
+* `shared/docs/logo-concept.md` definerer den delte logo- og ikonretningen for Conquora-utgaver.
 * `shared/docs/images/svg/` inneholder SVG-kilder for kort.
 * `shared/docs/images/svg/icons/` inneholder SVG-ikoner brukt av kortkildene.
 * `shared/docs/images/png/` inneholder genererte PNG-previewbilder.
@@ -45,10 +47,9 @@ Dokumentasjonen skrives på norsk. Kode, filnavn, mappenavn, kort-ID-er og tekni
 ## Direkte Dokumentlenker
 
 * [Aktivt regelutkast](shared/docs/gameidea-working.md)
-* [Original spillide](shared/docs/gameidea.md)
-* [Kongekort](shared/docs/king-cards.md)
 * [Terrengkort](shared/docs/terrain-cards.md)
 * [Monsterkort](shared/docs/monster-cards.md)
+* [Logokonsept](shared/docs/logo-concept.md)
 * [SVG-kilder](shared/docs/images/svg/)
 * [SVG-ikoner](shared/docs/images/svg/icons/)
 * [PNG-previewbilder](shared/docs/images/png/)

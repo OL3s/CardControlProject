@@ -1,4 +1,4 @@
-# Elemental Dominion - Kompakt Regelark
+# Elements: Conquora - Kompakt Regelark
 
 Dette er et kort regelark for bruk under spilling. Fullt regelutkast ligger i [`docs/gameidea-working.md`](docs/gameidea-working.md).
 
@@ -12,12 +12,12 @@ Formatmål: fire sider/paneler på ett foldbart ark.
 
 Vinn ved å:
 
-* Fullføre kongens oppdrag ved starten av din tur.
+* Kontrollere minst 6 terreng ved starten av din tur.
 * Ødelegge motstandernes konger.
 
 Siste levende konge vinner.
 
-Oppdrag er enkle kontrollmål på kongekortet, vanligvis rundt 6 kontrollerte terreng totalt.
+Kontrollmålet er en felles regel og har ikke et eget kort.
 
 ## Elementer
 
@@ -30,15 +30,14 @@ Elementfordel i kamp gir `+1` kampverdi.
 
 ## Oppsett
 
-1. Bland konge-, terreng- og monsterbunken.
+1. Bland terreng- og monsterbunken hver for seg.
 2. Legg ett tilfeldig terreng i midten. Det starter eierløst.
 3. Rull for startspiller. Høyest får startspillerbrikken.
-4. Hver spiller trekker 2 konger, velger 1 og legger den andre nederst i kongebunken.
-5. Hver spiller trekker 3 terreng, velger 1 og legger resten nederst i terrengbunken.
-6. Hver spiller trekker 3 monstre, velger 1 og legger resten nederst i monsterbunken.
-7. Legg startterrenget inntil sentrumsterrenget.
-8. Plasser kongen og 2 bønder på startterrenget.
-9. Sett kongens liv til 6.
+4. Hver spiller trekker 3 terreng, velger 1 og legger resten nederst i terrengbunken.
+5. Hver spiller trekker 3 monstre, velger 1 og legger resten nederst i monsterbunken.
+6. Legg startterrenget inntil sentrumsterrenget.
+7. Plasser kongen og 2 bønder på startterrenget.
+8. Sett kongens livmarkør til 6.
 
 ## Runden
 
@@ -48,11 +47,11 @@ Elementfordel i kamp gir `+1` kampverdi.
 
 ## Starten Av Din Tur
 
-1. Sjekk kongens oppdrag. Du vinner hvis kravene på kongekortet er oppfylt.
+1. Sjekk det felles kontrollmålet. Du vinner hvis du kontrollerer minst 6 terreng.
 2. Få 1 ledig bondebrikke.
 3. Trekk 1 terrengkort eller 1 monsterkort hvis du har færre enn 3 kort på hånden.
 
-Håndgrense: maks 3 terreng-/monsterkort totalt. Kongekort teller ikke.
+Håndgrense: maks 3 terreng-/monsterkort totalt.
 
 ---
 

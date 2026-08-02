@@ -1,14 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
-  <title id="title">Conquora Card Generation icon</title>
-  <desc id="desc">The four-sector Elements: Conquora mark.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Elements: Conquora logo concept</title>
+  <desc id="desc">A circular Conquora mark divided into four equal sectors for neutral, grass, flame, and water.</desc>
   <rect width="512" height="512" rx="96" fill="#15131b"/>
+
   <g stroke="#15131b" stroke-width="12" stroke-linejoin="round">
     <path d="M256 256 L76 256 A180 180 0 0 1 256 76 Z" fill="#9b968d"/>
     <path d="M256 256 L256 76 A180 180 0 0 1 436 256 Z" fill="#62a84a"/>
     <path d="M256 256 L436 256 A180 180 0 0 1 256 436 Z" fill="#e4572e"/>
     <path d="M256 256 L256 436 A180 180 0 0 1 76 256 Z" fill="#3e83c4"/>
   </g>
+
   <circle cx="256" cy="256" r="184" fill="none" stroke="#ead99f" stroke-width="10"/>
+
   <g fill="none" stroke="#f8f1da" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="166" cy="166" r="28"/>
     <path d="M326 194 C328 148 360 124 390 126 C386 164 364 194 326 194 Z"/>
@@ -16,6 +19,7 @@
     <path d="M346 394 C312 374 316 342 344 306 C344 330 366 338 372 360 C378 378 364 394 346 394 Z"/>
     <path d="M166 306 C146 336 126 356 126 378 C126 402 144 420 166 420 C188 420 206 402 206 378 C206 356 186 336 166 306 Z"/>
   </g>
+
   <circle cx="256" cy="256" r="49" fill="#15131b" stroke="#ead99f" stroke-width="9"/>
   <path d="M256 225 L282 256 L256 287 L230 256 Z" fill="#ead99f"/>
 </svg>

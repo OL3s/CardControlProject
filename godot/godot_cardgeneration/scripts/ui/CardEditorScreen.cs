@@ -31,9 +31,6 @@ public partial class CardEditorScreen : CardToolScreen
     private SpinBox? _terrainProducedGrass;
     private SpinBox? _terrainProducedFlame;
     private SpinBox? _terrainProducedWater;
-    private OptionButton? _kingElementFocus;
-    private SpinBox? _kingHealth;
-    private TextEdit? _kingQuestText;
 
     public void SetCard(CardResource? card)
     {
@@ -154,29 +151,6 @@ public partial class CardEditorScreen : CardToolScreen
         return lineEdit;
     }
 
-    private OptionButton AddElementOption(VBoxContainer form, string label, ElementResource? selectedElement)
-    {
-        form.AddChild(new Label { Text = label });
-        var option = new OptionButton
-        {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        };
-        option.AddItem("None");
-        foreach (var element in _elements)
-        {
-            option.AddItem($"{element.DisplayName} ({element.ElementType})");
-        }
-
-        var selectedIndex = selectedElement is null
-            ? 0
-            : _elements.Select((element, index) => new { element, index })
-                .FirstOrDefault(item => item.element.ElementType == selectedElement.ElementType)
-                ?.index + 1 ?? 0;
-        option.Select(selectedIndex);
-        form.AddChild(option);
-        return option;
-    }
-
     private void AddTypeSpecificFields(VBoxContainer form)
     {
         AddSeparator(form);
@@ -218,15 +192,6 @@ public partial class CardEditorScreen : CardToolScreen
                     out _terrainProducedFlame,
                     out _terrainProducedWater);
                 BindSpinPreview(_terrainProducedNeutral, _terrainProducedGrass, _terrainProducedFlame, _terrainProducedWater);
-                break;
-            case KingCardResource king:
-                form.AddChild(new Label { Text = "King Setup" });
-                _kingElementFocus = AddElementOption(form, "Element Focus", king.ElementFocus);
-                _kingElementFocus.ItemSelected += index => RunGuiAction("Change king element focus", RefreshPreview, $"index={index}");
-                _kingHealth = AddSpinBox(form, "Health", 1, 30, 1, king.Health);
-                _kingHealth.ValueChanged += _ => RefreshPreview();
-                _kingQuestText = AddTextEdit(form, "Quest Text", king.QuestText, 90);
-                _kingQuestText.TextChanged += RefreshPreview;
                 break;
         }
 
@@ -539,23 +504,7 @@ public partial class CardEditorScreen : CardToolScreen
                     (ElementType.Flame, _terrainProducedFlame),
                     (ElementType.Water, _terrainProducedWater));
                 break;
-            case KingCardResource king:
-                king.ElementFocus = GetSelectedKingElementFocus();
-                king.Health = (int)(_kingHealth?.Value ?? king.Health);
-                king.QuestText = _kingQuestText?.Text ?? king.QuestText;
-                break;
         }
-    }
-
-    private ElementResource? GetSelectedKingElementFocus()
-    {
-        if (_kingElementFocus is null || _kingElementFocus.Selected <= 0)
-        {
-            return null;
-        }
-
-        var elementIndex = _kingElementFocus.Selected - 1;
-        return elementIndex >= 0 && elementIndex < _elements.Count ? _elements[elementIndex] : null;
     }
 
     private ResourceAmount[] BuildAmounts(params (ElementType ElementType, SpinBox? Input)[] specs)
@@ -625,13 +574,6 @@ public partial class CardEditorScreen : CardToolScreen
         {
             cloneTerrain.ProducedResources = sourceTerrain.ProducedResources;
         }
-        else if (source is KingCardResource sourceKing && clone is KingCardResource cloneKing)
-        {
-            cloneKing.ElementFocus = sourceKing.ElementFocus;
-            cloneKing.Health = sourceKing.Health;
-            cloneKing.QuestText = sourceKing.QuestText;
-            cloneKing.QuestRequirements = sourceKing.QuestRequirements;
-        }
 
         return clone;
     }
@@ -649,9 +591,9 @@ public partial class CardEditorScreen : CardToolScreen
     {
         return cardType switch
         {
+            CardType.Monster => new MonsterCardResource(),
             CardType.Terrain => new TerrainCardResource(),
-            CardType.King => new KingCardResource(),
-            _ => new MonsterCardResource()
+            _ => throw new ArgumentOutOfRangeException(nameof(cardType), cardType, "Only monster and terrain cards are supported.")
         };
     }
 
@@ -661,7 +603,6 @@ public partial class CardEditorScreen : CardToolScreen
         {
             MonsterCardResource => CardType.Monster,
             TerrainCardResource => CardType.Terrain,
-            KingCardResource => CardType.King,
             _ => CardType.Unknown
         };
     }

@@ -15,11 +15,12 @@ public partial class MainMenu : Control
     private const string SettingsIconPath = "res://assets/icons/actions/settings.svg";
 
     private readonly CardToolService _cardToolService = new();
+    private static string ApplicationVersion => ProjectSettings.GetSetting("application/config/version", "0.0.0").AsString();
 
     public override void _Ready()
     {
         AppLogger.RegisterGlobalHandlers();
-        AppLogger.GuiInfo($"Application starting. Log file: {AppLogger.CurrentUserLogPath} ({AppLogger.CurrentGlobalLogPath})");
+        AppLogger.GuiInfo($"Application v{ApplicationVersion} starting. Log file: {AppLogger.CurrentUserLogPath} ({AppLogger.CurrentGlobalLogPath})");
 
         var defaultResult = _cardToolService.EnsureDefaultResources();
         if (!defaultResult.Success)
@@ -92,7 +93,7 @@ public partial class MainMenu : Control
 
         var title = new Label
         {
-            Text = "Godot Card Generation",
+            Text = "Conquora Card Generation",
             HorizontalAlignment = HorizontalAlignment.Center
         };
         title.AddThemeFontSizeOverride("font_size", 28);
@@ -100,7 +101,7 @@ public partial class MainMenu : Control
 
         var subtitle = new Label
         {
-            Text = "Card studio for cards, decks, preview and export.",
+            Text = "Default edition: Elements: Conquora",
             HorizontalAlignment = HorizontalAlignment.Center,
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
@@ -120,6 +121,20 @@ public partial class MainMenu : Control
         AddMenuButton(grid, "Export", ExportIconPath, ShowExportCenter);
         AddMenuButton(grid, "Settings", SettingsIconPath, ShowSettings);
 
+        var versionLabel = new Label
+        {
+            Text = $"v{ApplicationVersion}",
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            MouseFilter = MouseFilterEnum.Ignore,
+            Modulate = new Color(1, 1, 1, 0.62f)
+        };
+        versionLabel.SetAnchorsPreset(LayoutPreset.BottomRight);
+        versionLabel.OffsetLeft = -160;
+        versionLabel.OffsetTop = -48;
+        versionLabel.OffsetRight = -24;
+        versionLabel.OffsetBottom = -20;
+        AddChild(versionLabel);
     }
 
     private static void AddMenuButton(GridContainer parent, string text, string iconPath, Action? onPressed = null)

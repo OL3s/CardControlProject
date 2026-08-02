@@ -22,7 +22,6 @@ public abstract partial class CardToolScreen : Control
     protected const string EditIconPath = "res://assets/icons/actions/edit.svg";
     protected const string ExportIconPath = "res://assets/icons/actions/export.svg";
     protected const string ImportIconPath = "res://assets/icons/actions/import.svg";
-    protected const string KingTypeIconPath = "res://assets/icons/actions/king_type.svg";
     protected const string MonsterTypeIconPath = "res://assets/icons/actions/monster_type.svg";
     protected const string PreviewIconPath = "res://assets/icons/actions/preview.svg";
     protected const string RefreshIconPath = "res://assets/icons/actions/refresh.svg";

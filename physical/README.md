@@ -1,8 +1,8 @@
 [Back](../README.md)
 
-# Fysisk Versjon
+# Elements: Conquora - Fysisk Versjon
 
-Denne mappen dokumenterer den fysiske bordspillversjonen av spillet.
+Denne mappen dokumenterer den fysiske bordspillversjonen av defaultutgaven **Elements: Conquora**.
 
 ## Status
 
@@ -38,7 +38,7 @@ Den fysiske versjonen skal gjøre spillet mulig å teste og spille rundt et bord
 
 Den fysiske versjonen skal etter hvert dekke:
 
-* Kortark for konge-, terreng- og monsterkort.
+* Kortark for terreng- og monsterkort.
 * Papirark for regler, referanser og playtest.
 * 3D-printbare modeller for bønder, konger, markører og eventuelle spesialkomponenter.
 * Praktiske anbefalinger for kortstørrelse, utskrift, klipping og bordplass.
@@ -56,7 +56,7 @@ Kortgenerering dokumenteres i [`../godot_cardgeneration/`](../godot_cardgenerati
 
 Verktøyet bør støtte:
 
-* Individuelle kortbilder for konge-, terreng- og monsterkort.
+* Individuelle kortbilder for terreng- og monsterkort.
 * Kort som bygges av lag som bakgrunn, ramme, illustrasjon, ikoner, tekst og effekter.
 * Printbare ark som A4 og eventuelt andre A-formater senere.
 * Riktig fysisk kortstørrelse målt i millimeter.

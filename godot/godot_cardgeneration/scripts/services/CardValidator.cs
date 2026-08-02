@@ -17,9 +17,15 @@ public sealed class CardValidator
                 return ToolResult.Fail("A card is missing an id.");
             }
 
-            if (card.CardType == CardType.Unknown)
+            if (card is not MonsterCardResource && card is not TerrainCardResource)
             {
-                return ToolResult.Fail($"Card '{card.Id}' is missing a card type.");
+                return ToolResult.Fail($"Card '{card.Id}' must be a monster or terrain card.");
+            }
+
+            if (card is MonsterCardResource && card.CardType != CardType.Monster
+                || card is TerrainCardResource && card.CardType != CardType.Terrain)
+            {
+                return ToolResult.Fail($"Card '{card.Id}' has a card type that does not match its resource type.");
             }
 
             if (card is MonsterCardResource monster)
@@ -35,10 +41,6 @@ public sealed class CardValidator
                 }
             }
 
-            if (card is KingCardResource { ElementFocus: null } king)
-            {
-                return ToolResult.Fail($"King card '{king.Id}' is missing an element focus.");
-            }
         }
 
         return ToolResult.Ok($"Validated {cards.Count} cards.");

@@ -313,7 +313,6 @@ public partial class SavedCardsScreen : CardToolScreen
         {
             CardType.Monster => MonsterTypeIconPath,
             CardType.Terrain => TerrainTypeIconPath,
-            CardType.King => KingTypeIconPath,
             _ => CardIconPath
         };
     }

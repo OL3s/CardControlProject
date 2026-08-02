@@ -11,6 +11,9 @@ namespace CardGeneration.Services;
 
 public sealed class CardToolService
 {
+    private const string DefaultContentVersion = "terrain_monster_v1";
+    private const string DefaultContentVersionPath = "user://resources/default_content_version.txt";
+
     private readonly CardRepository _cardRepository;
     private readonly DeckRepository _deckRepository;
     private readonly CardValidator _cardValidator;
@@ -197,6 +200,8 @@ public sealed class CardToolService
 
     public ToolResult EnsureDefaultResources()
     {
+        ResetGeneratedDefaultsWhenOutdated();
+
         var existingCards = LoadAllCards()
             .Where(card => !string.IsNullOrWhiteSpace(card.Id))
             .GroupBy(card => card.Id)
@@ -245,6 +250,7 @@ public sealed class CardToolService
 
         if (savedCardCount == 0 && !savedDeck)
         {
+            SaveDefaultContentVersion();
             return ToolResult.Ok("Default resources are available.");
         }
 
@@ -259,7 +265,27 @@ public sealed class CardToolService
             generated.Add($"deck '{defaultDeck.Id}'");
         }
 
+        SaveDefaultContentVersion();
         return ToolResult.Ok($"Generated missing default resources: {string.Join(", ", generated)}.");
+    }
+
+    private void ResetGeneratedDefaultsWhenOutdated()
+    {
+        var versionPath = Godot.ProjectSettings.GlobalizePath(DefaultContentVersionPath);
+        if (File.Exists(versionPath) && File.ReadAllText(versionPath).Trim() == DefaultContentVersion)
+        {
+            return;
+        }
+
+        _cardRepository.DeleteGeneratedDefaultCards();
+        _deckRepository.DeleteGeneratedDefaultDecks();
+    }
+
+    private static void SaveDefaultContentVersion()
+    {
+        var versionPath = Godot.ProjectSettings.GlobalizePath(DefaultContentVersionPath);
+        Directory.CreateDirectory(Path.GetDirectoryName(versionPath)!);
+        File.WriteAllText(versionPath, DefaultContentVersion);
     }
 
     private static bool IsSupportedDpi(int dpi)
@@ -305,6 +331,12 @@ public sealed class CardToolService
 
     public ToolResult SaveCard(CardResource card)
     {
+        var validationResult = _cardValidator.Validate([card]);
+        if (!validationResult.Success)
+        {
+            return validationResult;
+        }
+
         return _cardRepository.SaveCard(card);
     }
 
@@ -341,13 +373,17 @@ public sealed class CardToolService
         }
 
         var card = LoadExternalResource<CardResource>(filePath);
-        return card is null
-            ? ToolResult.Fail($"Could not import card resource from {filePath}.")
-            : _cardRepository.SaveCard(card);
+        return card is null ? ToolResult.Fail($"Could not import card resource from {filePath}.") : SaveCard(card);
     }
 
     public ToolResult ExportCardResource(CardResource card, string filePath)
     {
+        var validationResult = _cardValidator.Validate([card]);
+        if (!validationResult.Success)
+        {
+            return validationResult;
+        }
+
         return SaveResourceFile(card, filePath, card.Id, "card");
     }
 
@@ -384,6 +420,12 @@ public sealed class CardToolService
 
     public ToolResult SaveDeck(CardDeckResource deck)
     {
+        var validationResult = _deckValidator.Validate(deck);
+        if (!validationResult.Success)
+        {
+            return validationResult;
+        }
+
         return _deckRepository.SaveDeck(deck);
     }
 
@@ -414,6 +456,12 @@ public sealed class CardToolService
 
     public ToolResult SaveDeckToExistingResource(CardDeckResource deck, string resourcePath)
     {
+        var validationResult = _deckValidator.Validate(deck);
+        if (!validationResult.Success)
+        {
+            return validationResult;
+        }
+
         return _deckRepository.SaveDeckToExistingResource(deck, resourcePath);
     }
 
@@ -425,13 +473,17 @@ public sealed class CardToolService
         }
 
         var deck = LoadExternalResource<CardDeckResource>(filePath);
-        return deck is null
-            ? ToolResult.Fail($"Could not import deck resource from {filePath}.")
-            : _deckRepository.SaveDeck(deck);
+        return deck is null ? ToolResult.Fail($"Could not import deck resource from {filePath}.") : SaveDeck(deck);
     }
 
     public ToolResult ExportDeckResource(CardDeckResource deck, string filePath)
     {
+        var validationResult = _deckValidator.Validate(deck);
+        if (!validationResult.Success)
+        {
+            return validationResult;
+        }
+
         return SaveResourceFile(deck, filePath, deck.Id, "deck");
     }
 
@@ -676,13 +728,6 @@ public sealed class CardToolService
         {
             cloneTerrain.ProducedResources = sourceTerrain.ProducedResources;
         }
-        else if (source is KingCardResource sourceKing && clone is KingCardResource cloneKing)
-        {
-            cloneKing.ElementFocus = sourceKing.ElementFocus;
-            cloneKing.Health = sourceKing.Health;
-            cloneKing.QuestText = sourceKing.QuestText;
-            cloneKing.QuestRequirements = sourceKing.QuestRequirements;
-        }
 
         return clone;
     }
@@ -694,7 +739,6 @@ public sealed class CardToolService
             Id = source.Id,
             MonsterBackImageTexture = source.MonsterBackImageTexture,
             TerrainBackImageTexture = source.TerrainBackImageTexture,
-            KingBackImageTexture = source.KingBackImageTexture,
             Entries = (source.Entries ?? Array.Empty<CardDeckEntryResource>())
                 .Select(entry => new CardDeckEntryResource
                 {
@@ -709,9 +753,9 @@ public sealed class CardToolService
     {
         return cardType switch
         {
+            CardType.Monster => new MonsterCardResource(),
             CardType.Terrain => new TerrainCardResource(),
-            CardType.King => new KingCardResource(),
-            _ => new MonsterCardResource()
+            _ => throw new ArgumentOutOfRangeException(nameof(cardType), cardType, "Only monster and terrain cards are supported.")
         };
     }
 

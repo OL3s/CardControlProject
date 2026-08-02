@@ -11,7 +11,7 @@ public partial class CardTypePickerScreen : CardToolScreen
 
     public override void _Ready()
     {
-        var content = BuildScreen("New Card", "Choose the card type before editing. Monster, terrain and king cards have different data and setup.");
+        var content = BuildScreen("New Card", "Choose the card type before editing. Monster and terrain cards have different data and setup.");
 
         var choices = new HBoxContainer
         {
@@ -30,13 +30,8 @@ public partial class CardTypePickerScreen : CardToolScreen
         AddCardTypeChoice(
             choices,
             "Terrain",
-            "Map card with element focus and produced resources.",
+            "Map card with produced resources.",
             CardType.Terrain);
-        AddCardTypeChoice(
-            choices,
-            "King",
-            "Player king card with health and quest text.",
-            CardType.King);
     }
 
     private void AddCardTypeChoice(HBoxContainer parent, string title, string description, CardType cardType)
@@ -96,9 +91,9 @@ public partial class CardTypePickerScreen : CardToolScreen
     {
         return cardType switch
         {
+            CardType.Monster => new MonsterCardResource { Id = "monster_back_preview" },
             CardType.Terrain => new TerrainCardResource { Id = "terrain_back_preview" },
-            CardType.King => new KingCardResource { Id = "king_back_preview" },
-            _ => new MonsterCardResource { Id = "monster_back_preview" }
+            _ => throw new ArgumentOutOfRangeException(nameof(cardType), cardType, "Only monster and terrain cards are supported.")
         };
     }
 }

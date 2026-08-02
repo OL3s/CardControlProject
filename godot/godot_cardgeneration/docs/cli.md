@@ -2,7 +2,7 @@
 
 # CLI
 
-Kortverktøyet skal kunne kjøres i Godot headless. CLI brukes for batchjobber, automatisert eksport og kontroll av kortdata uten å åpne GUI. Målet for CLI-paritet er batch/data/export: liste/hente data, import, validering, config og eksport. Full interaktiv kort- og deckredigering kan være GUI-only i denne fasen.
+Conquora Card Generation skal kunne kjøres i Godot headless. CLI brukes for batchjobber, automatisert eksport og kontroll av kortdata uten å åpne GUI. Den innebygde default-preseten er **Elements: Conquora**. Målet for CLI-paritet er batch/data/export: liste/hente data, import, validering, config og eksport. Full interaktiv kort- og deckredigering kan være GUI-only i denne fasen.
 
 ## Grunnform
 
@@ -225,7 +225,7 @@ Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, ved valgt DPI. En deck ka
 
 `--easy-backs` grupperer forsidene etter korttype og fyller alle slots på hvert tilhørende baksideark. Modusen bruker mer papir og blekk, men gjør slot-alignment og `--back-mirror` unødvendig; speiling ignoreres når easy backs er aktivert.
 
-Deck image-export støtter `--backs none`, `--backs used` og `--backs all`. Valgte baksider legges foran kortforsidene i rekkefølgen Monster, Terrain og King.
+Deck image-export støtter `--backs none`, `--backs used` og `--backs all`. Valgte baksider legges foran kortforsidene i rekkefølgen Monster og Terrain.
 
 Når et ark er fullt, lager eksporten automatisk neste nummererte front/back-par. Arkdelingen bruker antall kort som får plass på valgt papir og `ceil(cardCount / cardsPerSheet)`.
 

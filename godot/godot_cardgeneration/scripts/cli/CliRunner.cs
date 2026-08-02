@@ -86,7 +86,7 @@ public sealed class CliRunner
     private static string GetHelpText()
     {
         return """
-        Godot Card Generation CLI
+        Conquora Card Generation CLI
 
         Usage:
           godot --headless --path godot/godot_cardgeneration -- --command <command> [options]
@@ -138,7 +138,7 @@ public sealed class CliRunner
         Deck image backs:
           --backs none  Export fronts only.
           --backs used  Prepend backs for card types present in the deck.
-          --backs all   Prepend Monster, Terrain, and King backs.
+          --backs all   Prepend Monster and Terrain backs.
 
         Print DPI choices:
           150  Draft preview quality.

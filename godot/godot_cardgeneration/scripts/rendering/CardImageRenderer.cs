@@ -11,6 +11,7 @@ public static class CardImageRenderer
 {
     public const int PreviewWidth = 750;
     public const int PreviewHeight = 1050;
+    public static Color PlaceholderColor => new(0.165f, 0.157f, 0.18f);
 
     public static Image Render(CardResource card)
     {
@@ -68,7 +69,7 @@ public static class CardImageRenderer
     private static void DrawCardBase(Image image, CardType cardType)
     {
         FillRoundedRect(image, new Rect2I(20, 20, 710, 1010), 48, new Color(0.02f, 0.02f, 0.025f));
-        FillRoundedRect(image, new Rect2I(38, 38, 674, 974), 40, GetBaseColor(cardType));
+        FillRoundedRect(image, new Rect2I(38, 38, 674, 974), 40, GetFrameColor(cardType));
         FillRoundedRect(image, new Rect2I(58, 58, 634, 934), 30, new Color(0.035f, 0.03f, 0.035f));
     }
 
@@ -82,7 +83,15 @@ public static class CardImageRenderer
                 return;
             }
 
-            DrawPlaceholderCardImage(image, card, cardImageRect);
+            if (string.IsNullOrWhiteSpace(card.CardImageSourcePath))
+            {
+                DrawPlaceholderCardImage(image, cardImageRect);
+            }
+            else
+            {
+                DrawImageNotFoundPlaceholder(image, cardImageRect);
+            }
+
             return;
         }
 
@@ -124,14 +133,14 @@ public static class CardImageRenderer
             return;
         }
 
-        FillRoundedRect(image, backImageRect, 28, GetMutedBaseColor(cardType));
+        FillRoundedRect(image, backImageRect, 28, GetBackFieldColor(cardType));
 
         var center = new Vector2I(375, 525);
-        var accentColor = GetBaseColor(cardType);
+        var accentColor = GetFrameColor(cardType);
         FillRoundedRect(image, new Rect2I(center.X - 170, center.Y - 170, 340, 340), 170, new Color(0.02f, 0.015f, 0.018f, 0.88f));
         FillRoundedRect(image, new Rect2I(center.X - 135, center.Y - 135, 270, 270), 135, new Color(accentColor.R, accentColor.G, accentColor.B, 0.32f));
         FillRoundedRect(image, new Rect2I(center.X - 74, center.Y - 230, 148, 460), 74, new Color(0.04f, 0.018f, 0.02f, 0.92f));
-        FillRoundedRect(image, new Rect2I(center.X - 92, center.Y - 92, 184, 184), 92, GetBaseColor(cardType));
+        FillRoundedRect(image, new Rect2I(center.X - 92, center.Y - 92, 184, 184), 92, GetFrameColor(cardType));
         FillRoundedRect(image, new Rect2I(center.X - 64, center.Y - 64, 128, 128), 64, new Color(0.03f, 0.02f, 0.025f));
     }
 
@@ -144,9 +153,6 @@ public static class CardImageRenderer
                 break;
             case TerrainCardResource terrain:
                 DrawTerrainPanels(image, terrain);
-                break;
-            case KingCardResource king:
-                DrawKingPanels(image, king);
                 break;
         }
     }
@@ -201,15 +207,6 @@ public static class CardImageRenderer
         }
 
         DrawElementIcons(image, amount.Element, count, anchor, iconSize, gap);
-    }
-
-    private static void DrawKingPanels(Image image, KingCardResource card)
-    {
-        DrawElementIcons(image, card.ElementFocus, 1, new Vector2I(96, 88), 72, 0);
-
-        FillRoundedRect(image, new Rect2I(92, 790, 566, 160), 26, new Color(0.035f, 0.028f, 0.045f, 0.78f));
-        FillRoundedRect(image, new Rect2I(118, 820, 60, 60), 30, new Color(0.88f, 0.76f, 0.36f));
-        DrawResourceAmounts(image, card.QuestRequirements, new Vector2I(205, 816), 60, 8);
     }
 
     private static int DrawResourceAmounts(Image image, ResourceAmount[] amounts, Vector2I start, int size, int gap)
@@ -299,11 +296,36 @@ public static class CardImageRenderer
         target.BlendRect(source, new Rect2I(Vector2I.Zero, source.GetSize()), targetRect.Position);
     }
 
-    private static void DrawPlaceholderCardImage(Image image, CardResource card, Rect2I rect)
+    private static void DrawPlaceholderCardImage(Image image, Rect2I rect)
     {
-        FillRoundedRect(image, rect, 28, GetMutedBaseColor(card.CardType));
+        FillRoundedRect(image, rect, 28, PlaceholderColor);
 
         // Intentionally plain: placeholder art must stay local and not imply final illustration.
+    }
+
+    private static void DrawImageNotFoundPlaceholder(Image image, Rect2I rect)
+    {
+        var accent = new Color(0.72f, 0.67f, 0.54f);
+        FillRoundedRect(image, rect, 28, PlaceholderColor);
+
+        var imageFrame = new Rect2I(225, 385, 300, 280);
+        FillRoundedRect(image, imageFrame, 22, accent);
+        FillRoundedRect(image, new Rect2I(239, 399, 272, 252), 16, new Color(0.075f, 0.07f, 0.085f));
+        FillRoundedRect(image, new Rect2I(274, 434, 44, 44), 22, accent);
+        DrawDiagonalBand(image, new Vector2I(260, 425), new Vector2I(490, 625), 16, accent);
+        DrawDiagonalBand(image, new Vector2I(490, 425), new Vector2I(260, 625), 16, accent);
+    }
+
+    private static void DrawDiagonalBand(Image image, Vector2I start, Vector2I end, int thickness, Color color)
+    {
+        var steps = Math.Max(Math.Abs(end.X - start.X), Math.Abs(end.Y - start.Y)) / 4;
+        for (var step = 0; step <= steps; step++)
+        {
+            var progress = steps == 0 ? 0f : (float)step / steps;
+            var x = Mathf.RoundToInt(Mathf.Lerp(start.X, end.X, progress));
+            var y = Mathf.RoundToInt(Mathf.Lerp(start.Y, end.Y, progress));
+            FillRoundedRect(image, new Rect2I(x - thickness / 2, y - thickness / 2, thickness, thickness), thickness / 2, color);
+        }
     }
 
     private static void DrawElementFallback(Image image, ElementType elementType, Rect2I rect)
@@ -353,24 +375,22 @@ public static class CardImageRenderer
         }
     }
 
-    private static Color GetBaseColor(CardType cardType)
+    private static Color GetFrameColor(CardType cardType)
     {
         return cardType switch
         {
-            CardType.Monster => new Color(0.36f, 0.12f, 0.13f),
-            CardType.Terrain => new Color(0.58f, 0.40f, 0.22f),
-            CardType.King => new Color(0.62f, 0.48f, 0.16f),
+            CardType.Monster => new Color(0.30f, 0.24f, 0.26f),
+            CardType.Terrain => new Color(0.42f, 0.34f, 0.24f),
             _ => new Color(0.22f, 0.22f, 0.25f)
         };
     }
 
-    private static Color GetMutedBaseColor(CardType cardType)
+    private static Color GetBackFieldColor(CardType cardType)
     {
         return cardType switch
         {
-            CardType.Monster => new Color(0.13f, 0.07f, 0.075f),
-            CardType.Terrain => new Color(0.12f, 0.19f, 0.10f),
-            CardType.King => new Color(0.16f, 0.10f, 0.22f),
+            CardType.Monster => new Color(0.105f, 0.095f, 0.115f),
+            CardType.Terrain => new Color(0.15f, 0.125f, 0.095f),
             _ => new Color(0.10f, 0.10f, 0.12f)
         };
     }
@@ -381,7 +401,6 @@ public static class CardImageRenderer
         {
             CardType.Monster => "res://assets/card_backs/monster_card_back.svg",
             CardType.Terrain => "res://assets/card_backs/terrain_card_back.svg",
-            CardType.King => "res://assets/card_backs/king_card_back.svg",
             _ => string.Empty
         };
     }

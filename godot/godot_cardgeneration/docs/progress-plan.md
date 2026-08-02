@@ -16,7 +16,7 @@ Mål:
 * Lage grunnleggende resource-modell.
 * Lage service-stubber som GUI og CLI kan dele.
 * Lage CLI-runner som kan kjøres headless.
-* Legge inn placeholder-bilder for konge, terreng og monster.
+* Legge inn placeholder-bilder for terreng og monster.
 * Legge inn egen ikonmappe med første SVG-ikoner for elementer og kortsymboler.
 
 ## Fase 2: Lagring Og Lasting
@@ -29,7 +29,7 @@ Mål:
 * Implementere `DeckRepository`. Gjort for rekursiv lasting og enkel saving.
 * Implementere config-lagring for verktøyinnstillinger. Gjort med `CardToolConfigResource` og `ConfigRepository`.
 * Lage første `ElementResource`-filer. Gjort.
-* Lage første eksempelressurser for monsterkort, terrengkort og kongekort. Monsterkort er gjort; terreng og konge gjenstår.
+* Lage første eksempelressurser for monsterkort og terrengkort. Monsterkort er gjort; terreng gjenstår.
 * Lage første eksempelressurs for kortstokk. Gjort med `sample_monster_deck`.
 
 ## Fase 3: Preview Og Editor
@@ -44,7 +44,7 @@ Mål:
 * Lage første kortopprettingsflyt via `+` i `Cards`. Gjort med korttypevalg før editor, felles kortfelt, type-spesifikke basisfelt, image source path, save og export.
 * Lage første deckopprettingsflyt via `+` i `Decks`. Gjort med valg mellom tom deck og default 52-korts preset, deckfelt, tilgjengelige kort, entries, save og export.
 * Bruke default 52-korts deck som standarddeck i stedet for én-korts placeholder. Gjort med innebygd deck `default_deck` i `CardToolService`, og oppstart genererer også de 52 kortene som `default_`-prefiksede card resources.
-* Legge til type-spesifikke editorfelt for monster, terreng og konge. Delvis gjort for monsterkrav/grunnstyrke, terrengressurser og kongeliv/oppdragstekst.
+* Legge til type-spesifikke editorfelt for monster og terreng. Delvis gjort for monsterkrav/grunnstyrke og terrengressurser.
 
 ## Fase 4: Rendering
 

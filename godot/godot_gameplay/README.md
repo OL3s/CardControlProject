@@ -1,8 +1,8 @@
 [Back](../README.md)
 
-# Godot-versjon
+# Elements: Conquora - Godot-versjon
 
-Denne mappen dokumenterer den digitale versjonen av spillet. Den digitale versjonen skal bygges i Godot med C#.
+Denne mappen dokumenterer den digitale versjonen av defaultutgaven **Elements: Conquora**. Den digitale versjonen skal bygges i Godot med C#.
 
 ## Status
 
