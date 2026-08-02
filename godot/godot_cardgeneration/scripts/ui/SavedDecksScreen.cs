@@ -35,7 +35,7 @@ public partial class SavedDecksScreen : CardToolScreen
         AddIconButton(toolbar, DeckIconPath, "Create deck", ShowCreateDeckMenu);
         AddIconButton(toolbar, ImportIconPath, "Import deck resource", OpenImportDialog);
         AddIconButton(toolbar, CheckIconPath, "Validate decks", ValidateDecks);
-        AddIconButton(toolbar, RefreshIconPath, "Refresh", BuildUi);
+        AddIconButton(toolbar, RefreshIconPath, "Refresh", RefreshDefaultsAndBuildUi);
         AddResourceDialogs();
 
         _createDeckMenu = new PopupMenu();
@@ -83,6 +83,13 @@ public partial class SavedDecksScreen : CardToolScreen
         }
 
         SetStatus($"Loaded {_decks.Count} saved deck(s).");
+    }
+
+    private void RefreshDefaultsAndBuildUi()
+    {
+        var defaultResult = CardToolService.EnsureDefaultResources();
+        BuildUi();
+        SetStatus(defaultResult.Message, !defaultResult.Success);
     }
 
     private void AddDeckRow(VBoxContainer list, CardDeckResource deck)

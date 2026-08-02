@@ -69,8 +69,8 @@ public sealed class CliRunner
             "validate-deck" => _cardToolService.ValidateDeck(options.DeckId),
             "render-card" => _cardToolService.RenderCard(options.CardId, options.OutputPath),
             "export-deck" => _cardToolService.ExportDeck(options.DeckId, options.OutputPath, options.Format, options.Layout, options.Columns, options.Spacing),
-            "export-sheet" => _cardToolService.ExportSheet(options.DeckId, options.OutputPath, options.Paper, options.Dpi, options.BackMirror),
-            "export-diy" => _cardToolService.ExportDiy(options.DeckId, options.OutputPath, options.Paper),
+            "export-sheet" => _cardToolService.ExportSheet(options.DeckId, options.OutputPath, options.Paper, options.Dpi, options.BackMirror, options.IncludeMeasurementGuide),
+            "export-diy" => _cardToolService.ExportDiy(options.DeckId, options.OutputPath, options.Dpi, options.BackMirror, options.IncludeMeasurementGuide),
             "export-showcase" => _cardToolService.ExportShowcase(options.DeckId, options.OutputPath, options.Format),
             _ => ToolResult.Fail($"Unknown command '{options.Command}'. Use --help to list commands.")
         };
@@ -102,7 +102,7 @@ public sealed class CliRunner
           render-card --card <card_id> --output <path>
           export-deck --deck <deck_id> --format png --layout individual --output <path>
           export-sheet --deck <deck_id> --paper a4 --dpi 600 --back-mirror none --output <path>
-          export-diy --deck <deck_id> --paper a4 --output <path>
+          export-diy --deck <deck_id> --dpi 600 --output <path>
           export-showcase --deck <deck_id> --format png --output <path>
 
         Shortcut flags are also supported:
@@ -139,6 +139,9 @@ public sealed class CliRunner
           width  Mirror the whole back sheet left/right.
           height Mirror the whole back sheet top/bottom.
           both   Mirror the whole back sheet both ways.
+
+        Print sheet options:
+          --measurement-guide  Add a 10 cm guide line with 1 cm ticks for print scaling checks.
 
         Config:
           show-config prints the saved defaults.

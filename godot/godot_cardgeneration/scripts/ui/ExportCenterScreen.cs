@@ -23,9 +23,11 @@ public partial class ExportCenterScreen : CardToolScreen
     private OptionButton _paper = null!;
     private OptionButton _dpi = null!;
     private OptionButton _backMirror = null!;
+    private CheckBox _measurementGuide = null!;
     private SpinBox _columns = null!;
     private SpinBox _spacing = null!;
     private Button _exportButton = null!;
+    private Button _showcaseButton = null!;
     private Button _reloadButton = null!;
     private ProgressBar _progressBar = null!;
     private Label _progressLabel = null!;
@@ -75,6 +77,7 @@ public partial class ExportCenterScreen : CardToolScreen
         _exportType = new OptionButton { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         _exportType.AddItem("Deck Images");
         _exportType.AddItem("Print Sheet");
+        _exportType.AddItem("DIY");
         _exportType.AddItem("Showcase");
         content.AddChild(_exportType);
         _exportType.ItemSelected += _ => RefreshVisibleOptions();
@@ -95,12 +98,20 @@ public partial class ExportCenterScreen : CardToolScreen
         SelectOption(_dpi, config.DefaultDpi.ToString());
         _backMirror = AddOptionButton(_printSheetOptions, "Back Mirror", ["none", "width", "height", "both"]);
         SelectOption(_backMirror, config.DefaultBackMirror);
+        _measurementGuide = new CheckBox
+        {
+            Text = "10 cm measurement guide",
+            ButtonPressed = false,
+            TooltipText = "Draws a 10 cm ruler line with 1 cm ticks on print sheets so printed scale can be checked."
+        };
+        _printSheetOptions.AddChild(_measurementGuide);
 
         var buttons = new HBoxContainer();
         buttons.AddThemeConstantOverride("separation", 8);
         content.AddChild(buttons);
         _exportButton = AddIconButton(buttons, ExportIconPath, "Export", ExportSelected);
-        _reloadButton = AddIconButton(buttons, RefreshIconPath, "Reload", BuildUi);
+        _showcaseButton = AddIconButton(buttons, PreviewIconPath, "Show print preview", ShowPrintPreview);
+        _reloadButton = AddIconButton(buttons, RefreshIconPath, "Reload", RefreshDefaultsAndBuildUi);
 
         _progressBar = new ProgressBar
         {
@@ -122,6 +133,13 @@ public partial class ExportCenterScreen : CardToolScreen
 
         RefreshVisibleOptions();
         SetStatus($"Ready to export {_cards.Count} card(s) and {_decks.Count} deck(s).");
+    }
+
+    private void RefreshDefaultsAndBuildUi()
+    {
+        var defaultResult = CardToolService.EnsureDefaultResources();
+        BuildUi();
+        SetStatus(defaultResult.Message, !defaultResult.Success);
     }
 
     private void AddOutputPathDialog(string defaultOutputPath)
@@ -249,11 +267,12 @@ public partial class ExportCenterScreen : CardToolScreen
 
         var exportType = GetSelectedText(_exportType);
         var isPrintSheet = exportType == "Print Sheet";
+        var isDiy = exportType == "DIY";
         var isShowcase = exportType == "Showcase";
-        _deckImageOptions.Visible = !isPrintSheet && !isShowcase;
-        _printSheetOptions.Visible = isPrintSheet;
+        _deckImageOptions.Visible = !isPrintSheet && !isDiy && !isShowcase;
+        _printSheetOptions.Visible = isPrintSheet || isDiy;
 
-        if (isPrintSheet || isShowcase)
+        if (isPrintSheet || isDiy || isShowcase)
         {
             return;
         }
@@ -422,8 +441,18 @@ public partial class ExportCenterScreen : CardToolScreen
             var paper = GetSelectedText(_paper);
             var dpi = int.Parse(GetSelectedText(_dpi));
             var backMirror = GetSelectedText(_backMirror);
+            var includeMeasurementGuide = _measurementGuide.ButtonPressed;
             var sheetOutputPath = ResolveMultiOutputPath(outputPath, $"{selectedDeck.Id}_{paper}_{dpi}dpi_sheets");
-            return () => CardToolService.ExportSheet(selectedDeck, sheetOutputPath, paper, dpi, backMirror, progress);
+            return () => CardToolService.ExportSheet(selectedDeck, sheetOutputPath, paper, dpi, backMirror, includeMeasurementGuide, progress);
+        }
+
+        if (exportType == "DIY")
+        {
+            var dpi = int.Parse(GetSelectedText(_dpi));
+            var backMirror = GetSelectedText(_backMirror);
+            var includeMeasurementGuide = _measurementGuide.ButtonPressed;
+            var diyOutputPath = ResolveMultiOutputPath(outputPath, $"{selectedDeck.Id}_diy_{dpi}dpi");
+            return () => CardToolService.ExportDiy(selectedDeck, diyOutputPath, dpi, backMirror, includeMeasurementGuide, progress);
         }
 
         if (exportType == "Showcase")
@@ -438,6 +467,121 @@ public partial class ExportCenterScreen : CardToolScreen
             ? ResolveMultiOutputPath(outputPath, $"{selectedDeck.Id}_individual")
             : ResolveSingleOutputPath(outputPath);
         return () => CardToolService.ExportDeck(selectedDeck, deckOutputPath, "png", layout, columns, spacing, progress);
+    }
+
+    private void ShowPrintPreview()
+    {
+        var previewDeck = GetSelectedPreviewDeck();
+        if (previewDeck is null)
+        {
+            return;
+        }
+
+        var paper = GetSelectedText(_paper);
+        var dpi = int.Parse(GetSelectedText(_dpi));
+        var backMirror = GetSelectedText(_backMirror);
+        var includeMeasurementGuide = _measurementGuide.ButtonPressed;
+        var frontImage = CardToolService.RenderSheetPreview(previewDeck, paper, dpi, backMirror, includeMeasurementGuide, showBack: false, out var frontError);
+        if (frontImage is null)
+        {
+            SetStatus(frontError, true);
+            return;
+        }
+
+        var backImage = CardToolService.RenderSheetPreview(previewDeck, paper, dpi, backMirror, includeMeasurementGuide, showBack: true, out var backError);
+        if (backImage is null)
+        {
+            frontImage.Dispose();
+            SetStatus(backError, true);
+            return;
+        }
+
+        ShowPrintPreviewPopup(previewDeck.Id, paper, dpi, frontImage, backImage);
+        SetStatus($"Showing {paper.ToUpperInvariant()} print preview for '{previewDeck.Id}'.");
+    }
+
+    private CardDeckResource? GetSelectedPreviewDeck()
+    {
+        if (GetSelectedText(_targetType) == "Card")
+        {
+            if (_card.Selected < 0 || _card.Selected >= _cards.Count)
+            {
+                SetStatus("Select a card before previewing print output.", true);
+                return null;
+            }
+
+            var card = _cards[_card.Selected];
+            return new CardDeckResource
+            {
+                Id = card.Id,
+                Entries = [new CardDeckEntryResource { Card = card, Count = 1 }]
+            };
+        }
+
+        if (_deck.Selected < 0 || _deck.Selected >= _decks.Count)
+        {
+            SetStatus("Select a deck before previewing print output.", true);
+            return null;
+        }
+
+        return _decks[_deck.Selected];
+    }
+
+    private void ShowPrintPreviewPopup(string targetId, string paper, int dpi, Image frontImage, Image backImage)
+    {
+        var popup = new PopupPanel
+        {
+            Title = $"Print preview: {targetId} ({paper.ToUpperInvariant()}, {dpi} DPI layout)"
+        };
+        AddChild(popup);
+
+        var margin = new MarginContainer();
+        margin.AddThemeConstantOverride("margin_left", 14);
+        margin.AddThemeConstantOverride("margin_right", 14);
+        margin.AddThemeConstantOverride("margin_top", 14);
+        margin.AddThemeConstantOverride("margin_bottom", 14);
+        popup.AddChild(margin);
+
+        var scroll = new ScrollContainer
+        {
+            CustomMinimumSize = new Vector2(980, 680),
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsVertical = SizeFlags.ExpandFill
+        };
+        margin.AddChild(scroll);
+
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 16);
+        scroll.AddChild(row);
+
+        AddSheetPreview(row, "Front sheet", frontImage);
+        AddSheetPreview(row, "Back sheet", backImage);
+
+        popup.PopupCentered(new Vector2I(1060, 760));
+        popup.PopupHide += popup.QueueFree;
+    }
+
+    private static void AddSheetPreview(Container parent, string title, Image image)
+    {
+        var column = new VBoxContainer();
+        column.AddThemeConstantOverride("separation", 8);
+        parent.AddChild(column);
+
+        column.AddChild(new Label
+        {
+            Text = title,
+            HorizontalAlignment = HorizontalAlignment.Center
+        });
+
+        var texture = ImageTexture.CreateFromImage(image);
+        image.Dispose();
+        column.AddChild(new TextureRect
+        {
+            Texture = texture,
+            CustomMinimumSize = new Vector2(460, 650),
+            ExpandMode = TextureRect.ExpandModeEnum.FitWidthProportional,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered
+        });
     }
 
     private void ReportExportProgress(ExportProgress progress)
@@ -472,7 +616,7 @@ public partial class ExportCenterScreen : CardToolScreen
             return ExportOutputMode.SaveFile;
         }
 
-        if (GetSelectedText(_exportType) == "Print Sheet")
+        if (GetSelectedText(_exportType) is "Print Sheet" or "DIY")
         {
             return ExportOutputMode.Folder;
         }
@@ -533,6 +677,7 @@ public partial class ExportCenterScreen : CardToolScreen
     private void SetExportControlsDisabled(bool disabled)
     {
         _exportButton.Disabled = disabled;
+        _showcaseButton.Disabled = disabled;
         _reloadButton.Disabled = disabled;
         _targetType.Disabled = disabled;
         _card.Disabled = disabled;
@@ -542,6 +687,7 @@ public partial class ExportCenterScreen : CardToolScreen
         _paper.Disabled = disabled;
         _dpi.Disabled = disabled;
         _backMirror.Disabled = disabled;
+        _measurementGuide.Disabled = disabled;
         _columns.Editable = !disabled;
         _spacing.Editable = !disabled;
     }

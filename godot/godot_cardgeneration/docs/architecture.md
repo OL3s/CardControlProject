@@ -89,7 +89,7 @@ Repository-implementasjonen kan lese `.tres` og `.res` rekursivt fra:
 
 Cards/Decks-listene viser både default resources og `user://resources/...`. Ved oppstart sørger `CardToolService.EnsureDefaultResources()` for at decken `default_deck` og alle kortene fra den finnes. Manglende defaultkort lagres under `user://resources/cards/default/...` med `default_`-prefix, og manglende defaultdeck lagres under `user://resources/decks/default/default_deck.tres`.
 
-Default resources er read-only. Repositoryene nekter å overskrive eller slette `res://` resources og genererte `user://resources/.../default` resources. Endringer i defaults må lagres via `Save as new` eller duplicate, som skriver til vanlige user resource-mapper.
+Packaged default resources under `res://` er read-only. Repositoryene nekter å overskrive `res://` resources og genererte `user://resources/.../default` resources. Genererte defaultkort/decks under `user://resources/.../default` kan slettes og lages på nytt ved oppstart hvis de mangler. Endringer i defaults må lagres via `Save as new` eller duplicate, som skriver til vanlige user resource-mapper.
 
 `ConfigRepository` laster og lagrer `res://resources/config/card_tool_config.tres`.
 
@@ -105,7 +105,9 @@ Første `CardRenderService` renderer PNG direkte fra `CardResource`.
 * `grid`: ett samlet PNG-bilde med kortene i rutenett.
 * `strip`: ett langt vertikalt PNG-bilde.
 
-`SheetExportService` støtter A4 og A3 som printark. Den lager nummererte front- og baksideark. Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, beregnet fra valgt DPI. Baksidearket kan speiles langs width, height eller begge etter at baksidene er plassert.
+`SheetExportService` støtter A4 og A3 som printark. Den lager nummererte front- og baksideark. Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, beregnet fra valgt DPI. Baksidearket kan speiles langs width, height eller begge etter at baksidene er plassert. Printark kan også reservere en bunnstripe med en `10 cm` målelinje med centimeter-ticks for utskriftsskalering.
+
+`DiyExportService` bruker samme printarkexport og lager både A4- og A3-varianter i egne undermapper.
 
 `DefaultDeckFactory` lager deck-startpunkter for GUI: tom deck og default 52-korts deck basert på tabellene i `shared/docs/king-cards.md`, `shared/docs/terrain-cards.md` og `shared/docs/monster-cards.md`. Factoryen bruker eksisterende lagrede kortresources når `default_`-ID finnes, og lager ellers preset-kort med `default_`-prefix. De manglende preset-kortene lagres som card resources før decken `default_deck` lagres.
 
@@ -168,7 +170,7 @@ Implementerte skjermer:
 * `CardTypePickerScreen`: velger korttype før nytt kort åpnes i editor.
 * `CardEditorScreen`: lager eller redigerer kort med ID, image source path, front/back preview, fullscreen preview, save og PNG-export. Korttypen er låst etter typevalg. Bare kongekort har eksplisitt elementvalg.
 * `DeckEditorScreen`: lager eller redigerer kortstokk med deck-ID, tilgjengelige kort, entries med count, `Save` og `Save New`. Tilgjengelige kort vises som horisontalt scrollbare preview-fliser med kompakte ikonknapper for add og select. Deckinnhold vises som preview-fliser med count-badge og ikonknapper for delete, duplicate og select. Multiselect brukes for batch add/remove. Skjermen eksporterer ikke.
-* `ExportCenterScreen`: eneste eksportflate. Den eksporterer enten ett kort som PNG eller en deck som deck images, showcase eller print sheets.
+* `ExportCenterScreen`: eneste eksportflate. Den eksporterer enten ett kort som PNG eller en deck som deck images, showcase, print sheets eller DIY print sheets. Den har også en showcase-bunnknapp som åpner print-preview av valgt card/deck med gjeldende printvalg.
 
 Første editor dekker fellesfeltene i kortmodellen. Type-spesifikke felt som monsterkrav, terrengproduksjon og kongeoppdrag kan legges inn senere uten å endre service-regelen.
 

@@ -504,7 +504,7 @@ public sealed class CardToolService
         return _deckExportService.ExportDeck(deck, outputPath, format, layout, columns, spacing, progress);
     }
 
-    public ToolResult ExportSheet(string? deckId, string outputPath, string paper, int dpi, string backMirror = "none")
+    public ToolResult ExportSheet(string? deckId, string outputPath, string paper, int dpi, string backMirror = "none", bool includeMeasurementGuide = false)
     {
         if (string.IsNullOrWhiteSpace(deckId))
         {
@@ -514,15 +514,20 @@ public sealed class CardToolService
         var deck = LoadDeckById(deckId);
         return deck is null
             ? ToolResult.Fail($"Deck '{deckId}' was not found.")
-            : _sheetExportService.ExportSheet(deck, outputPath, paper, dpi, backMirror);
+            : _sheetExportService.ExportSheet(deck, outputPath, paper, dpi, backMirror, includeMeasurementGuide);
     }
 
-    public ToolResult ExportSheet(CardDeckResource deck, string outputPath, string paper, int dpi, string backMirror = "none", Action<ExportProgress>? progress = null)
+    public ToolResult ExportSheet(CardDeckResource deck, string outputPath, string paper, int dpi, string backMirror = "none", bool includeMeasurementGuide = false, Action<ExportProgress>? progress = null)
     {
-        return _sheetExportService.ExportSheet(deck, outputPath, paper, dpi, backMirror, progress);
+        return _sheetExportService.ExportSheet(deck, outputPath, paper, dpi, backMirror, includeMeasurementGuide, progress);
     }
 
-    public ToolResult ExportDiy(string? deckId, string outputPath, string paper)
+    public Godot.Image? RenderSheetPreview(CardDeckResource deck, string paper, int dpi, string backMirror, bool includeMeasurementGuide, bool showBack, out string errorMessage)
+    {
+        return _sheetExportService.RenderSheetPreview(deck, paper, dpi, backMirror, includeMeasurementGuide, showBack, out errorMessage);
+    }
+
+    public ToolResult ExportDiy(string? deckId, string outputPath, int dpi, string backMirror = "none", bool includeMeasurementGuide = false)
     {
         if (string.IsNullOrWhiteSpace(deckId))
         {
@@ -532,7 +537,12 @@ public sealed class CardToolService
         var deck = LoadDeckById(deckId);
         return deck is null
             ? ToolResult.Fail($"Deck '{deckId}' was not found.")
-            : _diyExportService.ExportDiy(deck, outputPath, paper);
+            : _diyExportService.ExportDiy(deck, outputPath, dpi, backMirror, includeMeasurementGuide);
+    }
+
+    public ToolResult ExportDiy(CardDeckResource deck, string outputPath, int dpi, string backMirror = "none", bool includeMeasurementGuide = false, Action<ExportProgress>? progress = null)
+    {
+        return _diyExportService.ExportDiy(deck, outputPath, dpi, backMirror, includeMeasurementGuide, progress);
     }
 
     public ToolResult ExportShowcase(string? deckId, string outputPath, string format)
@@ -562,7 +572,7 @@ public sealed class CardToolService
         var cardRenderService = new CardRenderService();
         var deckExportService = new DeckExportService(cardRenderService);
         var sheetExportService = new SheetExportService();
-        var diyExportService = new DiyExportService();
+        var diyExportService = new DiyExportService(sheetExportService);
         var configRepository = new ConfigRepository();
 
         return new DefaultServices(

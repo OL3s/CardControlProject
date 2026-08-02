@@ -16,6 +16,7 @@ public sealed class CliOptions
     public string Paper { get; private set; } = "a4";
     public int Dpi { get; private set; } = 600;
     public string BackMirror { get; private set; } = "none";
+    public bool IncludeMeasurementGuide { get; private set; }
     public string Layout { get; private set; } = "individual";
     public int Columns { get; private set; }
     public int Spacing { get; private set; } = 24;
@@ -85,6 +86,9 @@ public sealed class CliOptions
                 case "--back-mirror":
                     options.BackMirror = ReadValue(args, ref index, "--back-mirror");
                     options.HasBackMirror = true;
+                    break;
+                case "--measurement-guide":
+                    options.IncludeMeasurementGuide = true;
                     break;
                 case "--layout":
                     options.Layout = ReadValue(args, ref index, "--layout");

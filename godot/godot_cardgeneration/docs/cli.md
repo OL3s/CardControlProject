@@ -52,16 +52,16 @@ Status:
 * `reset-content`: implementert for å slette lagrede kort/decks og regenerere defaultkort og decken `default_deck`.
 * `import-card`: implementert for `.tres` kortresource.
 * `import-deck`: implementert for `.tres` deckresource.
-* `delete-card`: implementert for vanlige user card resources; read-only defaults kan ikke slettes.
+* `delete-card`: implementert for vanlige user card resources og genererte defaultkort; packaged `res://` defaults kan ikke slettes.
 * `duplicate-card`: implementert for å kopiere et kort til en vanlig user card resource.
-* `delete-deck`: implementert for vanlige user deck resources; read-only defaults kan ikke slettes.
+* `delete-deck`: implementert for vanlige user deck resources og genererte defaultdecks; packaged `res://` defaults kan ikke slettes.
 * `duplicate-deck`: implementert for å kopiere en deck til en vanlig user deck resource.
 * `validate-cards`: implementert.
 * `validate-deck`: implementert for lagrede og innebygde deckresources.
 * `render-card`: implementert for PNG.
 * `export-deck`: implementert for PNG-layoutene `individual`, `grid` og `strip`.
-* `export-sheet`: implementert for A4 og A3 PNG-printark med front/back, valgbar DPI og valgfri bakside-speiling.
-* `export-diy`: stub.
+* `export-sheet`: implementert for A4 og A3 PNG-printark med front/back, valgbar DPI, valgfri bakside-speiling og valgfri 10 cm målelinje.
+* `export-diy`: implementert som A4- og A3-printark i egne undermapper med samme printvalg.
 * `export-showcase`: implementert som grid-output og delt med GUI Showcase-export.
 
 ## Eksempler
@@ -186,6 +186,12 @@ Speile baksidearket venstre/høyre for tosidig print:
 godot --headless --path godot/godot_cardgeneration -- --command export-sheet --deck monster_cards --paper a4 --dpi 600 --back-mirror width --output output/sheets
 ```
 
+Legge til 10 cm målelinje for å sjekke printskalering:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command export-sheet --deck monster_cards --paper a4 --dpi 600 --measurement-guide --output output/sheets
+```
+
 A3 bruker samme kommando med `--paper a3`:
 
 ```sh
@@ -215,14 +221,14 @@ monster_cards_a4_600dpi_front_002.png
 monster_cards_a4_600dpi_back_002.png
 ```
 
-Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, ved valgt DPI. En deck kan inneholde flere korttyper, så baksiden renderes per korttype for hvert kort. Front- og baksideark bruker samme slot-beregning; speiling skjer på hele baksidearket etter at alle baksider er plassert.
+Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, ved valgt DPI. En deck kan inneholde flere korttyper, så baksiden renderes per korttype for hvert kort. Front- og baksideark bruker samme slot-beregning; speiling skjer på hele baksidearket etter at alle baksider er plassert. `--measurement-guide` reserverer en liten bunnstripe og tegner en 10 cm linje med centimeter-ticks nederst på arkene.
 
 Når et ark er fullt, lager eksporten automatisk neste nummererte front/back-par. Arkdelingen bruker antall kort som får plass på valgt papir og `ceil(cardCount / cardsPerSheet)`.
 
-Eksportere DIY-pakke:
+Eksportere DIY-pakke som A4- og A3-printark:
 
 ```sh
-godot --headless --path godot/godot_cardgeneration -- --command export-diy --deck monster_cards --paper a4 --output output/diy
+godot --headless --path godot/godot_cardgeneration -- --command export-diy --deck monster_cards --dpi 600 --output output/diy
 ```
 
 Eksportere showcase:
@@ -310,6 +316,6 @@ GUI Settings-panelet bruker samme config-resource. Export-skjermen bruker disse 
 
 Cards/Decks-listene viser både default resources under `res://resources/...` og brukerbiblioteket under `user://resources/...`. User resources overstyrer default resources med samme ID. Ved oppstart genereres manglende defaultkort til `user://resources/cards/default/...` med `default_`-prefix, og decken `default_deck` genereres til `user://resources/decks/default/default_deck.tres` hvis den mangler fra både default- og brukerressurser.
 
-Default resources er read-only også i CLI. `delete-card`/`delete-deck` nekter defaults, og endringer skal starte med `duplicate-card`/`duplicate-deck` eller GUI `Save as new`.
+Packaged `res://` resources er read-only også i CLI. Genererte defaultkort/decks under `user://resources/.../default` kan slettes og lages på nytt ved oppstart hvis de mangler. Endringer i defaults skal starte med `duplicate-card`/`duplicate-deck` eller GUI `Save as new`.
 
 Default deck er `default_deck`. Den er en innebygd 52-korts preset fra `DefaultDeckFactory`, og de 52 kortene fra decken blir også tilgjengelige som card resources med `default_`-prefix ved oppstart.

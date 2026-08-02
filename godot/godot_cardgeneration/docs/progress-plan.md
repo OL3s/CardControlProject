@@ -87,8 +87,8 @@ Mål:
 * Støtte normale DPI-valg for printark. Gjort for `150`, `300`, `600` og `1200`.
 * Støtte valgfri speiling av baksideark for tosidig print. Gjort med `none`, `width`, `height` og `both`.
 * Lage nye nummererte ark automatisk når arket er fullt. Gjort.
-* Legge inn safe margin, bleed og kuttemerker. Gjenstår.
-* Lage DIY-eksport med kortbilder, printark og måleinformasjon. Gjenstår.
+* Legge inn safe margin, bleed og kuttemerker. Gjenstår, men valgfri 10 cm målelinje for printskalering er gjort.
+* Lage DIY-eksport med kortbilder, printark og måleinformasjon. Delvis gjort som A4- og A3-printark basert på samme printarkexport med valgfri målelinje.
 
 ## Fase 7: Dataintegrasjon
 
@@ -118,7 +118,7 @@ Mål:
 * La CLI bruke configverdier som defaults når flagg ikke oppgis. Gjort.
 * La CLI endre config uten å åpne GUI. Gjort med `set-config`.
 * La CLI nullstille config uten å åpne GUI. Gjort med `reset-config`.
-* La GUI/CLI slette lagrede kort/decks og generere default deck. Gjort med `reset-content` og Settings-handling. Default resources er read-only, og GUI/CLI har delete/duplicate for vanlige user resources.
+* La GUI/CLI slette lagrede kort/decks og generere default deck. Gjort med `reset-content` og Settings-handling. Genererte defaultkort/decks kan slettes og kommer tilbake ved oppstart hvis de mangler; packaged `res://` resources er fortsatt read-only.
 * Lage GUI for å redigere samme config. Gjort med `SettingsPanel`.
 * Gjøre Settings-panelet scrollbart for små vinduer. Gjort.
 * Koble Settings-panelet til endelige export-/preview-skjermer når de finnes. Delvis gjort ved at kort-, deck- og exportskjermene leser config-defaults via `CardToolService`.

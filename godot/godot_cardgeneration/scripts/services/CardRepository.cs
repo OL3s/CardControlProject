@@ -105,11 +105,13 @@ public sealed class CardRepository
             return ToolResult.Fail("Missing card id. Use --card <card_id>.");
         }
 
-        var card = LoadSavedUserCards().FirstOrDefault(savedCard => savedCard.Id == cardId);
+        var card = LoadSavedUserCards()
+            .Concat(LoadGeneratedDefaultCards())
+            .FirstOrDefault(savedCard => savedCard.Id == cardId);
         if (card is null)
         {
-            return LoadAllCards().Any(existingCard => existingCard.Id == cardId)
-                ? ToolResult.Fail($"Card '{cardId}' is a read-only default resource. Duplicate it or save as new before deleting.")
+            return LoadDefaultCards().Any(existingCard => existingCard.Id == cardId)
+                ? ToolResult.Fail($"Card '{cardId}' is a packaged default resource and cannot be deleted.")
                 : ToolResult.Fail($"Card '{cardId}' was not found.");
         }
 
@@ -141,9 +143,9 @@ public sealed class CardRepository
 
     private static ToolResult DeleteResourceFile(string resourcePath, string resourceType, string id)
     {
-        if (string.IsNullOrWhiteSpace(resourcePath) || IsDefaultResourcePath(resourcePath))
+        if (string.IsNullOrWhiteSpace(resourcePath) || IsPackagedResourcePath(resourcePath))
         {
-            return ToolResult.Fail($"{resourceType} '{id}' is a read-only default resource.");
+            return ToolResult.Fail($"{resourceType} '{id}' is a packaged default resource and cannot be deleted.");
         }
 
         var globalPath = ProjectSettings.GlobalizePath(resourcePath);
@@ -187,5 +189,10 @@ public sealed class CardRepository
     {
         return resourcePath.StartsWith("res://", System.StringComparison.OrdinalIgnoreCase)
             || IsUnderRoot(resourcePath, UserDefaultCardsRootPath);
+    }
+
+    private static bool IsPackagedResourcePath(string resourcePath)
+    {
+        return resourcePath.StartsWith("res://", System.StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -39,7 +39,7 @@ public partial class SavedCardsScreen : CardToolScreen
         AddIconButton(toolbar, CardIconPath, "Create card", () => NewCardRequested?.Invoke());
         AddIconButton(toolbar, ImportIconPath, "Import card resource", OpenImportDialog);
         AddIconButton(toolbar, CheckIconPath, "Validate cards", ValidateCards);
-        AddIconButton(toolbar, RefreshIconPath, "Refresh", BuildUi);
+        AddIconButton(toolbar, RefreshIconPath, "Refresh", RefreshDefaultsAndBuildUi);
         AddResourceDialogs();
 
         var body = new HBoxContainer
@@ -109,6 +109,13 @@ public partial class SavedCardsScreen : CardToolScreen
 
         ShowCard(_cards[0]);
         SetStatus($"Loaded {_cards.Count} saved card(s).");
+    }
+
+    private void RefreshDefaultsAndBuildUi()
+    {
+        var defaultResult = CardToolService.EnsureDefaultResources();
+        BuildUi();
+        SetStatus(defaultResult.Message, !defaultResult.Success);
     }
 
     private void AddCardRow(VBoxContainer list, CardResource card)

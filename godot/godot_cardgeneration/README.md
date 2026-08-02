@@ -37,7 +37,7 @@ Første GUI-retning bruker en smal hovedmeny:
 
 Default deck er `default_deck`. Den lages av `DefaultDeckFactory` fra `shared/docs`. Ved oppstart lagres manglende defaultkort med `default_`-prefix til `user://resources/cards/default/...` og manglende defaultdeck til `user://resources/decks/default/default_deck.tres`, slik at de kommer tilbake etter sletting og ny appstart. `sample_monster_deck` er bare en liten smoke-test resource.
 
-Default resources er read-only i appen. De kan åpnes i editoren for inspeksjon og som utgangspunkt, men `Save` nekter å overskrive dem. Bruk `Save as new` eller duplicate for å lage en vanlig user resource før endringer lagres eller slettes.
+Packaged default resources under `res://` er read-only i appen. Genererte defaultkort/decks under `user://resources/.../default` kan slettes, og manglende defaultkort/decks lages på nytt ved neste oppstart. Defaults kan åpnes i editoren for inspeksjon og som utgangspunkt, men `Save` nekter å overskrive dem. Bruk `Save as new` eller duplicate for å lage en vanlig user resource før endringer lagres.
 
 Hovedmenyen skal ikke vise et tilfeldig kortpreview og skal ikke ha egne `New Card`/`New Deck` valg. Kortpreview hører hjemme i `Cards`, `Decks`, editor- og eksportskjermene. Preview viser både front og bakside der det er relevant, og dobbelklikk på preview åpner større visning.
 
@@ -45,7 +45,7 @@ Korteditoren støtter felles kortfelt, image source path, preview, lagring og PN
 
 Deckeditoren støtter deck-ID, tilgjengelige kort på tvers av korttyper, deck entries med antall, `Save` og `Save New`. Venstre side viser lagrede kort som preview-fliser i en horisontal scrollrad med ikonknapper for å legge til én kopi eller velge flere kort. Høyre side viser deckinnhold som preview-fliser med ikonknapper for slett, dupliser og multiselect. Eksport gjøres bare fra `Export`-skjermen. En deck er et ferdig produkt med alle relevante korttyper, ikke en separat monster-/terreng-/kongebunke.
 
-`Export` er eneste eksportflate. Den kan eksportere ett lagret kort som PNG, eller en lagret kortstokk som vanlige deck images, showcase eller printarkexport med A4/A3, DPI og bakside-speiling. Verdiene starter fra lagrede defaults, men kan endres direkte i Export for den ene eksporten uten å lagres som nye defaults.
+`Export` er eneste eksportflate. Den kan eksportere ett lagret kort som PNG, eller en lagret kortstokk som vanlige deck images, showcase, printarkexport med A4/A3, eller DIY-export som lager både A4- og A3-printark. Showcase som export type lager deck showcase-output. Showcase-bunnknappen viser en print-preview av valgt card/deck med gjeldende papir-, DPI-, bakside- og målelinjevalg. Verdiene starter fra lagrede defaults, men kan endres direkte i Export for den ene eksporten uten å lagres som nye defaults.
 
 Export-knappen åpner Godots file dialog i valgt/default exportmappe. Cancel avbryter eksporten, og Save eller mappevalg starter eksporten.
 
@@ -124,6 +124,8 @@ Baksidearket kan eksporteres med speiling hvis skriveroppsettet trenger det for 
 * `both`: speil begge veier.
 
 Front- og baksideark bruker samme kortstørrelse og slot-beregning. For best fysisk treff må utskrift normalt kjøres uten skalering, og skriveren må ha god nok mating/duplex-presisjon.
+
+Printark kan få en valgfri `10 cm` målelinje med `1 cm`-ticks nederst på arket. Den brukes til å sjekke med linjal etter utskrift at skriver/PDF-viewer ikke har skalert arket feil.
 
 Verktøyet bør støtte:
 
@@ -205,18 +207,19 @@ Første implementerte CLI-funksjoner:
 * `reset-content` sletter lagrede kort- og deckresources og regenererer defaultkort og decken `default_deck`.
 * `import-card` importerer en ekstern `.tres` kortresource til brukerressursene.
 * `import-deck` importerer en ekstern `.tres` deckresource til brukerressursene.
-* `delete-card` sletter en vanlig user card resource, men nekter read-only defaults.
+* `delete-card` sletter vanlige user card resources og genererte defaultkort; packaged `res://` defaults kan ikke slettes.
 * `duplicate-card` kopierer et kort til en vanlig user card resource.
-* `delete-deck` sletter en vanlig user deck resource, men nekter read-only defaults.
+* `delete-deck` sletter vanlige user deck resources og genererte defaultdecks; packaged `res://` defaults kan ikke slettes.
 * `duplicate-deck` kopierer en deck til en vanlig user deck resource.
 * `validate-cards` validerer lagrede kortresources.
 * `validate-deck` validerer en lagret eller innebygd deck.
 * `render-card` renderer ett kort til PNG.
 * `export-deck` renderer en kortstokk til PNG som enkeltbilder, samlet grid eller lang strip.
-* `export-sheet` renderer A4/A3-printark med egne front- og baksideark, valgbar DPI og valgfri bakside-speiling.
+* `export-sheet` renderer A4/A3-printark med egne front- og baksideark, valgbar DPI, valgfri bakside-speiling og valgfri 10 cm målelinje.
+* `export-diy` renderer både A4- og A3-printark for en kortstokk, med samme DPI, bakside-speiling og målelinjevalg.
 * `export-showcase` renderer en showcase-grid for en kortstokk.
 
-`export-diy` finnes foreløpig som service-/CLI-stub. `export-showcase` bruker foreløpig samme grid-output som `export-deck --layout grid`.
+`export-showcase` bruker foreløpig samme grid-output som `export-deck --layout grid`.
 
 Langvarige innstillinger ligger i `resources/config/card_tool_config.tres`. GUI bruker denne configen til å fylle inn startverdier når Export åpnes, men valg gjort i Export er bare for den ene eksporten. CLI bruker configen som defaults når flagg ikke oppgis. Dette gjør repeterende kommandoer korte, for eksempel kan `--command export-sheet` bruke lagret deck, output, papir, DPI og layout. Den samme configen redigeres i GUI under `Settings`.
 

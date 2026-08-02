@@ -137,11 +137,13 @@ public sealed class DeckRepository
             return ToolResult.Fail("Missing deck id. Use --deck <deck_id>.");
         }
 
-        var deck = LoadSavedUserDecks().FirstOrDefault(savedDeck => savedDeck.Id == deckId);
+        var deck = LoadSavedUserDecks()
+            .Concat(LoadGeneratedDefaultDecks())
+            .FirstOrDefault(savedDeck => savedDeck.Id == deckId);
         if (deck is null)
         {
-            return LoadAllDecks().Any(existingDeck => existingDeck.Id == deckId)
-                ? ToolResult.Fail($"Deck '{deckId}' is a read-only default resource. Duplicate it or save as new before deleting.")
+            return LoadDefaultDecks().Any(existingDeck => existingDeck.Id == deckId)
+                ? ToolResult.Fail($"Deck '{deckId}' is a packaged default resource and cannot be deleted.")
                 : ToolResult.Fail($"Deck '{deckId}' was not found.");
         }
 
@@ -173,9 +175,9 @@ public sealed class DeckRepository
 
     private static ToolResult DeleteResourceFile(string resourcePath, string resourceType, string id)
     {
-        if (string.IsNullOrWhiteSpace(resourcePath) || IsDefaultResourcePath(resourcePath))
+        if (string.IsNullOrWhiteSpace(resourcePath) || IsPackagedResourcePath(resourcePath))
         {
-            return ToolResult.Fail($"{resourceType} '{id}' is a read-only default resource.");
+            return ToolResult.Fail($"{resourceType} '{id}' is a packaged default resource and cannot be deleted.");
         }
 
         var globalPath = ProjectSettings.GlobalizePath(resourcePath);
@@ -243,5 +245,10 @@ public sealed class DeckRepository
     {
         return resourcePath.StartsWith("res://", System.StringComparison.OrdinalIgnoreCase)
             || IsUnderRoot(resourcePath, UserDefaultDecksRootPath);
+    }
+
+    private static bool IsPackagedResourcePath(string resourcePath)
+    {
+        return resourcePath.StartsWith("res://", System.StringComparison.OrdinalIgnoreCase);
     }
 }
