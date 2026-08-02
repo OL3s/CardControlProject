@@ -5,21 +5,25 @@ namespace CardGeneration.Services;
 
 public static class ResourceRepository
 {
-    public static IReadOnlyList<TResource> LoadAll<TResource>(string rootPath)
+    public static IReadOnlyList<TResource> LoadAll<TResource>(string rootPath, bool warnIfMissing = true)
         where TResource : Resource
     {
         var resources = new List<TResource>();
-        LoadDirectory(rootPath, resources);
+        LoadDirectory(rootPath, resources, warnIfMissing);
         return resources;
     }
 
-    private static void LoadDirectory<TResource>(string directoryPath, List<TResource> resources)
+    private static void LoadDirectory<TResource>(string directoryPath, List<TResource> resources, bool warnIfMissing)
         where TResource : Resource
     {
         using var directory = DirAccess.Open(directoryPath);
         if (directory is null)
         {
-            GD.PushWarning($"Resource directory was not found: {directoryPath}");
+            if (warnIfMissing)
+            {
+                GD.PushWarning($"Resource directory was not found: {directoryPath}");
+            }
+
             return;
         }
 
@@ -32,7 +36,7 @@ public static class ResourceRepository
                 var childPath = $"{directoryPath}/{fileName}";
                 if (directory.CurrentIsDir())
                 {
-                    LoadDirectory(childPath, resources);
+                    LoadDirectory(childPath, resources, warnIfMissing);
                 }
                 else if (IsResourceFile(fileName))
                 {

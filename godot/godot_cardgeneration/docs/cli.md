@@ -138,7 +138,7 @@ monster_cards_a4_600dpi_front_002.png
 monster_cards_a4_600dpi_back_002.png
 ```
 
-Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, ved valgt DPI. Baksiden bestemmes av `DeckCardType` på kortstokken, ikke av hvert enkelt kort.
+Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, ved valgt DPI. En deck kan inneholde flere korttyper, så baksiden renderes per korttype for hvert kort.
 
 Når et ark er fullt, lager eksporten automatisk neste nummererte front/back-par. Arkdelingen bruker antall kort som får plass på valgt papir og `ceil(cardCount / cardsPerSheet)`.
 
@@ -197,3 +197,5 @@ Felt som brukes som defaults:
 CLI bruker configverdier når tilsvarende flagg ikke er oppgitt. Direkte CLI-flagg overstyrer config for den ene kjøringen uten å lagre endringen. `set-config` lagrer bare feltene som oppgis.
 
 GUI Settings-panelet bruker samme config-resource. Endringer i GUI og CLI skal derfor være synlige for hverandre.
+
+Default deck er `default_52_card_deck`. Den er en innebygd 52-korts preset fra `DefaultDeckFactory` og kan brukes av CLI uten at decken først er lagret som `.tres`.

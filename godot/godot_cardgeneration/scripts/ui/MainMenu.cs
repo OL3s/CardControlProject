@@ -1,5 +1,6 @@
 using System;
 using CardGeneration.Cli;
+using CardGeneration.Resources.Enums;
 using CardGeneration.Services;
 using Godot;
 
@@ -30,17 +31,17 @@ public partial class MainMenu : Control
     private void BuildMenu()
     {
         ClearChildren();
-        SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 
         var background = new ColorRect
         {
             Color = new Color(0.055f, 0.048f, 0.07f)
         };
-        background.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        background.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         AddChild(background);
 
         var margin = new MarginContainer();
-        margin.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        margin.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         margin.AddThemeConstantOverride("margin_left", 48);
         margin.AddThemeConstantOverride("margin_right", 48);
         margin.AddThemeConstantOverride("margin_top", 48);
@@ -77,17 +78,15 @@ public partial class MainMenu : Control
 
         var subtitle = new Label
         {
-            Text = "Card studio for saved cards, decks, preview and export.",
+            Text = "Card studio for cards, decks, preview and export.",
             HorizontalAlignment = HorizontalAlignment.Center,
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
         menu.AddChild(subtitle);
 
-        AddMenuButton(menu, "Saved Cards");
-        AddMenuButton(menu, "Saved Decks");
-        AddMenuButton(menu, "New Card");
-        AddMenuButton(menu, "New Deck");
-        AddMenuButton(menu, "Export");
+        AddMenuButton(menu, "Cards", ShowCards);
+        AddMenuButton(menu, "Decks", ShowDecks);
+        AddMenuButton(menu, "Export", ShowExportCenter);
         AddMenuButton(menu, "Settings", ShowSettings);
 
     }
@@ -106,22 +105,82 @@ public partial class MainMenu : Control
     private void ShowSettings()
     {
         ClearChildren();
-        SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 
         var background = new ColorRect
         {
             Color = new Color(0.055f, 0.048f, 0.07f)
         };
-        background.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        background.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         AddChild(background);
 
         var center = new CenterContainer();
-        center.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        center.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         AddChild(center);
 
         var settingsPanel = new SettingsPanel();
         settingsPanel.BackRequested += BuildMenu;
         center.AddChild(settingsPanel);
+    }
+
+    private void ShowCards()
+    {
+        var screen = new SavedCardsScreen();
+        screen.EditCardRequested += ShowCardEditor;
+        screen.NewCardRequested += ShowCardTypePicker;
+        ShowScreen(screen);
+    }
+
+    private void ShowDecks()
+    {
+        var screen = new SavedDecksScreen();
+        screen.EditDeckRequested += ShowDeckEditor;
+        screen.NewDeckRequested += ShowDeckEditor;
+        ShowScreen(screen);
+    }
+
+    private void ShowCardEditor(CardGeneration.Resources.CardResource? card)
+    {
+        var screen = new CardEditorScreen();
+        screen.SetCard(card);
+        ShowScreen(screen);
+    }
+
+    private void ShowDeckEditor(CardGeneration.Resources.CardDeckResource? deck)
+    {
+        var screen = new DeckEditorScreen();
+        screen.SetDeck(deck);
+        screen.NewCardRequested += ShowCardTypePicker;
+        ShowScreen(screen);
+    }
+
+    private void ShowCardTypePicker()
+    {
+        var screen = new CardTypePickerScreen();
+        screen.CardTypeSelected += ShowCardEditorForType;
+        ShowScreen(screen);
+    }
+
+    private void ShowCardEditorForType(CardType cardType)
+    {
+        ShowCardEditor(_cardToolService.CreateCard(cardType));
+    }
+
+    private void ShowExportCenter()
+    {
+        ShowScreen(new ExportCenterScreen());
+    }
+
+    private void ShowScreen(CardToolScreen screen)
+    {
+        ClearChildren();
+        SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        screen.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        screen.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        screen.SizeFlagsVertical = SizeFlags.ExpandFill;
+        screen.Setup(_cardToolService);
+        screen.BackRequested += BuildMenu;
+        AddChild(screen);
     }
 
     private void ClearChildren()

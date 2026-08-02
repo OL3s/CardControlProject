@@ -9,10 +9,14 @@ namespace CardGeneration.Services;
 public sealed class DeckRepository
 {
     public const string DecksRootPath = "res://resources/decks";
+    public const string UserDecksRootPath = "res://resources/user/decks";
 
     public IReadOnlyList<CardDeckResource> LoadAllDecks()
     {
         return ResourceRepository.LoadAll<CardDeckResource>(DecksRootPath)
+            .Concat(ResourceRepository.LoadAll<CardDeckResource>(UserDecksRootPath, warnIfMissing: false))
+            .GroupBy(deck => deck.Id)
+            .Select(group => group.Last())
             .OrderBy(deck => deck.Id)
             .ToArray();
     }
@@ -29,7 +33,8 @@ public sealed class DeckRepository
             return ToolResult.Fail("Deck must have an id before it can be saved.");
         }
 
-        var path = $"{DecksRootPath}/{deck.Id}.tres";
+        DirAccess.MakeDirRecursiveAbsolute(ProjectSettings.GlobalizePath(UserDecksRootPath));
+        var path = $"{UserDecksRootPath}/{deck.Id}.tres";
         var error = ResourceSaver.Save(deck, path);
         return error == Error.Ok
             ? ToolResult.Ok($"Saved deck '{deck.Id}' to {path}.")

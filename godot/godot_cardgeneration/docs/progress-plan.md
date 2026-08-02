@@ -34,13 +34,17 @@ Mål:
 
 ## Fase 3: Preview Og Editor
 
+Status: delvis gjennomført.
+
 Mål:
 
-* Lage kortpreview-scene.
-* Vise kort basert på `CardResource`.
-* Lage enkle skjermer for `Saved Cards` og `Saved Decks`.
-* Lage første `New Card`-flyt.
-* Lage første `New Deck`-flyt.
+* Lage kortpreview-scene. Gjort med `CardPreviewControl`.
+* Vise kort basert på `CardResource`. Gjort i kortliste, deckliste og korteditor med front/back preview og større popup ved dobbelklikk.
+* Lage enkle skjermer for `Cards` og `Decks`. Gjort.
+* Lage første kortopprettingsflyt via `+` i `Cards`. Gjort med korttypevalg før editor, felles kortfelt, type-spesifikke basisfelt, image source path, save og export.
+* Lage første deckopprettingsflyt via `+` i `Decks`. Gjort med valg mellom tom deck og default 52-korts preset, deckfelt, tilgjengelige kort, entries, save og export.
+* Bruke default 52-korts deck som standarddeck i stedet for én-korts placeholder. Gjort med innebygd `default_52_card_deck` i `CardToolService`.
+* Legge til type-spesifikke editorfelt for monster, terreng og konge. Delvis gjort for monsterkrav/grunnstyrke, terrengressurser og kongeliv/oppdragstekst.
 
 ## Fase 4: Rendering
 
@@ -62,11 +66,13 @@ Status: delvis gjennomført.
 Mål:
 
 * Rendre alle kort i en kortstokk. Gjort for enkel PNG-eksport.
+* Støtte ferdige mixed decks med flere korttyper. Gjort ved å fjerne deck-type-lås og rendre baksider per korttype.
 * Eksportere kortstokk som enkeltbilder. Gjort med `--layout individual`.
 * Eksportere kortstokk som samlet grid. Gjort med `--layout grid`.
 * Eksportere kortstokk som lang strip. Gjort med `--layout strip`.
 * Lage showcase-visning for kort og kortstokker. GUI-visning gjenstår.
 * Eksportere showcase som bilde eller bildeserie. Første grid-output er koblet til `export-showcase`.
+* Lage samlet GUI-exportside. Gjort med `ExportCenterScreen` for deck images og print sheets.
 
 ## Fase 6: Printark Og DIY
 
@@ -112,4 +118,4 @@ Mål:
 * La CLI endre config uten å åpne GUI. Gjort med `set-config`.
 * Lage GUI for å redigere samme config. Gjort med `SettingsPanel`.
 * Gjøre Settings-panelet scrollbart for små vinduer. Gjort.
-* Koble Settings-panelet til endelige export-/preview-skjermer når de finnes. Gjenstår.
+* Koble Settings-panelet til endelige export-/preview-skjermer når de finnes. Delvis gjort ved at kort-, deck- og exportskjermene leser config-defaults via `CardToolService`.

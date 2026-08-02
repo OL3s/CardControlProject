@@ -24,37 +24,38 @@ All kode, filnavn, mappenavn og tekniske navn holdes på engelsk. Dokumentasjone
 
 ## Hovedflyt I Appen
 
-Første GUI-retning bruker denne hovedmenyen:
+Første GUI-retning bruker en smal hovedmeny:
 
-* `Saved Cards`
-* `Saved Decks`
-* `New Card`
-* `New Deck`
+* `Cards`
+* `Decks`
 * `Export`
 * `Settings`
 
-`Saved Cards` skal brukes til liste, filter, preview, showcase og eksport av ett eller flere kort.
+`Cards` viser lagrede kort, preview, enkel korteksport og hurtigvalg for å legge et kort til en valgt kortstokk. Nye kort opprettes med `+` inne på denne skjermen. Før editoren åpnes velges korttype, fordi monster-, terreng- og kongekort har ulik data og oppsett.
 
-`Saved Decks` skal brukes til liste, redigering, preview, showcase, kortstokkeksport, printark og DIY-eksport.
+`Decks` viser lagrede kortstokker, korttelling, preview av første kort, redigering og kortstokkeksport med lagrede defaults. Nye kortstokker opprettes med `+` inne på denne skjermen. `+` kan starte en tom kortstokk eller en default 52-korts preset fra `shared/docs`.
 
-Hovedmenyen skal ikke vise et tilfeldig kortpreview. Kortpreview hører hjemme i `Saved Cards`, `Saved Decks`, editor- og eksportskjermene.
+Default deck er `default_52_card_deck`. Den lages av `DefaultDeckFactory` fra `shared/docs` og er tilgjengelig i GUI og CLI selv om den ikke er lagret som `.tres` ennå. `sample_monster_deck` er bare en liten smoke-test resource.
 
-`New Card` skal lage nye `CardResource`-baserte kort.
+Hovedmenyen skal ikke vise et tilfeldig kortpreview og skal ikke ha egne `New Card`/`New Deck` valg. Kortpreview hører hjemme i `Cards`, `Decks`, editor- og eksportskjermene. Preview viser både front og bakside der det er relevant, og dobbelklikk på preview åpner større visning.
 
-`New Deck` skal lage nye `CardDeckResource`-baserte kortstokker.
+Korteditoren støtter felles kortfelt, image source path, preview, lagring og PNG-eksport. Korttypen er valgt før editoren åpnes. Monsterkort lagrer ikke element direkte; elementet utledes fra ikke-nøytralt ressurskrav. Terrengkort har ikke elementfokus og viser bare hvilke ressurser de produserer. Kongekort er eneste korttype som lagrer eksplisitt `ElementFocus`, fordi kongen skal vise elementikon øverst til venstre.
 
-`Export` skal være en samlet batch-side for eksportjobber, men de samme eksportfunksjonene skal også kunne startes fra lagrede kort og lagrede kortstokker.
+Deckeditoren støtter deck-ID, tilgjengelige kort på tvers av korttyper, deck entries med antall, `Save` og `Save New`. Venstre side viser lagrede kort som preview-fliser i en horisontal scrollrad med ikonknapper for å legge til én kopi eller velge flere kort. Høyre side viser deckinnhold som preview-fliser med ikonknapper for slett, dupliser og multiselect. Eksport gjøres bare fra `Export`-skjermen. En deck er et ferdig produkt med alle relevante korttyper, ikke en separat monster-/terreng-/kongebunke.
+
+`Export` er eneste eksportflate. Den kan eksportere ett lagret kort som PNG, eller en lagret kortstokk som vanlige deck images eller printarkexport med A4/A3 og DPI-valg.
+
+Export-skjermen har en output path-velger som åpner Godots file dialog i valgt/default exportmappe.
 
 `Settings` redigerer den samme config-resourcen som CLI bruker. Endringer gjort i GUI skal derfor påvirke senere CLI-kjøringer, og `set-config` i CLI skal påvirke GUI-innstillingene.
 
-## Forventet Flyt
+## Nåværende Flyt
 
-1. Les kortdata fra felles kilde.
-2. Bygg kortet i lag: bakgrunn, ramme, illustrasjon, ikoner, tekst og eventuelle effekter.
-3. Render kortet i Godot med en `SubViewport` i riktig pikselstørrelse.
-4. Eksporter individuelle kortbilder for preview, testing og print.
-5. Plasser kortene på ark i riktig fysisk størrelse.
-6. Eksporter printark som PDF, og eventuelt PNG for rask preview.
+1. Les kortdata fra Godot resources.
+2. Bygg kortet i lag med den felles `Image`-baserte rendereren.
+3. Bruk samme renderer i GUI-preview og CLI/headless eksport.
+4. Eksporter individuelle kortbilder, grid, strip eller printark som PNG.
+5. Plasser kortene på A4/A3-ark i pokerkortstørrelse basert på valgt DPI.
 
 ## Lagmodell
 
@@ -77,11 +78,15 @@ card
 
 `panels` ligger oppå kortbildet og samler spillinformasjon. Panelene skal gjøre ikoner og eventuell tekst lesbare uavhengig av hvor detaljert kortbildet er.
 
-`icons_and_text` inneholder ressursikoner, styrkeikoner, piler, korttekst og annen spillinformasjon.
+`icons_and_text` inneholder ressursikoner, styrkeikoner, piler, korttekst og annen spillinformasjon. Elementresources peker til SVG-ikonene under `assets/icons/elements/`, og renderer faller tilbake til enkle symboler dersom en texture ikke kan lastes.
+
+Monsterets elementvisning følger kravlisten: dersom kravlisten har ett ikke-nøytralt element, brukes dette som monsterets element. Hvis kravlisten bare har nøytral, blir monsteret nøytralt. Terrengkort har ingen egen elementvisning utover ressursikonene de produserer. Kongekort viser `ElementFocus` som ikon øverst til venstre.
 
 `print_guides` er kun for fysisk produksjon, for eksempel kuttemerker, bleed eller hjelpelinjer. Slike lag skal ikke være del av vanlig preview med mindre brukeren eksplisitt velger det.
 
-Baksiden bygges også i lag. Nederst ligger samme korttypebaserte basefarge/kant som skiller korttypen. Oppå den ligger baksidebildet for korttypen. Baksiden skal ikke avsløre kortspesifikke data som element, krav, styrke, tier eller effekt.
+Baksiden bygges også i lag. Nederst ligger samme korttypebaserte basefarge/kant som skiller korttypen. Oppå den ligger baksidebildet for korttypen. Baksiden skal ikke avsløre kortspesifikke data som element, krav, styrke, tier eller effekt. Printark bruker korttypen til hvert enkelt kort, siden én ferdig deck kan inneholde konger, terreng og monstre.
+
+Kortbaksidene ligger som SVG under `assets/card_backs/` og er kopiert fra `shared/docs/images/svg/`. Monsterbaksiden er tonet litt ned i rødfargen for å fungere bedre med gress- og vannmonstre.
 
 ## Printkrav
 
@@ -143,7 +148,9 @@ Safe margin: minst 4 mm innenfor kuttkant
 
 Godot kan eksportere PNG direkte fra `SubViewport`. Printark kan bygges senere enten i Godot eller med et eget PDF-/arkverktøy.
 
-Renderer-retningen er at samme kortscene brukes av både GUI-preview og CLI/headless eksport. Det skal hindre at kort ser riktig ut i appen, men eksporteres annerledes fra CLI.
+Renderer-retningen er at samme renderlogikk brukes av både GUI-preview og CLI/headless eksport. GUI-preview ligger i en gjenbrukbar packed scene, `scenes/card_preview/card_preview.tscn`, med `CardPreviewControl.cs` som script. Det skal hindre at kort ser riktig ut i appen, men eksporteres annerledes fra CLI.
+
+Preview-rendering bruker samme koordinatsystem som full eksport, men renderer direkte til ønsket preview-størrelse. Små kortfliser trenger derfor ikke først å lage full `750x1050`-render og deretter skalere ned.
 
 ## CLI Og Headless
 
@@ -210,6 +217,12 @@ godot/godot_cardgeneration/
     resources/
     services/
     ui/
+      CardToolScreen.cs
+      CardEditorScreen.cs
+      DeckEditorScreen.cs
+      ExportCenterScreen.cs
+      SavedCardsScreen.cs
+      SavedDecksScreen.cs
       SettingsPanel.cs
 ```
 
@@ -219,6 +232,8 @@ godot/godot_cardgeneration/
 
 `resources/` skal inneholde lagrede Godot resources for elementer, kort og kortstokker.
 
+Kuraterte/default resources ligger under `resources/cards/` og `resources/decks/`. Kort og kortstokker som brukeren lagrer fra GUI/CLI skrives under `resources/user/`, som er ignorert av git.
+
 `resources/config/card_tool_config.tres` inneholder langvarige defaults for CLI og eksport.
 
 Første sample-data ligger i:
@@ -227,6 +242,8 @@ Første sample-data ligger i:
 * `resources/config/card_tool_config.tres`
 * `resources/cards/monsters/monster_flame_1_a.tres`
 * `resources/decks/sample_monster_deck.tres`
+
+I tillegg finnes `default_52_card_deck` som innebygd preset fra `DefaultDeckFactory`.
 
 `scripts/resources/` inneholder `Resource`-modellene som kortverktøyet lagrer og leser.
 
@@ -267,12 +284,12 @@ SVG-kilder og ikoner brukes som grafiske assets. Spill- og kortikoner skal ligge
 
 ## Framdriftsstatus
 
-Første skeleton inneholder Godot-prosjekt, C# project file, hovedmeny, resource-modell, service-lag, CLI-runner, placeholder-assets, egne SVG-ikoner, sample resources og PNG-rendering av ett kort eller en enkel kortstokk.
+Første skeleton inneholder Godot-prosjekt, C# project file, hovedmeny, resource-modell, service-lag, CLI-runner, placeholder-assets, egne SVG-ikoner, sample resources, PNG-rendering, deck export, printarkexport og første GUI-skjermer for lagrede kort, lagrede kortstokker, korteditor, deckeditor, export center og settings.
 
 Videre plan ligger i [Framdriftsplan](docs/progress-plan.md).
 
 ## Åpne Punkter
 
 * Skal kortdata opprettes manuelt som Godot resources først, eller importeres fra eksisterende Markdown-tabeller først?
-* Skal SVG-kildene importeres som assets i Godot, eller skal verktøyet bruke ferdige PNG-lag i første renderer?
-* Skal preview eksporteres i lavere oppløsning enn print-masteren?
+* Skal type-spesifikke editorfelt for monster, terreng og konge prioriteres før importflyt?
+* Skal safe margin, bleed og kuttemerker inn i printark før DIY-eksporten?

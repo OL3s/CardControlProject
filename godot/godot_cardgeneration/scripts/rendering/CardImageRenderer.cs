@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using CardGeneration.App;
 using CardGeneration.Resources;
 using CardGeneration.Resources.Enums;
 using Godot;
@@ -12,7 +14,12 @@ public static class CardImageRenderer
 
     public static Image Render(CardResource card)
     {
-        var image = Image.CreateEmpty(PreviewWidth, PreviewHeight, false, Image.Format.Rgba8);
+        return Render(card, new Vector2I(PreviewWidth, PreviewHeight));
+    }
+
+    public static Image Render(CardResource card, Vector2I size)
+    {
+        var image = CreateTargetImage(size);
         image.Fill(new Color(0, 0, 0, 0));
 
         DrawCardBase(image, card.CardType);
@@ -24,8 +31,18 @@ public static class CardImageRenderer
 
     public static Image RenderBack(CardType cardType, Texture2D? backImageTexture = null)
     {
-        var image = Image.CreateEmpty(PreviewWidth, PreviewHeight, false, Image.Format.Rgba8);
+        return RenderBack(cardType, backImageTexture, new Vector2I(PreviewWidth, PreviewHeight));
+    }
+
+    public static Image RenderBack(CardType cardType, Texture2D? backImageTexture, Vector2I size)
+    {
+        var image = CreateTargetImage(size);
         image.Fill(new Color(0, 0, 0, 0));
+
+        if (backImageTexture is null && TryDrawImageSource(image, GetDefaultCardBackPath(cardType), new Rect2I(0, 0, PreviewWidth, PreviewHeight)))
+        {
+            return image;
+        }
 
         DrawCardBase(image, cardType);
         DrawCardBackImage(image, cardType, backImageTexture);
@@ -35,16 +52,17 @@ public static class CardImageRenderer
 
     public static Image RenderResized(CardResource card, int width, int height)
     {
-        var image = Render(card);
-        image.Resize(width, height, Image.Interpolation.Lanczos);
-        return image;
+        return Render(card, new Vector2I(width, height));
     }
 
     public static Image RenderBackResized(CardType cardType, Texture2D? backImageTexture, int width, int height)
     {
-        var image = RenderBack(cardType, backImageTexture);
-        image.Resize(width, height, Image.Interpolation.Lanczos);
-        return image;
+        return RenderBack(cardType, backImageTexture, new Vector2I(width, height));
+    }
+
+    private static Image CreateTargetImage(Vector2I size)
+    {
+        return Image.CreateEmpty(Math.Max(1, size.X), Math.Max(1, size.Y), false, Image.Format.Rgba8);
     }
 
     private static void DrawCardBase(Image image, CardType cardType)
@@ -59,11 +77,42 @@ public static class CardImageRenderer
         var cardImageRect = new Rect2I(62, 62, 626, 926);
         if (card.CardImageTexture is null)
         {
+            if (TryDrawImageSource(image, card.CardImageSourcePath, cardImageRect))
+            {
+                return;
+            }
+
             DrawPlaceholderCardImage(image, card, cardImageRect);
             return;
         }
 
         DrawTexture(image, card.CardImageTexture, cardImageRect);
+    }
+
+    private static bool TryDrawImageSource(Image target, string sourcePath, Rect2I targetRect)
+    {
+        if (string.IsNullOrWhiteSpace(sourcePath))
+        {
+            return false;
+        }
+
+        var globalPath = ProjectPaths.ToGlobalPath(sourcePath);
+        if (!FileAccess.FileExists(sourcePath) && !System.IO.File.Exists(globalPath))
+        {
+            return false;
+        }
+
+        var source = Image.LoadFromFile(globalPath);
+        if (source is null)
+        {
+            return false;
+        }
+
+        targetRect = ScaleRect(target, targetRect);
+        source.Convert(Image.Format.Rgba8);
+        source.Resize(targetRect.Size.X, targetRect.Size.Y, Image.Interpolation.Lanczos);
+        target.BlendRect(source, new Rect2I(Vector2I.Zero, source.GetSize()), targetRect.Position);
+        return true;
     }
 
     private static void DrawCardBackImage(Image image, CardType cardType, Texture2D? backImageTexture)
@@ -126,12 +175,46 @@ public static class CardImageRenderer
 
     private static void DrawTerrainPanels(Image image, TerrainCardResource card)
     {
-        FillRoundedRect(image, new Rect2I(72, 72, 606, 110), 24, new Color(0.02f, 0.025f, 0.02f, 0.72f));
-        DrawResourceAmounts(image, card.ProducedResources, new Vector2I(92, 88), 70, 10);
+        DrawTerrainResourceCorner(image, card.ProducedResources, ElementType.Neutral, new Vector2I(92, 88), drawRightToLeft: false);
+        DrawTerrainResourceCorner(image, card.ProducedResources, ElementType.Grass, new Vector2I(92, 862), drawRightToLeft: false);
+        DrawTerrainResourceCorner(image, card.ProducedResources, ElementType.Flame, new Vector2I(658, 88), drawRightToLeft: true);
+        DrawTerrainResourceCorner(image, card.ProducedResources, ElementType.Water, new Vector2I(658, 862), drawRightToLeft: true);
+    }
+
+    private static void DrawTerrainResourceCorner(Image image, ResourceAmount[] amounts, ElementType elementType, Vector2I anchor, bool drawRightToLeft)
+    {
+        var amount = amounts.FirstOrDefault(resourceAmount => resourceAmount.Element?.ElementType == elementType && resourceAmount.Amount > 0);
+        if (amount is null)
+        {
+            return;
+        }
+
+        const int iconSize = 62;
+        const int gap = 8;
+        const int padding = 14;
+        var count = Math.Max(1, amount.Amount);
+        var iconWidth = count * iconSize + Math.Max(0, count - 1) * gap;
+        var panelWidth = iconWidth + padding * 2;
+        var panel = drawRightToLeft
+            ? new Rect2I(anchor.X - panelWidth, anchor.Y - padding, panelWidth, iconSize + padding * 2)
+            : new Rect2I(anchor.X - padding, anchor.Y - padding, panelWidth, iconSize + padding * 2);
+
+        FillRoundedRect(image, panel, 24, new Color(0.02f, 0.025f, 0.02f, 0.72f));
+
+        if (drawRightToLeft)
+        {
+            DrawElementIconsRightToLeft(image, amount.Element, count, new Vector2I(anchor.X - iconSize, anchor.Y), iconSize, gap);
+            return;
+        }
+
+        DrawElementIcons(image, amount.Element, count, anchor, iconSize, gap);
     }
 
     private static void DrawKingPanels(Image image, KingCardResource card)
     {
+        FillRoundedRect(image, new Rect2I(92, 85, 84, 84), 34, new Color(0.035f, 0.028f, 0.045f, 0.78f));
+        DrawElementIcons(image, card.ElementFocus, 1, new Vector2I(108, 101), 52, 0);
+
         FillRoundedRect(image, new Rect2I(92, 790, 566, 160), 26, new Color(0.035f, 0.028f, 0.045f, 0.78f));
         FillRoundedRect(image, new Rect2I(118, 820, 60, 60), 30, new Color(0.88f, 0.76f, 0.36f));
         DrawResourceAmounts(image, card.QuestRequirements, new Vector2I(205, 820), 52, 8);
@@ -154,6 +237,22 @@ public static class CardImageRenderer
         for (var index = 0; index < count; index++)
         {
             var rect = new Rect2I(start.X + index * (size + gap), start.Y, size, size);
+            if (element?.IconTexture is not null)
+            {
+                DrawTexture(image, element.IconTexture, rect);
+            }
+            else
+            {
+                DrawElementFallback(image, element?.ElementType ?? ElementType.Neutral, rect);
+            }
+        }
+    }
+
+    private static void DrawElementIconsRightToLeft(Image image, ElementResource? element, int count, Vector2I start, int size, int gap)
+    {
+        for (var index = 0; index < count; index++)
+        {
+            var rect = new Rect2I(start.X - index * (size + gap), start.Y, size, size);
             if (element?.IconTexture is not null)
             {
                 DrawTexture(image, element.IconTexture, rect);
@@ -195,6 +294,7 @@ public static class CardImageRenderer
             return;
         }
 
+        targetRect = ScaleRect(target, targetRect);
         source.Convert(Image.Format.Rgba8);
         source.Resize(targetRect.Size.X, targetRect.Size.Y, Image.Interpolation.Lanczos);
         target.BlendRect(source, new Rect2I(Vector2I.Zero, source.GetSize()), targetRect.Position);
@@ -208,7 +308,6 @@ public static class CardImageRenderer
         {
             FillRoundedRect(image, new Rect2I(rect.Position.X + 170, rect.Position.Y + 120, 286, 286), 143, new Color(0.82f, 0.22f, 0.12f, 0.18f));
             FillRoundedRect(image, new Rect2I(rect.Position.X + 260, rect.Position.Y + 280, 110, 360), 55, new Color(0.07f, 0.025f, 0.025f, 0.92f));
-            DrawElementFallback(image, card.Element?.ElementType ?? ElementType.Neutral, new Rect2I(rect.Position.X + 281, rect.Position.Y + 366, 56, 56));
         }
     }
 
@@ -263,7 +362,7 @@ public static class CardImageRenderer
     {
         return cardType switch
         {
-            CardType.Monster => new Color(0.56f, 0.08f, 0.09f),
+            CardType.Monster => new Color(0.36f, 0.12f, 0.13f),
             CardType.Terrain => new Color(0.58f, 0.40f, 0.22f),
             CardType.King => new Color(0.62f, 0.48f, 0.16f),
             _ => new Color(0.22f, 0.22f, 0.25f)
@@ -274,10 +373,21 @@ public static class CardImageRenderer
     {
         return cardType switch
         {
-            CardType.Monster => new Color(0.18f, 0.05f, 0.05f),
+            CardType.Monster => new Color(0.13f, 0.07f, 0.075f),
             CardType.Terrain => new Color(0.12f, 0.19f, 0.10f),
             CardType.King => new Color(0.16f, 0.10f, 0.22f),
             _ => new Color(0.10f, 0.10f, 0.12f)
+        };
+    }
+
+    private static string GetDefaultCardBackPath(CardType cardType)
+    {
+        return cardType switch
+        {
+            CardType.Monster => "res://assets/card_backs/monster_card_back.svg",
+            CardType.Terrain => "res://assets/card_backs/terrain_card_back.svg",
+            CardType.King => "res://assets/card_backs/king_card_back.svg",
+            _ => string.Empty
         };
     }
 
@@ -294,6 +404,9 @@ public static class CardImageRenderer
 
     private static void FillRoundedRect(Image image, Rect2I rect, int radius, Color color)
     {
+        rect = ScaleRect(image, rect);
+        radius = ScaleRadius(image, radius);
+
         var maxX = Math.Min(rect.End.X, image.GetWidth());
         var maxY = Math.Min(rect.End.Y, image.GetHeight());
         var minX = Math.Max(rect.Position.X, 0);
@@ -323,6 +436,33 @@ public static class CardImageRenderer
                 }
             }
         }
+    }
+
+    private static Rect2I ScaleRect(Image image, Rect2I rect)
+    {
+        if (image.GetWidth() == PreviewWidth && image.GetHeight() == PreviewHeight)
+        {
+            return rect;
+        }
+
+        var scaleX = image.GetWidth() / (float)PreviewWidth;
+        var scaleY = image.GetHeight() / (float)PreviewHeight;
+        return new Rect2I(
+            Mathf.RoundToInt(rect.Position.X * scaleX),
+            Mathf.RoundToInt(rect.Position.Y * scaleY),
+            Math.Max(1, Mathf.RoundToInt(rect.Size.X * scaleX)),
+            Math.Max(1, Mathf.RoundToInt(rect.Size.Y * scaleY)));
+    }
+
+    private static int ScaleRadius(Image image, int radius)
+    {
+        if (radius <= 0 || image.GetWidth() == PreviewWidth && image.GetHeight() == PreviewHeight)
+        {
+            return radius;
+        }
+
+        var scale = Math.Min(image.GetWidth() / (float)PreviewWidth, image.GetHeight() / (float)PreviewHeight);
+        return Math.Max(1, Mathf.RoundToInt(radius * scale));
     }
 
     private static void BlendPixel(Image image, int x, int y, Color color)

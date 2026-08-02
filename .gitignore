@@ -56,6 +56,9 @@ godot/builds/
 godot/exports/
 godot/.mono/
 godot/.csharp/
+godot/godot_cardgeneration/output/
+godot/godot_cardgeneration/resources/user/
+godot/godot_cardgeneration/resources/decks/*:*.tres
 
 # 3D/DCC generated caches and backups
 *.blend1

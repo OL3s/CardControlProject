@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Text;
+using System.Collections.Generic;
 using CardGeneration.App;
 using CardGeneration.Resources;
 
@@ -169,18 +170,86 @@ public sealed class CardToolService
 
     public ToolResult ListCards()
     {
-        var cards = _cardRepository.LoadAllCards();
+        var cards = LoadAllCards();
         return ToolResult.Ok(cards.Count == 0
             ? "Found 0 saved cards."
             : $"Found {cards.Count} saved cards:\n{string.Join("\n", cards.Select(card => $"- {card.Id}"))}");
     }
 
+    public IReadOnlyList<ElementResource> LoadAllElements()
+    {
+        return ResourceRepository.LoadAll<ElementResource>("res://resources/elements")
+            .OrderBy(element => element.DisplayName)
+            .ThenBy(element => element.ElementType)
+            .ToArray();
+    }
+
+    public IReadOnlyList<CardResource> LoadAllCards()
+    {
+        return _cardRepository.LoadAllCards();
+    }
+
+    public CardResource CreateCard(CardGeneration.Resources.Enums.CardType cardType)
+    {
+        return CardFactory.CreateCard(cardType, LoadAllElements());
+    }
+
+    public CardResource? LoadCardById(string cardId)
+    {
+        return _cardRepository.LoadCardById(cardId);
+    }
+
+    public ToolResult SaveCard(CardResource card)
+    {
+        return _cardRepository.SaveCard(card);
+    }
+
     public ToolResult ListDecks()
     {
-        var decks = _deckRepository.LoadAllDecks();
+        var decks = LoadAllDecks();
         return ToolResult.Ok(decks.Count == 0
             ? "Found 0 saved decks."
             : $"Found {decks.Count} saved decks:\n{string.Join("\n", decks.Select(deck => $"- {deck.Id}"))}");
+    }
+
+    public IReadOnlyList<CardDeckResource> LoadAllDecks()
+    {
+        var decks = _deckRepository.LoadAllDecks().ToList();
+        if (decks.All(deck => deck.Id != DefaultDeckFactory.Default52CardDeckId))
+        {
+            decks.Insert(0, CreateDefault52CardDeck());
+        }
+
+        return decks;
+    }
+
+    public CardDeckResource CreateEmptyDeck()
+    {
+        return DefaultDeckFactory.CreateEmptyDeck();
+    }
+
+    public CardDeckResource CreateDefault52CardDeck()
+    {
+        var existingCards = LoadAllCards()
+            .GroupBy(card => card.Id)
+            .ToDictionary(group => group.Key, group => group.First());
+        return DefaultDeckFactory.CreateDefault52CardDeck(LoadAllElements(), existingCards);
+    }
+
+    public CardDeckResource? LoadDeckById(string deckId)
+    {
+        var deck = _deckRepository.LoadDeckById(deckId);
+        if (deck is not null)
+        {
+            return deck;
+        }
+
+        return deckId == DefaultDeckFactory.Default52CardDeckId ? CreateDefault52CardDeck() : null;
+    }
+
+    public ToolResult SaveDeck(CardDeckResource deck)
+    {
+        return _deckRepository.SaveDeck(deck);
     }
 
     public ToolResult ValidateCards()
@@ -195,7 +264,7 @@ public sealed class CardToolService
             return ToolResult.Fail("Missing deck id. Use --deck <deck_id>.");
         }
 
-        var deck = _deckRepository.LoadDeckById(deckId);
+        var deck = LoadDeckById(deckId);
         return deck is null
             ? ToolResult.Fail($"Deck '{deckId}' was not found.")
             : _deckValidator.Validate(deck);
@@ -214,6 +283,11 @@ public sealed class CardToolService
             : _cardRenderService.RenderCard(card, outputPath);
     }
 
+    public ToolResult RenderCard(CardResource card, string outputPath)
+    {
+        return _cardRenderService.RenderCard(card, outputPath);
+    }
+
     public ToolResult ExportDeck(string? deckId, string outputPath, string format, string layout, int columns, int spacing)
     {
         if (string.IsNullOrWhiteSpace(deckId))
@@ -221,10 +295,15 @@ public sealed class CardToolService
             return ToolResult.Fail("Missing deck id. Use --deck <deck_id>.");
         }
 
-        var deck = _deckRepository.LoadDeckById(deckId);
+        var deck = LoadDeckById(deckId);
         return deck is null
             ? ToolResult.Fail($"Deck '{deckId}' was not found.")
             : _deckExportService.ExportDeck(deck, outputPath, format, layout, columns, spacing);
+    }
+
+    public ToolResult ExportDeck(CardDeckResource deck, string outputPath, string format, string layout, int columns, int spacing)
+    {
+        return _deckExportService.ExportDeck(deck, outputPath, format, layout, columns, spacing);
     }
 
     public ToolResult ExportSheet(string? deckId, string outputPath, string paper, int dpi)
@@ -234,10 +313,15 @@ public sealed class CardToolService
             return ToolResult.Fail("Missing deck id. Use --deck <deck_id>.");
         }
 
-        var deck = _deckRepository.LoadDeckById(deckId);
+        var deck = LoadDeckById(deckId);
         return deck is null
             ? ToolResult.Fail($"Deck '{deckId}' was not found.")
             : _sheetExportService.ExportSheet(deck, outputPath, paper, dpi);
+    }
+
+    public ToolResult ExportSheet(CardDeckResource deck, string outputPath, string paper, int dpi)
+    {
+        return _sheetExportService.ExportSheet(deck, outputPath, paper, dpi);
     }
 
     public ToolResult ExportDiy(string? deckId, string outputPath, string paper)
@@ -247,7 +331,7 @@ public sealed class CardToolService
             return ToolResult.Fail("Missing deck id. Use --deck <deck_id>.");
         }
 
-        var deck = _deckRepository.LoadDeckById(deckId);
+        var deck = LoadDeckById(deckId);
         return deck is null
             ? ToolResult.Fail($"Deck '{deckId}' was not found.")
             : _diyExportService.ExportDiy(deck, outputPath, paper);

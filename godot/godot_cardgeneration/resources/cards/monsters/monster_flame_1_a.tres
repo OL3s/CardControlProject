@@ -23,11 +23,8 @@ PowerGain = 1
 [resource]
 script = ExtResource("1_monster")
 Id = "monster_flame_1_a"
-DisplayName = "Flame Monster Placeholder"
 CardType = 1
-Element = ExtResource("2_flame")
 InternalTier = 1
 Requirements = Array[Resource]([SubResource("ResourceAmount_requirement_flame_1")])
 BasePower = 1
 PowerBonuses = Array[Resource]([SubResource("PowerBonus_flame_2")])
-Notes = "First sample monster card resource for renderer and CLI smoke tests."

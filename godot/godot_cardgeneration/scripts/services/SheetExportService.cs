@@ -52,8 +52,7 @@ public sealed class SheetExportService
         var xGap = (sheetWidth - columns * cardWidth) / (columns + 1);
         var yGap = (sheetHeight - rows * cardHeight) / (rows + 1);
         var sheetCount = (int)Math.Ceiling(cards.Count / (double)cardsPerSheet);
-        var deckBackType = ResolveDeckCardType(deck, cards);
-        var backImage = CardImageRenderer.RenderBackResized(deckBackType, deck.BackImageTexture, cardWidth, cardHeight);
+        var backImages = new Dictionary<CardType, Image>();
 
         for (var sheetIndex = 0; sheetIndex < sheetCount; sheetIndex++)
         {
@@ -72,6 +71,7 @@ public sealed class SheetExportService
                     yGap + row * (cardHeight + yGap));
 
                 var frontImage = CardImageRenderer.RenderResized(cards[cardIndex], cardWidth, cardHeight);
+                var backImage = GetBackImage(cards[cardIndex].CardType, deck.BackImageTexture, cardWidth, cardHeight, backImages);
                 frontSheet.BlendRect(frontImage, new Rect2I(Vector2I.Zero, frontImage.GetSize()), position);
                 backSheet.BlendRect(backImage, new Rect2I(Vector2I.Zero, backImage.GetSize()), position);
             }
@@ -120,14 +120,15 @@ public sealed class SheetExportService
         return cards;
     }
 
-    private static CardType ResolveDeckCardType(CardDeckResource deck, IReadOnlyList<CardResource> cards)
+    private static Image GetBackImage(CardType cardType, Texture2D? backImageTexture, int width, int height, Dictionary<CardType, Image> backImages)
     {
-        if (deck.DeckCardType != CardType.Unknown)
+        if (!backImages.TryGetValue(cardType, out var backImage))
         {
-            return deck.DeckCardType;
+            backImage = CardImageRenderer.RenderBackResized(cardType, backImageTexture, width, height);
+            backImages[cardType] = backImage;
         }
 
-        return cards.Count > 0 ? cards[0].CardType : CardType.Unknown;
+        return backImage;
     }
 
     private static bool IsSupportedDpi(int dpi)

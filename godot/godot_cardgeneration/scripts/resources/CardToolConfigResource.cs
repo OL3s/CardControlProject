@@ -6,7 +6,7 @@ namespace CardGeneration.Resources;
 public partial class CardToolConfigResource : Resource
 {
     [Export] public string DefaultCardId { get; set; } = "monster_flame_1_a";
-    [Export] public string DefaultDeckId { get; set; } = "sample_monster_deck";
+    [Export] public string DefaultDeckId { get; set; } = "default_52_card_deck";
     [Export] public string DefaultOutputPath { get; set; } = "output";
     [Export] public string DefaultFormat { get; set; } = "png";
     [Export] public string DefaultPaper { get; set; } = "a4";

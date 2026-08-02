@@ -10,10 +10,14 @@ namespace CardGeneration.Services;
 public sealed class CardRepository
 {
     public const string CardsRootPath = "res://resources/cards";
+    public const string UserCardsRootPath = "res://resources/user/cards";
 
     public IReadOnlyList<CardResource> LoadAllCards()
     {
         return ResourceRepository.LoadAll<CardResource>(CardsRootPath)
+            .Concat(ResourceRepository.LoadAll<CardResource>(UserCardsRootPath, warnIfMissing: false))
+            .GroupBy(card => card.Id)
+            .Select(group => group.Last())
             .OrderBy(card => card.Id)
             .ToArray();
     }
@@ -30,7 +34,7 @@ public sealed class CardRepository
             return ToolResult.Fail("Card must have an id before it can be saved.");
         }
 
-        var directoryPath = GetCardTypeDirectory(card);
+        var directoryPath = GetCardTypeDirectory(card, UserCardsRootPath);
         DirAccess.MakeDirRecursiveAbsolute(ProjectSettings.GlobalizePath(directoryPath));
         var path = $"{directoryPath}/{card.Id}.tres";
         var error = ResourceSaver.Save(card, path);
@@ -39,14 +43,14 @@ public sealed class CardRepository
             : ToolResult.Fail($"Failed to save card '{card.Id}' to {path}: {error}.");
     }
 
-    private static string GetCardTypeDirectory(CardResource card)
+    private static string GetCardTypeDirectory(CardResource card, string rootPath)
     {
         return card.CardType switch
         {
-            CardType.Monster => $"{CardsRootPath}/monsters",
-            CardType.Terrain => $"{CardsRootPath}/terrain",
-            CardType.King => $"{CardsRootPath}/kings",
-            _ => CardsRootPath
+            CardType.Monster => $"{rootPath}/monsters",
+            CardType.Terrain => $"{rootPath}/terrain",
+            CardType.King => $"{rootPath}/kings",
+            _ => rootPath
         };
     }
 }

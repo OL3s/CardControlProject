@@ -24,11 +24,6 @@ public sealed class CardValidator
 
             if (card is MonsterCardResource monster)
             {
-                if (monster.Element is null)
-                {
-                    return ToolResult.Fail($"Monster card '{monster.Id}' is missing an element.");
-                }
-
                 if (monster.Requirements.Length == 0)
                 {
                     return ToolResult.Fail($"Monster card '{monster.Id}' must have at least one requirement.");
@@ -38,6 +33,11 @@ public sealed class CardValidator
                 {
                     return ToolResult.Fail($"Monster card '{monster.Id}' has an invalid requirement.");
                 }
+            }
+
+            if (card is KingCardResource { ElementFocus: null } king)
+            {
+                return ToolResult.Fail($"King card '{king.Id}' is missing an element focus.");
             }
         }
 

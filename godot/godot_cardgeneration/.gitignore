@@ -13,6 +13,8 @@ obj/
 builds/
 exports/
 output/
+resources/user/
+resources/decks/*:*.tres
 *.translation
 
 # Local editor files
