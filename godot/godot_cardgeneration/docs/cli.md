@@ -62,7 +62,7 @@ Status:
 * `export-deck`: implementert for PNG-layoutene `individual`, `grid` og `strip`.
 * `export-sheet`: implementert for A4 og A3 PNG-printark med front/back, valgbar DPI, valgfri bakside-speiling og valgfri 10 cm målelinje.
 * `export-diy`: implementert som A4- og A3-printark i egne undermapper med samme printvalg.
-* `export-showcase`: implementert som grid-output og delt med GUI Showcase-export.
+* `export-showcase`: implementert som et eldre grid-output-preset for CLI.
 
 ## Eksempler
 
@@ -222,6 +222,10 @@ monster_cards_a4_600dpi_back_002.png
 ```
 
 Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, ved valgt DPI. En deck kan inneholde flere korttyper, så baksiden renderes per korttype for hvert kort. Front- og baksideark bruker samme slot-beregning; speiling skjer på hele baksidearket etter at alle baksider er plassert. `--measurement-guide` reserverer en liten bunnstripe og tegner en 10 cm linje med centimeter-ticks nederst på arkene.
+
+`--easy-backs` grupperer forsidene etter korttype og fyller alle slots på hvert tilhørende baksideark. Modusen bruker mer papir og blekk, men gjør slot-alignment og `--back-mirror` unødvendig; speiling ignoreres når easy backs er aktivert.
+
+Deck image-export støtter `--backs none`, `--backs used` og `--backs all`. Valgte baksider legges foran kortforsidene i rekkefølgen Monster, Terrain og King.
 
 Når et ark er fullt, lager eksporten automatisk neste nummererte front/back-par. Arkdelingen bruker antall kort som får plass på valgt papir og `ceil(cardCount / cardsPerSheet)`.
 

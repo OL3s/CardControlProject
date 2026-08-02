@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using CardGeneration.App;
 using CardGeneration.Resources.Enums;
 using CardGeneration.Services;
 using Godot;
@@ -42,6 +43,7 @@ public abstract partial class CardToolScreen : Control
 
     protected VBoxContainer BuildScreen(string titleText, string subtitleText)
     {
+        AppLogger.GuiInfo($"Build screen: {titleText}");
         ClearChildren();
         SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         SizeFlagsHorizontal = SizeFlags.ExpandFill;
@@ -107,7 +109,7 @@ public abstract partial class CardToolScreen : Control
             TooltipText = "Back",
             CustomMinimumSize = new Vector2(110, 42)
         };
-        backButton.Pressed += () => BackRequested?.Invoke();
+        backButton.Pressed += LogGuiAction("Back", () => BackRequested?.Invoke());
         header.AddChild(backButton);
 
         var scroll = new ScrollContainer
@@ -169,7 +171,11 @@ public abstract partial class CardToolScreen : Control
 
         if (isError)
         {
-            GD.PushError(message);
+            AppLogger.GuiError(message);
+        }
+        else if (!string.IsNullOrWhiteSpace(message))
+        {
+            AppLogger.GuiInfo(message);
         }
     }
 
@@ -181,7 +187,7 @@ public abstract partial class CardToolScreen : Control
             CustomMinimumSize = new Vector2(minWidth, 40),
             SizeFlagsVertical = SizeFlags.ShrinkCenter
         };
-        button.Pressed += onPressed;
+        button.Pressed += LogGuiAction($"Button: {text}", onPressed);
         parent.AddChild(button);
         return button;
     }
@@ -196,9 +202,19 @@ public abstract partial class CardToolScreen : Control
             CustomMinimumSize = minimumSize ?? new Vector2(42, 40),
             SizeFlagsVertical = SizeFlags.ShrinkCenter
         };
-        button.Pressed += onPressed;
+        button.Pressed += LogGuiAction($"Button: {tooltip}", onPressed);
         parent.AddChild(button);
         return button;
+    }
+
+    protected static Action LogGuiAction(string action, Action callback, string? details = null)
+    {
+        return AppLogger.WrapGuiAction(action, callback, details);
+    }
+
+    protected static void RunGuiAction(string action, Action callback, string? details = null)
+    {
+        AppLogger.RunGuiAction(action, callback, details);
     }
 
     protected static Texture2D? LoadIcon(string iconPath)

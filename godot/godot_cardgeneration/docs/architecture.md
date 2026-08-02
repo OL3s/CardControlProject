@@ -170,7 +170,7 @@ Implementerte skjermer:
 * `CardTypePickerScreen`: velger korttype før nytt kort åpnes i editor.
 * `CardEditorScreen`: lager eller redigerer kort med ID, image source path, front/back preview, fullscreen preview, save og PNG-export. Korttypen er låst etter typevalg. Bare kongekort har eksplisitt elementvalg.
 * `DeckEditorScreen`: lager eller redigerer kortstokk med deck-ID, tilgjengelige kort, entries med count, `Save` og `Save New`. Tilgjengelige kort vises som horisontalt scrollbare preview-fliser med kompakte ikonknapper for add og select. Deckinnhold vises som preview-fliser med count-badge og ikonknapper for delete, duplicate og select. Multiselect brukes for batch add/remove. Skjermen eksporterer ikke.
-* `ExportCenterScreen`: eneste eksportflate. Den eksporterer enten ett kort som PNG eller en deck som deck images, showcase, print sheets eller DIY print sheets. Den har også en showcase-bunnknapp som åpner print-preview av valgt card/deck med gjeldende printvalg.
+* `ExportCenterScreen`: eneste eksportflate. Den tilbyr `Images` for enkeltkort, individuelle deckbilder, grid og strip, og `Print` for A4/A3-ark til fysisk utskrift og kutting. Begge typene har preview. Print kan bruke vanlig slot-alignment eller `Easy backs`, som grupperer forsider etter korttype og fyller hele det tilhørende baksidearket.
 
 Første editor dekker fellesfeltene i kortmodellen. Type-spesifikke felt som monsterkrav, terrengproduksjon og kongeoppdrag kan legges inn senere uten å endre service-regelen.
 

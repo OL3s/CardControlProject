@@ -1,4 +1,5 @@
 using System;
+using CardGeneration.App;
 using CardGeneration.Cli;
 using CardGeneration.Resources.Enums;
 using CardGeneration.Services;
@@ -17,19 +18,28 @@ public partial class MainMenu : Control
 
     public override void _Ready()
     {
+        AppLogger.RegisterGlobalHandlers();
+        AppLogger.GuiInfo($"Application starting. Log file: {AppLogger.CurrentUserLogPath} ({AppLogger.CurrentGlobalLogPath})");
+
         var defaultResult = _cardToolService.EnsureDefaultResources();
         if (!defaultResult.Success)
         {
-            GD.PushError(defaultResult.Message);
+            AppLogger.GuiError(defaultResult.Message);
+        }
+        else
+        {
+            AppLogger.GuiInfo(defaultResult.Message);
         }
 
         var userArgs = OS.GetCmdlineUserArgs();
         if (DisplayServer.GetName() == "headless" || userArgs.Length > 0)
         {
+            AppLogger.Info($"Starting CLI mode with {userArgs.Length} user argument(s).", "CLI");
             RunCli(userArgs);
             return;
         }
 
+        AppLogger.GuiInfo("Starting GUI mode.");
         BuildMenu();
     }
 
@@ -41,6 +51,7 @@ public partial class MainMenu : Control
 
     private void BuildMenu()
     {
+        AppLogger.GuiInfo("Build screen: Main Menu");
         ClearChildren();
         SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 
@@ -123,29 +134,15 @@ public partial class MainMenu : Control
             CustomMinimumSize = new Vector2(170, 132),
             TooltipText = text
         };
-        button.Pressed += onPressed ?? (() => GD.Print($"{text} is not implemented yet."));
+        button.Pressed += AppLogger.WrapGuiAction(
+            $"Open {text}",
+            onPressed ?? (() => AppLogger.GuiWarning($"{text} is not implemented yet.")));
         parent.AddChild(button);
     }
 
     private void ShowSettings()
     {
-        ClearChildren();
-        SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-
-        var background = new ColorRect
-        {
-            Color = new Color(0.055f, 0.048f, 0.07f)
-        };
-        background.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        AddChild(background);
-
-        var center = new CenterContainer();
-        center.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        AddChild(center);
-
-        var settingsPanel = new SettingsPanel();
-        settingsPanel.BackRequested += BuildMenu;
-        center.AddChild(settingsPanel);
+        ShowScreen(new SettingsPanel());
     }
 
     private void ShowCards()
@@ -205,6 +202,7 @@ public partial class MainMenu : Control
 
     private void ShowScreen(CardToolScreen screen)
     {
+        AppLogger.GuiInfo($"Navigate to {screen.GetType().Name}.");
         ClearChildren();
         SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         screen.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);

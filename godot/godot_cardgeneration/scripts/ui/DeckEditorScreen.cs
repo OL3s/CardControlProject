@@ -127,7 +127,7 @@ public partial class DeckEditorScreen : CardToolScreen
             Title = "Save Deck As New Resource",
             Filters = ["*.tres ; Godot Resource"]
         };
-        _saveAsDialog.FileSelected += OnSaveAsFileSelected;
+        _saveAsDialog.FileSelected += path => RunGuiAction("Selected deck save-as file", () => OnSaveAsFileSelected(path), $"path={path}");
         AddChild(_saveAsDialog);
     }
 
@@ -196,7 +196,7 @@ public partial class DeckEditorScreen : CardToolScreen
                 "*.svg ; SVG"
             ]
         };
-        _backImageDialog.FileSelected += OnBackImageSelected;
+        _backImageDialog.FileSelected += path => RunGuiAction("Selected deck back image file", () => OnBackImageSelected(path), $"path={path}");
         AddChild(_backImageDialog);
     }
 
@@ -406,7 +406,7 @@ public partial class DeckEditorScreen : CardToolScreen
             Icon = string.IsNullOrWhiteSpace(action.IconPath) ? null : LoadIcon(action.IconPath),
             ExpandIcon = true
         };
-        button.Pressed += action.OnPressed;
+        button.Pressed += LogGuiAction($"Deck tile: {action.Tooltip}", action.OnPressed);
         return button;
     }
 

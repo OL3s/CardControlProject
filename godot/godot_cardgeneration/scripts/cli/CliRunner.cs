@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using CardGeneration.App;
 using CardGeneration.Services;
 using Godot;
@@ -16,15 +17,18 @@ public sealed class CliRunner
 
     public int Run(string[] args)
     {
+        var stopwatch = Stopwatch.StartNew();
         try
         {
             var options = CliOptions.Parse(args);
             if (options.ShowHelp || string.IsNullOrWhiteSpace(options.Command))
             {
+                AppLogger.CliInfo("Showing CLI help.");
                 GD.Print(GetHelpText());
                 return 0;
             }
 
+            AppLogger.CliInfo($"START command={options.Command}; arguments={args.Length}");
             if (options.Command != "set-config")
             {
                 options.ApplyConfigDefaults(_cardToolService.LoadConfig());
@@ -33,10 +37,12 @@ public sealed class CliRunner
             var result = Execute(options);
             if (result.Success)
             {
+                AppLogger.CliInfo($"DONE command={options.Command}; exit_code={result.ExitCode}; elapsed_ms={stopwatch.ElapsedMilliseconds}; result={result.Message}");
                 GD.Print(result.Message);
             }
             else
             {
+                AppLogger.CliError($"FAILED command={options.Command}; exit_code={result.ExitCode}; elapsed_ms={stopwatch.ElapsedMilliseconds}; result={result.Message}");
                 GD.PushError(result.Message);
             }
 
@@ -44,6 +50,7 @@ public sealed class CliRunner
         }
         catch (Exception exception)
         {
+            AppLogger.CliError($"FAILED command parsing or execution; exit_code=1; elapsed_ms={stopwatch.ElapsedMilliseconds}", exception);
             GD.PushError(exception.Message);
             return 1;
         }
@@ -68,8 +75,8 @@ public sealed class CliRunner
             "validate-cards" => _cardToolService.ValidateCards(),
             "validate-deck" => _cardToolService.ValidateDeck(options.DeckId),
             "render-card" => _cardToolService.RenderCard(options.CardId, options.OutputPath),
-            "export-deck" => _cardToolService.ExportDeck(options.DeckId, options.OutputPath, options.Format, options.Layout, options.Columns, options.Spacing),
-            "export-sheet" => _cardToolService.ExportSheet(options.DeckId, options.OutputPath, options.Paper, options.Dpi, options.BackMirror, options.IncludeMeasurementGuide),
+            "export-deck" => _cardToolService.ExportDeck(options.DeckId, options.OutputPath, options.Format, options.Layout, options.Columns, options.Spacing, ParseImageBackMode(options.BackImages)),
+            "export-sheet" => _cardToolService.ExportSheet(options.DeckId, options.OutputPath, options.Paper, options.Dpi, options.BackMirror, options.IncludeMeasurementGuide, options.EasyPrintBacks),
             "export-diy" => _cardToolService.ExportDiy(options.DeckId, options.OutputPath, options.Dpi, options.BackMirror, options.IncludeMeasurementGuide),
             "export-showcase" => _cardToolService.ExportShowcase(options.DeckId, options.OutputPath, options.Format),
             _ => ToolResult.Fail($"Unknown command '{options.Command}'. Use --help to list commands.")
@@ -128,6 +135,11 @@ public sealed class CliRunner
           grid        One PNG with all cards in a grid.
           strip       One long vertical PNG with all cards.
 
+        Deck image backs:
+          --backs none  Export fronts only.
+          --backs used  Prepend backs for card types present in the deck.
+          --backs all   Prepend Monster, Terrain, and King backs.
+
         Print DPI choices:
           150  Draft preview quality.
           300  Standard print quality.
@@ -142,6 +154,7 @@ public sealed class CliRunner
 
         Print sheet options:
           --measurement-guide  Add a 10 cm guide line with 1 cm ticks for print scaling checks.
+          --easy-backs         Group fronts by card type and fill every paired back sheet.
 
         Config:
           show-config prints the saved defaults.
@@ -150,5 +163,16 @@ public sealed class CliRunner
           reset-content deletes saved cards/decks and regenerates default cards/deck.
           Export commands use config defaults when flags are omitted.
         """;
+    }
+
+    private static ImageBackMode ParseImageBackMode(string value)
+    {
+        return value.ToLowerInvariant() switch
+        {
+            "none" => ImageBackMode.None,
+            "used" => ImageBackMode.Used,
+            "all" => ImageBackMode.All,
+            _ => throw new ArgumentException($"Back image mode '{value}' is not supported. Use none, used, or all.")
+        };
     }
 }

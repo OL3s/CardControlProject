@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using CardGeneration.App;
 using CardGeneration.Resources;
 using CardGeneration.Resources.Enums;
+using CardGeneration.Services;
 using Godot;
 
 namespace CardGeneration.Ui;
@@ -14,6 +16,8 @@ public partial class SavedCardsScreen : CardToolScreen
     private CardPreviewControl _frontPreview = null!;
     private Label _details = null!;
     private FileDialog _importDialog = null!;
+    private FileDialog _importFolderDialog = null!;
+    private readonly HashSet<string> _expandedFolders = new(StringComparer.OrdinalIgnoreCase);
 
     public event Action<CardResource?>? EditCardRequested;
     public event Action? NewCardRequested;
@@ -37,7 +41,8 @@ public partial class SavedCardsScreen : CardToolScreen
         toolbar.AddThemeConstantOverride("separation", 10);
         content.AddChild(toolbar);
         AddIconButton(toolbar, CardIconPath, "Create card", () => NewCardRequested?.Invoke());
-        AddIconButton(toolbar, ImportIconPath, "Import card resource", OpenImportDialog);
+        AddIconButton(toolbar, ImportIconPath, "Import card resource files", OpenImportDialog);
+        AddIconButton(toolbar, BrowseIconPath, "Import card folder recursively", OpenImportFolderDialog);
         AddIconButton(toolbar, CheckIconPath, "Validate cards", ValidateCards);
         AddIconButton(toolbar, RefreshIconPath, "Refresh", RefreshDefaultsAndBuildUi);
         AddResourceDialogs();
@@ -102,10 +107,7 @@ public partial class SavedCardsScreen : CardToolScreen
             return;
         }
 
-        foreach (var card in _cards)
-        {
-            AddCardRow(list, card);
-        }
+        AddCardFolderSections(list);
 
         ShowCard(_cards[0]);
         SetStatus($"Loaded {_cards.Count} saved card(s).");
@@ -173,6 +175,109 @@ public partial class SavedCardsScreen : CardToolScreen
         AddIconButton(buttons, DeleteIconPath, "Delete", () => DeleteCard(card));
     }
 
+    private void AddCardFolderSections(VBoxContainer list)
+    {
+        foreach (var group in _cards.GroupBy(GetCardFolderLabel).OrderBy(group => group.Key))
+        {
+            AddFolderSection(list, group.Key, group.OrderBy(card => card.Id).ToArray());
+        }
+    }
+
+    private void AddFolderSection(VBoxContainer list, string folderName, IReadOnlyList<CardResource> cards)
+    {
+        var panel = new PanelContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        list.AddChild(panel);
+
+        var margin = new MarginContainer();
+        margin.AddThemeConstantOverride("margin_left", 10);
+        margin.AddThemeConstantOverride("margin_right", 10);
+        margin.AddThemeConstantOverride("margin_top", 6);
+        margin.AddThemeConstantOverride("margin_bottom", 6);
+        panel.AddChild(margin);
+
+        var expanded = _expandedFolders.Contains(folderName);
+        var button = new Button
+        {
+            Text = $"{(expanded ? "[-]" : "[+]")} {folderName} ({cards.Count})",
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            TooltipText = expanded ? "Collapse folder" : "Open folder",
+            Alignment = HorizontalAlignment.Left,
+            Icon = LoadIcon(BrowseIconPath),
+            IconAlignment = HorizontalAlignment.Left
+        };
+        button.Text = $"{folderName} ({cards.Count})";
+        button.AddThemeColorOverride("font_color", expanded ? new Color(0.78f, 0.93f, 0.75f) : new Color(0.88f, 0.84f, 0.74f));
+        button.Pressed += LogGuiAction("Toggle card folder", () => ToggleFolder(folderName), $"folder={folderName}; expanded={!expanded}");
+        margin.AddChild(button);
+
+        if (!expanded)
+        {
+            return;
+        }
+
+        foreach (var card in cards)
+        {
+            AddCardRow(list, card);
+        }
+    }
+
+    private void ToggleFolder(string folderName)
+    {
+        if (!_expandedFolders.Add(folderName))
+        {
+            _expandedFolders.Remove(folderName);
+        }
+
+        BuildUi();
+    }
+
+    private static string GetCardFolderLabel(CardResource card)
+    {
+        var resourcePath = NormalizeResourcePath(card.ResourcePath);
+        if (string.IsNullOrWhiteSpace(resourcePath))
+        {
+            return "unknown";
+        }
+
+        if (IsUnderRoot(resourcePath, CardRepository.UserCardsRootPath))
+        {
+            if (IsUnderRoot(resourcePath, CardRepository.UserDefaultCardsRootPath))
+            {
+                return "default_cards";
+            }
+
+            return GetRelativeFolder(resourcePath, CardRepository.UserCardsRootPath, "user");
+        }
+
+        if (IsUnderRoot(resourcePath, CardRepository.CardsRootPath))
+        {
+            var folder = GetRelativeFolder(resourcePath, CardRepository.CardsRootPath, "root");
+            return folder == "root" ? "packaged" : $"packaged/{folder}";
+        }
+
+        return "external";
+    }
+
+    private static string GetRelativeFolder(string resourcePath, string rootPath, string rootLabel)
+    {
+        var relativePath = resourcePath[rootPath.Length..].TrimStart('/');
+        var folder = NormalizeResourcePath(Path.GetDirectoryName(relativePath) ?? string.Empty);
+        return string.IsNullOrWhiteSpace(folder) ? rootLabel : folder;
+    }
+
+    private static bool IsUnderRoot(string resourcePath, string rootPath)
+    {
+        return resourcePath.StartsWith(NormalizeResourcePath(rootPath) + "/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeResourcePath(string path)
+    {
+        return path.Replace('\\', '/');
+    }
+
     private void ShowCard(CardResource card)
     {
         _frontPreview.SetCard(card);
@@ -215,10 +320,13 @@ public partial class SavedCardsScreen : CardToolScreen
 
     private void AddResourceDialogs()
     {
-        _importDialog = CreateResourceDialog("Import Card Resource", FileDialog.FileModeEnum.OpenFile);
-        _importDialog.FileSelected += OnImportFileSelected;
+        _importDialog = CreateResourceDialog("Import Card Resources", FileDialog.FileModeEnum.OpenFiles);
+        _importDialog.FilesSelected += paths => RunGuiAction("Selected card resource files", () => OnImportFilesSelected(paths), $"files={paths.Length}");
         AddChild(_importDialog);
 
+        _importFolderDialog = CreateResourceDialog("Import Card Folder", FileDialog.FileModeEnum.OpenDir);
+        _importFolderDialog.DirSelected += path => RunGuiAction("Selected card import folder", () => OnImportFolderSelected(path), $"path={path}");
+        AddChild(_importFolderDialog);
     }
 
     private static FileDialog CreateResourceDialog(string title, FileDialog.FileModeEnum fileMode)
@@ -234,17 +342,80 @@ public partial class SavedCardsScreen : CardToolScreen
 
     private void OpenImportDialog()
     {
-        var outputDirectory = ProjectSettings.GlobalizePath(CardGeneration.Services.CardRepository.UserCardsRootPath);
+        var outputDirectory = ProjectSettings.GlobalizePath(CardRepository.UserCardsRootPath);
         Directory.CreateDirectory(outputDirectory);
         _importDialog.CurrentDir = outputDirectory;
         _importDialog.PopupCenteredRatio(0.72f);
     }
 
-    private void OnImportFileSelected(string filePath)
+    private void OpenImportFolderDialog()
     {
-        var result = CardToolService.ImportCardResource(filePath);
+        var outputDirectory = ProjectSettings.GlobalizePath(CardRepository.UserCardsRootPath);
+        Directory.CreateDirectory(outputDirectory);
+        _importFolderDialog.CurrentDir = outputDirectory;
+        _importFolderDialog.PopupCenteredRatio(0.72f);
+    }
+
+    private void OnImportFilesSelected(string[] filePaths)
+    {
+        ImportCardFiles(filePaths);
+    }
+
+    private void OnImportFolderSelected(string folderPath)
+    {
+        var globalFolderPath = ProjectPaths.ToGlobalPath(folderPath);
+        if (!Directory.Exists(globalFolderPath))
+        {
+            SetStatus($"Import folder was not found: {folderPath}.", true);
+            return;
+        }
+
+        ImportCardFiles(Directory.EnumerateFiles(globalFolderPath, "*.*", SearchOption.AllDirectories).Where(IsResourceFilePath));
+    }
+
+    private void ImportCardFiles(IEnumerable<string> filePaths)
+    {
+        var imported = 0;
+        var scanned = 0;
+        var failures = new List<string>();
+        foreach (var filePath in filePaths)
+        {
+            scanned++;
+            var result = CardToolService.ImportCardResource(filePath);
+            if (result.Success)
+            {
+                imported++;
+            }
+            else
+            {
+                failures.Add(result.Message);
+            }
+        }
+
+        AppLogger.GuiInfo($"Card import completed. scanned={scanned}; imported={imported}; failed={failures.Count}");
         BuildUi();
-        SetStatus(result.Message, !result.Success);
+        SetStatus(CreateImportStatus(imported, scanned, failures), failures.Count > 0);
+    }
+
+    private static string CreateImportStatus(int imported, int scanned, IReadOnlyList<string> failures)
+    {
+        if (scanned == 0)
+        {
+            return "No card resource files found.";
+        }
+
+        if (failures.Count == 0)
+        {
+            return $"Imported {imported} card resource(s).";
+        }
+
+        return $"Imported {imported} card resource(s). Failed {failures.Count}: {string.Join(" | ", failures)}";
+    }
+
+    private static bool IsResourceFilePath(string filePath)
+    {
+        return filePath.EndsWith(".tres", StringComparison.OrdinalIgnoreCase)
+            || filePath.EndsWith(".res", StringComparison.OrdinalIgnoreCase);
     }
 
     private void ValidateCards()

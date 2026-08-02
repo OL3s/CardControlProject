@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using CardGeneration.App;
 using CardGeneration.Resources;
+using CardGeneration.Services;
 using Godot;
 
 namespace CardGeneration.Ui;
@@ -23,18 +24,21 @@ public partial class ExportCenterScreen : CardToolScreen
     private OptionButton _paper = null!;
     private OptionButton _dpi = null!;
     private OptionButton _backMirror = null!;
+    private CheckBox _easyPrintBacks = null!;
     private CheckBox _measurementGuide = null!;
     private SpinBox _columns = null!;
     private SpinBox _spacing = null!;
     private Button _exportButton = null!;
-    private Button _showcaseButton = null!;
+    private Button _previewButton = null!;
     private Button _reloadButton = null!;
     private ProgressBar _progressBar = null!;
     private Label _progressLabel = null!;
+    private VBoxContainer _imageBackOptions = null!;
+    private OptionButton _imageBackMode = null!;
     private VBoxContainer _deckImageOptions = null!;
     private VBoxContainer _gridColumnRow = null!;
     private VBoxContainer _spacingRow = null!;
-    private VBoxContainer _printSheetOptions = null!;
+    private VBoxContainer _printOptions = null!;
     private FileDialog _outputPathDialog = null!;
     private bool _startExportAfterPathSelection;
     private string _selectedOutputPath = string.Empty;
@@ -68,49 +72,60 @@ public partial class ExportCenterScreen : CardToolScreen
             SelectOption(_targetType, "Card");
         }
 
-        _targetType.ItemSelected += _ => RefreshVisibleOptions();
+        _targetType.ItemSelected += index => RunGuiAction("Change export target", RefreshVisibleOptions, $"index={index}; target={GetSelectedText(_targetType)}");
         _deck = AddDeckOption(content, config.DefaultDeckId);
         _card = AddCardOption(content, config.DefaultCardId);
         AddOutputPathDialog(config.DefaultOutputPath);
         _exportTypeLabel = new Label { Text = "Export Type" };
         content.AddChild(_exportTypeLabel);
         _exportType = new OptionButton { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        _exportType.AddItem("Deck Images");
-        _exportType.AddItem("Print Sheet");
-        _exportType.AddItem("DIY");
-        _exportType.AddItem("Showcase");
+        _exportType.AddItem("Images");
+        _exportType.AddItem("Print");
         content.AddChild(_exportType);
-        _exportType.ItemSelected += _ => RefreshVisibleOptions();
+        _exportType.ItemSelected += index => RunGuiAction("Change export type", RefreshVisibleOptions, $"index={index}; type={GetSelectedText(_exportType)}");
+
+        _imageBackOptions = AddOptionGroup(content, "Image Back Options");
+        _imageBackMode = AddOptionButton(_imageBackOptions, "Back Images", ["No backs", "Used card types", "All card types"]);
+        SelectOption(_imageBackMode, "All card types");
+        _imageBackMode.ItemSelected += index => RunGuiAction("Change image back mode", RefreshVisibleOptions, $"index={index}; mode={GetSelectedText(_imageBackMode)}");
 
         _deckImageOptions = AddOptionGroup(content, "Deck Image Options");
-        _layout = AddOptionButton(_deckImageOptions, "Deck Image Layout", ["individual", "grid", "strip"]);
+        _layout = AddOptionButton(_deckImageOptions, "Image Layout", ["individual", "grid", "strip"]);
         SelectOption(_layout, config.DefaultDeckLayout);
-        _layout.ItemSelected += _ => RefreshVisibleOptions();
+        _layout.ItemSelected += index => RunGuiAction("Change deck export layout", RefreshVisibleOptions, $"index={index}; layout={GetSelectedText(_layout)}");
         _gridColumnRow = AddOptionGroup(_deckImageOptions);
         _columns = AddSpinBox(_gridColumnRow, "Grid Columns", 0, 24, 1, config.DefaultGridColumns);
         _spacingRow = AddOptionGroup(_deckImageOptions);
         _spacing = AddSpinBox(_spacingRow, "Spacing", 0, 256, 1, config.DefaultSpacing);
 
-        _printSheetOptions = AddOptionGroup(content, "Print Sheet Options");
-        _paper = AddOptionButton(_printSheetOptions, "Print Paper", ["a4", "a3"]);
+        _printOptions = AddOptionGroup(content, "Print Options");
+        _paper = AddOptionButton(_printOptions, "Paper", ["A4", "A3"]);
         SelectOption(_paper, config.DefaultPaper);
-        _dpi = AddOptionButton(_printSheetOptions, "Print DPI", ["150", "300", "600", "1200"]);
+        _dpi = AddOptionButton(_printOptions, "Print DPI", ["150", "300", "600", "1200"]);
         SelectOption(_dpi, config.DefaultDpi.ToString());
-        _backMirror = AddOptionButton(_printSheetOptions, "Back Mirror", ["none", "width", "height", "both"]);
+        _backMirror = AddOptionButton(_printOptions, "Back Mirror", ["none", "width", "height", "both"]);
         SelectOption(_backMirror, config.DefaultBackMirror);
+        _easyPrintBacks = new CheckBox
+        {
+            Text = "Easy backs: group fronts by card type and fill every back sheet",
+            ButtonPressed = false,
+            TooltipText = "Uses more paper and ink, but every paired back sheet is completely filled with one card type's back so front/back slot alignment is unnecessary."
+        };
+        _easyPrintBacks.Toggled += enabled => RunGuiAction("Toggle easy print backs", UpdateBackMirrorAvailability, $"enabled={enabled}");
+        _printOptions.AddChild(_easyPrintBacks);
         _measurementGuide = new CheckBox
         {
             Text = "10 cm measurement guide",
             ButtonPressed = false,
             TooltipText = "Draws a 10 cm ruler line with 1 cm ticks on print sheets so printed scale can be checked."
         };
-        _printSheetOptions.AddChild(_measurementGuide);
+        _printOptions.AddChild(_measurementGuide);
 
         var buttons = new HBoxContainer();
         buttons.AddThemeConstantOverride("separation", 8);
         content.AddChild(buttons);
         _exportButton = AddIconButton(buttons, ExportIconPath, "Export", ExportSelected);
-        _showcaseButton = AddIconButton(buttons, PreviewIconPath, "Show print preview", ShowPrintPreview);
+        _previewButton = AddIconButton(buttons, PreviewIconPath, "Show preview", ShowPreview);
         _reloadButton = AddIconButton(buttons, RefreshIconPath, "Reload", RefreshDefaultsAndBuildUi);
 
         _progressBar = new ProgressBar
@@ -153,9 +168,9 @@ public partial class ExportCenterScreen : CardToolScreen
             Title = "Choose Export Folder",
             Filters = ["*.png ; PNG"]
         };
-        _outputPathDialog.DirSelected += OnOutputDirectorySelected;
-        _outputPathDialog.FileSelected += OnOutputFileSelected;
-        _outputPathDialog.Canceled += OnOutputPathDialogCanceled;
+        _outputPathDialog.DirSelected += path => RunGuiAction("Selected export output directory", () => OnOutputDirectorySelected(path), $"path={path}");
+        _outputPathDialog.FileSelected += path => RunGuiAction("Selected export output file", () => OnOutputFileSelected(path), $"path={path}");
+        _outputPathDialog.Canceled += LogGuiAction("Canceled export output path dialog", OnOutputPathDialogCanceled);
         AddChild(_outputPathDialog);
     }
 
@@ -255,24 +270,16 @@ public partial class ExportCenterScreen : CardToolScreen
         _card.Visible = isCardExport;
         _deckLabel.Visible = !isCardExport;
         _deck.Visible = !isCardExport;
-        _exportTypeLabel.Visible = !isCardExport;
-        _exportType.Visible = !isCardExport;
-        _deckImageOptions.Visible = !isCardExport;
-        _printSheetOptions.Visible = false;
+        _exportTypeLabel.Visible = true;
+        _exportType.Visible = true;
 
-        if (isCardExport)
-        {
-            return;
-        }
+        var isPrint = GetSelectedText(_exportType) == "Print";
+        _imageBackOptions.Visible = !isPrint;
+        _deckImageOptions.Visible = !isCardExport && !isPrint;
+        _printOptions.Visible = isPrint;
+        _previewButton.Visible = true;
 
-        var exportType = GetSelectedText(_exportType);
-        var isPrintSheet = exportType == "Print Sheet";
-        var isDiy = exportType == "DIY";
-        var isShowcase = exportType == "Showcase";
-        _deckImageOptions.Visible = !isPrintSheet && !isDiy && !isShowcase;
-        _printSheetOptions.Visible = isPrintSheet || isDiy;
-
-        if (isPrintSheet || isDiy || isShowcase)
+        if (isCardExport || isPrint)
         {
             return;
         }
@@ -405,18 +412,30 @@ public partial class ExportCenterScreen : CardToolScreen
 
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
-        var result = await Task.Run(exportOperation);
-
-        SetExportControlsDisabled(false);
-        ApplyExportProgress(1, 1, result.Message);
-        SetStatus(result.Message, !result.Success);
+        try
+        {
+            var result = await Task.Run(exportOperation);
+            ApplyExportProgress(1, 1, result.Message);
+            SetStatus(result.Message, !result.Success);
+        }
+        catch (Exception exception)
+        {
+            AppLogger.GuiError("Export failed with an unexpected exception.", exception);
+            SetStatus($"Export failed: {exception.Message}", true);
+        }
+        finally
+        {
+            SetExportControlsDisabled(false);
+        }
     }
 
     private Func<ToolResult>? CreateExportOperation()
     {
         var outputPath = _selectedOutputPath;
         Action<ExportProgress> progress = ReportExportProgress;
-        if (GetSelectedText(_targetType) == "Card")
+        var isCardExport = GetSelectedText(_targetType) == "Card";
+        CardDeckResource? selectedDeck = null;
+        if (isCardExport)
         {
             if (_card.Selected < 0 || _card.Selected >= _cards.Count)
             {
@@ -425,51 +444,202 @@ public partial class ExportCenterScreen : CardToolScreen
             }
 
             var selectedCard = _cards[_card.Selected];
-            return () => CardToolService.RenderCard(selectedCard, ResolveSingleOutputPath(outputPath), progress);
-        }
+            if (GetSelectedText(_exportType) == "Images" && GetImageBackMode() == ImageBackMode.None)
+            {
+                return () => CardToolService.RenderCard(selectedCard, ResolveSingleOutputPath(outputPath), progress);
+            }
 
-        if (_deck.Selected < 0 || _deck.Selected >= _decks.Count)
+            selectedDeck = CreateSingleCardDeck(selectedCard);
+        }
+        else
         {
-            SetStatus("Select a deck before exporting.", true);
-            return null;
+            if (_deck.Selected < 0 || _deck.Selected >= _decks.Count)
+            {
+                SetStatus("Select a deck before exporting.", true);
+                return null;
+            }
+
+            selectedDeck = _decks[_deck.Selected];
         }
 
-        var selectedDeck = _decks[_deck.Selected];
         var exportType = GetSelectedText(_exportType);
-        if (exportType == "Print Sheet")
+        if (exportType == "Print")
         {
-            var paper = GetSelectedText(_paper);
+            var paper = GetSelectedText(_paper).ToLowerInvariant();
             var dpi = int.Parse(GetSelectedText(_dpi));
             var backMirror = GetSelectedText(_backMirror);
             var includeMeasurementGuide = _measurementGuide.ButtonPressed;
-            var sheetOutputPath = ResolveMultiOutputPath(outputPath, $"{selectedDeck.Id}_{paper}_{dpi}dpi_sheets");
-            return () => CardToolService.ExportSheet(selectedDeck, sheetOutputPath, paper, dpi, backMirror, includeMeasurementGuide, progress);
+            var easyPrintBacks = _easyPrintBacks.ButtonPressed;
+            var modeSuffix = easyPrintBacks ? "_easy_backs" : string.Empty;
+            var sheetOutputPath = ResolveMultiOutputPath(outputPath, $"{selectedDeck.Id}_{paper}_{dpi}dpi{modeSuffix}_sheets");
+            return () => CardToolService.ExportSheet(selectedDeck, sheetOutputPath, paper, dpi, backMirror, includeMeasurementGuide, progress, easyPrintBacks);
         }
 
-        if (exportType == "DIY")
-        {
-            var dpi = int.Parse(GetSelectedText(_dpi));
-            var backMirror = GetSelectedText(_backMirror);
-            var includeMeasurementGuide = _measurementGuide.ButtonPressed;
-            var diyOutputPath = ResolveMultiOutputPath(outputPath, $"{selectedDeck.Id}_diy_{dpi}dpi");
-            return () => CardToolService.ExportDiy(selectedDeck, diyOutputPath, dpi, backMirror, includeMeasurementGuide, progress);
-        }
-
-        if (exportType == "Showcase")
-        {
-            return () => CardToolService.ExportShowcase(selectedDeck, ResolveSingleOutputPath(outputPath), "png", progress);
-        }
-
-        var layout = GetSelectedText(_layout);
+        var layout = isCardExport ? "individual" : GetSelectedText(_layout);
         var columns = (int)_columns.Value;
         var spacing = (int)_spacing.Value;
         var deckOutputPath = layout == "individual"
-            ? ResolveMultiOutputPath(outputPath, $"{selectedDeck.Id}_individual")
+            ? ResolveMultiOutputPath(outputPath, isCardExport ? $"{selectedDeck.Id}_images" : $"{selectedDeck.Id}_individual")
             : ResolveSingleOutputPath(outputPath);
-        return () => CardToolService.ExportDeck(selectedDeck, deckOutputPath, "png", layout, columns, spacing, progress);
+        var backMode = GetImageBackMode();
+        return () => CardToolService.ExportDeck(selectedDeck, deckOutputPath, "png", layout, columns, spacing, progress, backMode);
     }
 
-    private void ShowPrintPreview()
+    private async void ShowPreview()
+    {
+        ResetProgress();
+        SetExportControlsDisabled(true);
+        _progressBar.Visible = true;
+        _progressLabel.Visible = true;
+        SetStatus("Creating preview...");
+
+        try
+        {
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+
+            if (GetSelectedText(_exportType) == "Print")
+            {
+                await ShowPrintPreview();
+            }
+            else
+            {
+                await ShowImagePreview();
+            }
+        }
+        catch (Exception exception)
+        {
+            AppLogger.GuiError("Preview generation failed with an unexpected exception.", exception);
+            SetStatus($"Preview generation failed: {exception.Message}", true);
+        }
+        finally
+        {
+            SetExportControlsDisabled(false);
+        }
+    }
+
+    private async Task ShowImagePreview()
+    {
+        IReadOnlyList<ImagePreviewItem>? previews;
+        if (GetSelectedText(_targetType) == "Card")
+        {
+            if (_card.Selected < 0 || _card.Selected >= _cards.Count)
+            {
+                SetStatus("Select a card before previewing image output.", true);
+                return;
+            }
+
+            var card = _cards[_card.Selected];
+            var backMode = GetImageBackMode();
+            if (backMode == ImageBackMode.None)
+            {
+                previews = await Task.Run(() => (IReadOnlyList<ImagePreviewItem>)[new ImagePreviewItem(card.Id, CardToolService.RenderCardPreview(card, ReportExportProgress))]);
+            }
+            else
+            {
+                var deck = CreateSingleCardDeck(card);
+                var result = await Task.Run(() =>
+                {
+                    var items = CardToolService.RenderDeckImagePreviews(deck, "individual", 1, 0, out var error, ReportExportProgress, backMode);
+                    return (Items: items, Error: error);
+                });
+                previews = result.Items;
+                if (previews is null)
+                {
+                    SetStatus(result.Error, true);
+                    return;
+                }
+            }
+        }
+        else
+        {
+            if (_deck.Selected < 0 || _deck.Selected >= _decks.Count)
+            {
+                SetStatus("Select a deck before previewing image output.", true);
+                return;
+            }
+
+            var deck = _decks[_deck.Selected];
+            var layout = GetSelectedText(_layout);
+            var columns = (int)_columns.Value;
+            var spacing = (int)_spacing.Value;
+            var backMode = GetImageBackMode();
+            var result = await Task.Run(() =>
+            {
+                var items = CardToolService.RenderDeckImagePreviews(deck, layout, columns, spacing, out var error, ReportExportProgress, backMode);
+                return (Items: items, Error: error);
+            });
+            previews = result.Items;
+            if (previews is null)
+            {
+                SetStatus(result.Error, true);
+                return;
+            }
+        }
+
+        ShowImagePreviewPopup(previews);
+        SetStatus($"Showing image export preview with {previews.Count} image(s).");
+    }
+
+    private void ShowImagePreviewPopup(IReadOnlyList<ImagePreviewItem> previews)
+    {
+        var popup = new PopupPanel { Title = "Image export preview" };
+        AddChild(popup);
+
+        var margin = new MarginContainer();
+        margin.AddThemeConstantOverride("margin_left", 14);
+        margin.AddThemeConstantOverride("margin_right", 14);
+        margin.AddThemeConstantOverride("margin_top", 14);
+        margin.AddThemeConstantOverride("margin_bottom", 14);
+        popup.AddChild(margin);
+
+        var scroll = new ScrollContainer
+        {
+            CustomMinimumSize = new Vector2(980, 680),
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Auto,
+            VerticalScrollMode = ScrollContainer.ScrollMode.Auto
+        };
+        margin.AddChild(scroll);
+
+        Container previewList = previews.Count > 1
+            ? new GridContainer { Columns = 3, SizeFlagsHorizontal = SizeFlags.ExpandFill }
+            : new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        scroll.AddChild(previewList);
+
+        try
+        {
+            foreach (var preview in previews)
+            {
+                var column = new VBoxContainer();
+                column.AddThemeConstantOverride("separation", 8);
+                previewList.AddChild(column);
+                column.AddChild(new Label { Text = preview.Label, HorizontalAlignment = HorizontalAlignment.Center });
+
+                var texture = ImageTexture.CreateFromImage(preview.Image);
+                var imageSize = preview.Image.GetSize();
+                var displayWidth = previews.Count > 1 ? 280 : Math.Min(900, Math.Max(300, imageSize.X));
+                var displayHeight = Math.Max(1, (int)Math.Round(displayWidth * imageSize.Y / (double)imageSize.X));
+                column.AddChild(new TextureRect
+                {
+                    Texture = texture,
+                    CustomMinimumSize = new Vector2(displayWidth, displayHeight),
+                    ExpandMode = TextureRect.ExpandModeEnum.FitWidthProportional,
+                    StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered
+                });
+            }
+        }
+        finally
+        {
+            foreach (var preview in previews)
+            {
+                preview.Dispose();
+            }
+        }
+
+        popup.PopupCentered(new Vector2I(1060, 760));
+        popup.PopupHide += popup.QueueFree;
+    }
+
+    private async Task ShowPrintPreview()
     {
         var previewDeck = GetSelectedPreviewDeck();
         if (previewDeck is null)
@@ -477,27 +647,25 @@ public partial class ExportCenterScreen : CardToolScreen
             return;
         }
 
-        var paper = GetSelectedText(_paper);
+        var paper = GetSelectedText(_paper).ToLowerInvariant();
         var dpi = int.Parse(GetSelectedText(_dpi));
         var backMirror = GetSelectedText(_backMirror);
         var includeMeasurementGuide = _measurementGuide.ButtonPressed;
-        var frontImage = CardToolService.RenderSheetPreview(previewDeck, paper, dpi, backMirror, includeMeasurementGuide, showBack: false, out var frontError);
-        if (frontImage is null)
+        var easyPrintBacks = _easyPrintBacks.ButtonPressed;
+        var result = await Task.Run(() =>
         {
-            SetStatus(frontError, true);
+            var previewPages = CardToolService.RenderSheetPreviews(previewDeck, paper, dpi, backMirror, includeMeasurementGuide, easyPrintBacks, out var error, ReportExportProgress);
+            return (Pages: previewPages, Error: error);
+        });
+        var pages = result.Pages;
+        if (pages is null)
+        {
+            SetStatus(result.Error, true);
             return;
         }
 
-        var backImage = CardToolService.RenderSheetPreview(previewDeck, paper, dpi, backMirror, includeMeasurementGuide, showBack: true, out var backError);
-        if (backImage is null)
-        {
-            frontImage.Dispose();
-            SetStatus(backError, true);
-            return;
-        }
-
-        ShowPrintPreviewPopup(previewDeck.Id, paper, dpi, frontImage, backImage);
-        SetStatus($"Showing {paper.ToUpperInvariant()} print preview for '{previewDeck.Id}'.");
+        ShowPrintPreviewPopup(previewDeck.Id, paper, dpi, pages);
+        SetStatus($"Showing all {pages.Count} {paper.ToUpperInvariant()} print page pair(s) for '{previewDeck.Id}'.");
     }
 
     private CardDeckResource? GetSelectedPreviewDeck()
@@ -510,12 +678,7 @@ public partial class ExportCenterScreen : CardToolScreen
                 return null;
             }
 
-            var card = _cards[_card.Selected];
-            return new CardDeckResource
-            {
-                Id = card.Id,
-                Entries = [new CardDeckEntryResource { Card = card, Count = 1 }]
-            };
+            return CreateSingleCardDeck(_cards[_card.Selected]);
         }
 
         if (_deck.Selected < 0 || _deck.Selected >= _decks.Count)
@@ -527,7 +690,33 @@ public partial class ExportCenterScreen : CardToolScreen
         return _decks[_deck.Selected];
     }
 
-    private void ShowPrintPreviewPopup(string targetId, string paper, int dpi, Image frontImage, Image backImage)
+    private static CardDeckResource CreateSingleCardDeck(CardResource card)
+    {
+        var deck = new CardDeckResource
+        {
+            Id = card.Id,
+            Entries = [new CardDeckEntryResource { Card = card, Count = 1 }]
+        };
+        deck.SetBackImageTexture(card.CardType, card.BackImageTexture);
+        return deck;
+    }
+
+    private void UpdateBackMirrorAvailability()
+    {
+        _backMirror.Disabled = _easyPrintBacks.ButtonPressed;
+    }
+
+    private ImageBackMode GetImageBackMode()
+    {
+        return GetSelectedText(_imageBackMode) switch
+        {
+            "Used card types" => ImageBackMode.Used,
+            "All card types" => ImageBackMode.All,
+            _ => ImageBackMode.None
+        };
+    }
+
+    private void ShowPrintPreviewPopup(string targetId, string paper, int dpi, IReadOnlyList<SheetPreviewPage> pages)
     {
         var popup = new PopupPanel
         {
@@ -546,16 +735,59 @@ public partial class ExportCenterScreen : CardToolScreen
         {
             CustomMinimumSize = new Vector2(980, 680),
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            SizeFlagsVertical = SizeFlags.ExpandFill
+            SizeFlagsVertical = SizeFlags.ExpandFill,
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            VerticalScrollMode = ScrollContainer.ScrollMode.Auto
         };
         margin.AddChild(scroll);
 
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 16);
-        scroll.AddChild(row);
+        var pageList = new VBoxContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        pageList.AddThemeConstantOverride("separation", 20);
+        scroll.AddChild(pageList);
 
-        AddSheetPreview(row, "Front sheet", frontImage);
-        AddSheetPreview(row, "Back sheet", backImage);
+        try
+        {
+            foreach (var page in pages)
+            {
+                var pageGroup = new VBoxContainer
+                {
+                    SizeFlagsHorizontal = SizeFlags.ExpandFill
+                };
+                pageGroup.AddThemeConstantOverride("separation", 8);
+                pageList.AddChild(pageGroup);
+
+                pageGroup.AddChild(new Label
+                {
+                    Text = $"Page {page.PageNumber} of {pages.Count}",
+                    HorizontalAlignment = HorizontalAlignment.Center
+                });
+
+                var row = new HBoxContainer
+                {
+                    SizeFlagsHorizontal = SizeFlags.ExpandFill
+                };
+                row.AddThemeConstantOverride("separation", 16);
+                pageGroup.AddChild(row);
+
+                AddSheetPreview(row, $"Front page {page.PageNumber}", page.Front);
+                AddSheetPreview(row, $"Back page {page.PageNumber}", page.Back);
+
+                if (page.PageNumber < pages.Count)
+                {
+                    pageList.AddChild(new HSeparator());
+                }
+            }
+        }
+        finally
+        {
+            foreach (var page in pages)
+            {
+                page.Dispose();
+            }
+        }
 
         popup.PopupCentered(new Vector2I(1060, 760));
         popup.PopupHide += popup.QueueFree;
@@ -574,7 +806,6 @@ public partial class ExportCenterScreen : CardToolScreen
         });
 
         var texture = ImageTexture.CreateFromImage(image);
-        image.Dispose();
         column.AddChild(new TextureRect
         {
             Texture = texture,
@@ -611,19 +842,14 @@ public partial class ExportCenterScreen : CardToolScreen
 
     private ExportOutputMode GetOutputMode()
     {
-        if (GetSelectedText(_targetType) == "Card")
-        {
-            return ExportOutputMode.SaveFile;
-        }
-
-        if (GetSelectedText(_exportType) is "Print Sheet" or "DIY")
+        if (GetSelectedText(_exportType) == "Print")
         {
             return ExportOutputMode.Folder;
         }
 
-        if (GetSelectedText(_exportType) == "Showcase")
+        if (GetSelectedText(_targetType) == "Card")
         {
-            return ExportOutputMode.SaveFile;
+            return GetImageBackMode() == ImageBackMode.None ? ExportOutputMode.SaveFile : ExportOutputMode.Folder;
         }
 
         return GetSelectedText(_layout) == "individual" ? ExportOutputMode.Folder : ExportOutputMode.SaveFile;
@@ -638,11 +864,6 @@ public partial class ExportCenterScreen : CardToolScreen
 
         if (_deck.Selected >= 0 && _deck.Selected < _decks.Count)
         {
-            if (GetSelectedText(_exportType) == "Showcase")
-            {
-                return $"{SanitizeFileName(_decks[_deck.Selected].Id)}_showcase.png";
-            }
-
             return $"{SanitizeFileName(_decks[_deck.Selected].Id)}_{GetSelectedText(_layout)}.png";
         }
 
@@ -677,16 +898,18 @@ public partial class ExportCenterScreen : CardToolScreen
     private void SetExportControlsDisabled(bool disabled)
     {
         _exportButton.Disabled = disabled;
-        _showcaseButton.Disabled = disabled;
+        _previewButton.Disabled = disabled;
         _reloadButton.Disabled = disabled;
         _targetType.Disabled = disabled;
         _card.Disabled = disabled;
         _deck.Disabled = disabled;
         _exportType.Disabled = disabled;
+        _imageBackMode.Disabled = disabled;
         _layout.Disabled = disabled;
         _paper.Disabled = disabled;
         _dpi.Disabled = disabled;
-        _backMirror.Disabled = disabled;
+        _easyPrintBacks.Disabled = disabled;
+        _backMirror.Disabled = disabled || _easyPrintBacks.ButtonPressed;
         _measurementGuide.Disabled = disabled;
         _columns.Editable = !disabled;
         _spacing.Editable = !disabled;

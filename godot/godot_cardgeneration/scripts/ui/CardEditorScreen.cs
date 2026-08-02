@@ -118,7 +118,7 @@ public partial class CardEditorScreen : CardToolScreen
                 "*.svg ; SVG"
             ]
         };
-        _imageFileDialog.FileSelected += OnImageFileSelected;
+        _imageFileDialog.FileSelected += path => RunGuiAction("Selected card image file", () => OnImageFileSelected(path), $"path={path}");
         AddChild(_imageFileDialog);
 
         _saveAsDialog = new FileDialog
@@ -128,7 +128,7 @@ public partial class CardEditorScreen : CardToolScreen
             Title = "Save Card As New Resource",
             Filters = ["*.tres ; Godot Resource"]
         };
-        _saveAsDialog.FileSelected += OnSaveAsFileSelected;
+        _saveAsDialog.FileSelected += path => RunGuiAction("Selected card save-as file", () => OnSaveAsFileSelected(path), $"path={path}");
         AddChild(_saveAsDialog);
 
         RefreshPreview();
@@ -222,7 +222,7 @@ public partial class CardEditorScreen : CardToolScreen
             case KingCardResource king:
                 form.AddChild(new Label { Text = "King Setup" });
                 _kingElementFocus = AddElementOption(form, "Element Focus", king.ElementFocus);
-                _kingElementFocus.ItemSelected += _ => RefreshPreview();
+                _kingElementFocus.ItemSelected += index => RunGuiAction("Change king element focus", RefreshPreview, $"index={index}");
                 _kingHealth = AddSpinBox(form, "Health", 1, 30, 1, king.Health);
                 _kingHealth.ValueChanged += _ => RefreshPreview();
                 _kingQuestText = AddTextEdit(form, "Quest Text", king.QuestText, 90);

@@ -41,7 +41,7 @@ public partial class SavedDecksScreen : CardToolScreen
         _createDeckMenu = new PopupMenu();
         _createDeckMenu.AddItem("New Empty Deck", 0);
         _createDeckMenu.AddItem("Default 52-Card Preset", 1);
-        _createDeckMenu.IdPressed += OnCreateDeckMenuPressed;
+        _createDeckMenu.IdPressed += id => RunGuiAction("Create deck menu choice", () => OnCreateDeckMenuPressed(id), $"id={id}");
         AddChild(_createDeckMenu);
 
         var body = new HBoxContainer
@@ -237,7 +237,7 @@ public partial class SavedDecksScreen : CardToolScreen
     private void AddResourceDialogs()
     {
         _importDialog = CreateResourceDialog("Import Deck Resource", FileDialog.FileModeEnum.OpenFile);
-        _importDialog.FileSelected += OnImportFileSelected;
+        _importDialog.FileSelected += path => RunGuiAction("Selected deck resource file", () => OnImportFileSelected(path), $"path={path}");
         AddChild(_importDialog);
 
     }
