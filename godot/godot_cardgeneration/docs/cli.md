@@ -2,7 +2,7 @@
 
 # CLI
 
-Kortverktøyet skal kunne kjøres i Godot headless. CLI brukes for batchjobber, automatisert eksport og kontroll av kortdata uten å åpne GUI.
+Kortverktøyet skal kunne kjøres i Godot headless. CLI brukes for batchjobber, automatisert eksport og kontroll av kortdata uten å åpne GUI. Målet for CLI-paritet er batch/data/export: liste/hente data, import, validering, config og eksport. Full interaktiv kort- og deckredigering kan være GUI-only i denne fasen.
 
 ## Grunnform
 
@@ -45,12 +45,12 @@ Status:
 * `import-card`: implementert for `.tres` kortresource.
 * `import-deck`: implementert for `.tres` deckresource.
 * `validate-cards`: implementert.
-* `validate-deck`: implementert for lagrede deckresources.
+* `validate-deck`: implementert for lagrede og innebygde deckresources.
 * `render-card`: implementert for PNG.
 * `export-deck`: implementert for PNG-layoutene `individual`, `grid` og `strip`.
 * `export-sheet`: implementert for A4 og A3 PNG-printark med front/back og valgbar DPI.
 * `export-diy`: stub.
-* `export-showcase`: implementert som grid-output.
+* `export-showcase`: implementert som grid-output og delt med GUI Showcase-export.
 
 ## Eksempler
 

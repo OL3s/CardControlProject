@@ -18,7 +18,7 @@ Denne mappen inneholder Godot-prosjektet for kortverktøyet. Verktøyet skal bru
 
 Kortgenereringen skal gjøre det mulig å lage kort én gang fra Godot `Resource`-data og grafiske lag, og deretter bruke samme data til preview, bilder, kortstokker, printark og DIY-pakker.
 
-Verktøyet skal ha både GUI og CLI/headless-modus. GUI og CLI skal bruke samme service-lag for lasting, lagring, validering, rendering og eksport. Forskjellen skal primært være inputmetode: GUI bruker menyer og skjema, mens CLI bruker argumenter.
+Verktøyet skal ha både GUI og CLI/headless-modus. GUI og CLI skal bruke samme service-lag for lasting, import, validering, rendering, eksport og config-defaults. Kort- og deckredigering kan være GUI-only i denne fasen; batch/data/export-funksjoner skal finnes i begge innganger.
 
 All kode, filnavn, mappenavn og tekniske navn holdes på engelsk. Dokumentasjonen holdes på norsk.
 
@@ -43,9 +43,9 @@ Korteditoren støtter felles kortfelt, image source path, preview, lagring og PN
 
 Deckeditoren støtter deck-ID, tilgjengelige kort på tvers av korttyper, deck entries med antall, `Save` og `Save New`. Venstre side viser lagrede kort som preview-fliser i en horisontal scrollrad med ikonknapper for å legge til én kopi eller velge flere kort. Høyre side viser deckinnhold som preview-fliser med ikonknapper for slett, dupliser og multiselect. Eksport gjøres bare fra `Export`-skjermen. En deck er et ferdig produkt med alle relevante korttyper, ikke en separat monster-/terreng-/kongebunke.
 
-`Export` er eneste eksportflate. Den kan eksportere ett lagret kort som PNG, eller en lagret kortstokk som vanlige deck images eller printarkexport med A4/A3 og DPI-valg. Verdiene starter fra lagrede defaults, men kan endres direkte i Export for den ene eksporten uten å lagres som nye defaults.
+`Export` er eneste eksportflate. Den kan eksportere ett lagret kort som PNG, eller en lagret kortstokk som vanlige deck images, showcase eller printarkexport med A4/A3 og DPI-valg. Verdiene starter fra lagrede defaults, men kan endres direkte i Export for den ene eksporten uten å lagres som nye defaults.
 
-Export-skjermen har en output path-velger som åpner Godots file dialog i valgt/default exportmappe.
+Export-knappen åpner Godots file dialog i valgt/default exportmappe. Cancel avbryter eksporten, og Save eller mappevalg starter eksporten.
 
 `Settings` redigerer den samme config-resourcen som CLI bruker. Dette er oppstarts- og CLI-defaults, ikke valg som normalt må endres før hver eksport. Endringer gjort i GUI skal derfor påvirke senere CLI-kjøringer uten tilsvarende `--`-flagg, og `set-config` i CLI skal påvirke GUI-innstillingene.
 
@@ -176,7 +176,7 @@ Planlagte kommandoer:
 * `export-diy`
 * `export-showcase`
 
-CLI-kommandoene skal bare parse argumenter og kalle samme service-lag som GUI bruker.
+CLI-kommandoene skal bare parse argumenter og kalle samme service-lag som GUI bruker. CLI skal dekke batch/data/export-funksjoner, men trenger ikke å ha full interaktiv redigering av kort- og deckinnhold i denne fasen.
 
 Første implementerte CLI-funksjoner:
 
@@ -187,9 +187,11 @@ Første implementerte CLI-funksjoner:
 * `import-card` importerer en ekstern `.tres` kortresource til brukerressursene.
 * `import-deck` importerer en ekstern `.tres` deckresource til brukerressursene.
 * `validate-cards` validerer lagrede kortresources.
+* `validate-deck` validerer en lagret eller innebygd deck.
 * `render-card` renderer ett kort til PNG.
 * `export-deck` renderer en kortstokk til PNG som enkeltbilder, samlet grid eller lang strip.
 * `export-sheet` renderer A4/A3-printark med egne front- og baksideark og valgbar DPI.
+* `export-showcase` renderer en showcase-grid for en kortstokk.
 
 `export-diy` finnes foreløpig som service-/CLI-stub. `export-showcase` bruker foreløpig samme grid-output som `export-deck --layout grid`.
 

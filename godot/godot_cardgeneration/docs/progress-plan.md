@@ -71,8 +71,8 @@ Mål:
 * Eksportere kortstokk som samlet grid. Gjort med `--layout grid`.
 * Eksportere kortstokk som lang strip. Gjort med `--layout strip`.
 * Lage showcase-visning for kort og kortstokker. GUI-visning gjenstår.
-* Eksportere showcase som bilde eller bildeserie. Første grid-output er koblet til `export-showcase`.
-* Lage samlet GUI-exportside. Gjort med `ExportCenterScreen` for deck images og print sheets.
+* Eksportere showcase som bilde eller bildeserie. Første grid-output er koblet til `export-showcase` og GUI Showcase-export.
+* Lage samlet GUI-exportside. Gjort med `ExportCenterScreen` for deck images, showcase og print sheets.
 
 ## Fase 6: Printark Og DIY
 

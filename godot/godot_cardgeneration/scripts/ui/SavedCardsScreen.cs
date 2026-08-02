@@ -38,6 +38,7 @@ public partial class SavedCardsScreen : CardToolScreen
         content.AddChild(toolbar);
         AddIconButton(toolbar, CardIconPath, "Create card", () => NewCardRequested?.Invoke());
         AddIconButton(toolbar, ImportIconPath, "Import card resource", OpenImportDialog);
+        AddIconButton(toolbar, CheckIconPath, "Validate cards", ValidateCards);
         AddIconButton(toolbar, RefreshIconPath, "Refresh", BuildUi);
         AddResourceDialogs();
 
@@ -239,6 +240,12 @@ public partial class SavedCardsScreen : CardToolScreen
     {
         var result = CardToolService.ImportCardResource(filePath);
         BuildUi();
+        SetStatus(result.Message, !result.Success);
+    }
+
+    private void ValidateCards()
+    {
+        var result = CardToolService.ValidateCards();
         SetStatus(result.Message, !result.Success);
     }
 

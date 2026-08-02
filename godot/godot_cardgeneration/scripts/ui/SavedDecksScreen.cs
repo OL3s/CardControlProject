@@ -15,6 +15,7 @@ public partial class SavedDecksScreen : CardToolScreen
     private PopupMenu _createDeckMenu = null!;
     private Label _details = null!;
     private FileDialog _importDialog = null!;
+    private CardDeckResource? _selectedDeck;
 
     public event Action<CardDeckResource?>? EditDeckRequested;
     public event Action<CardDeckResource?>? NewDeckRequested;
@@ -35,6 +36,7 @@ public partial class SavedDecksScreen : CardToolScreen
         content.AddChild(toolbar);
         AddIconButton(toolbar, DeckIconPath, "Create deck", ShowCreateDeckMenu);
         AddIconButton(toolbar, ImportIconPath, "Import deck resource", OpenImportDialog);
+        AddIconButton(toolbar, CheckIconPath, "Validate selected deck", ValidateSelectedDeck);
         AddIconButton(toolbar, RefreshIconPath, "Refresh", BuildUi);
         AddResourceDialogs();
 
@@ -142,6 +144,7 @@ public partial class SavedDecksScreen : CardToolScreen
 
     private void ShowDeck(CardDeckResource deck)
     {
+        _selectedDeck = deck;
         _details.Text = $"ID: {deck.Id}\nCards: {GetCardCount(deck)}\nEntries: {(deck.Entries ?? Array.Empty<CardDeckEntryResource>()).Length}\n{GetCardComposition(deck)}";
     }
 
@@ -258,6 +261,18 @@ public partial class SavedDecksScreen : CardToolScreen
     {
         var result = CardToolService.ImportDeckResource(filePath);
         BuildUi();
+        SetStatus(result.Message, !result.Success);
+    }
+
+    private void ValidateSelectedDeck()
+    {
+        if (_selectedDeck is null)
+        {
+            SetStatus("Select a deck before validating.", true);
+            return;
+        }
+
+        var result = CardToolService.ValidateDeck(_selectedDeck.Id);
         SetStatus(result.Message, !result.Success);
     }
 

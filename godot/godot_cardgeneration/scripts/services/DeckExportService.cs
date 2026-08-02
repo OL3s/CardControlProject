@@ -44,9 +44,9 @@ public sealed class DeckExportService
         };
     }
 
-    public ToolResult ExportShowcase(CardDeckResource deck, string outputPath, string format)
+    public ToolResult ExportShowcase(CardDeckResource deck, string outputPath, string format, Action<ExportProgress>? progress = null)
     {
-        return ExportDeck(deck, outputPath, format, "grid", 0, 32);
+        return ExportDeck(deck, outputPath, format, "grid", 0, 32, progress);
     }
 
     private ToolResult ExportIndividualCards(CardDeckResource deck, IReadOnlyList<CardResource> cards, string outputPath, Action<ExportProgress>? progress)

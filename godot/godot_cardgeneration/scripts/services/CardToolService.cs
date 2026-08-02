@@ -382,10 +382,15 @@ public sealed class CardToolService
             return ToolResult.Fail("Missing deck id. Use --deck <deck_id>.");
         }
 
-        var deck = _deckRepository.LoadDeckById(deckId);
+        var deck = LoadDeckById(deckId);
         return deck is null
             ? ToolResult.Fail($"Deck '{deckId}' was not found.")
             : _deckExportService.ExportShowcase(deck, outputPath, format);
+    }
+
+    public ToolResult ExportShowcase(CardDeckResource deck, string outputPath, string format, Action<ExportProgress>? progress = null)
+    {
+        return _deckExportService.ExportShowcase(deck, outputPath, format, progress);
     }
 
     private static DefaultServices CreateDefaultServices()
