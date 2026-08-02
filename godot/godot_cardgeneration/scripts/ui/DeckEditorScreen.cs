@@ -11,13 +11,13 @@ namespace CardGeneration.Ui;
 
 public partial class DeckEditorScreen : CardToolScreen
 {
-    private const string CopyIconPath = "res://assets/icons/actions/copy.svg";
-
     private CardDeckResource _editingDeck = new();
     private readonly List<CardDeckEntryResource> _entries = [];
     private readonly HashSet<string> _selectedAvailableCardIds = [];
     private readonly HashSet<string> _selectedDeckCardIds = [];
     private IReadOnlyList<CardResource> _availableCards = Array.Empty<CardResource>();
+    private string _originalResourcePath = string.Empty;
+    private CardType _backImageTargetType = CardType.Monster;
     private LineEdit _id = null!;
     private HBoxContainer _backPreviewRow = null!;
     private FileDialog _backImageDialog = null!;
@@ -27,6 +27,7 @@ public partial class DeckEditorScreen : CardToolScreen
 
     public void SetDeck(CardDeckResource? deck)
     {
+        _originalResourcePath = deck?.ResourcePath ?? string.Empty;
         _editingDeck = deck is null ? new CardDeckResource() : CloneDeck(deck);
         _entries.Clear();
         _selectedAvailableCardIds.Clear();
@@ -68,9 +69,12 @@ public partial class DeckEditorScreen : CardToolScreen
         body.AddChild(form);
 
         _id = AddLineEdit(form, "Deck ID", _editingDeck.Id);
+        AddSectionHeader(form, "Deck Back Images");
         AddDeckBackEditor(form);
 
         AddSaveAsDialog();
+
+        AddSectionHeader(content, "Card Order");
 
         var lists = new HBoxContainer
         {
@@ -99,8 +103,19 @@ public partial class DeckEditorScreen : CardToolScreen
         RenderAvailableCards();
         RenderEntries();
         RefreshBackPreview();
+        AddSectionHeader(content, "Save Options");
         AddEditorActions(content, isNewDeck);
         SetStatus($"Loaded {_availableCards.Count} available card(s). Deck has {GetEntryCardCount()} card(s).");
+    }
+
+    private static void AddSectionHeader(VBoxContainer parent, string text)
+    {
+        AddSeparator(parent);
+        parent.AddChild(new Label
+        {
+            Text = text,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
     }
 
     private void AddSaveAsDialog()
@@ -136,8 +151,6 @@ public partial class DeckEditorScreen : CardToolScreen
 
     private void AddDeckBackEditor(VBoxContainer form)
     {
-        form.AddChild(new Label { Text = "Deck Back Image" });
-
         var panel = new PanelContainer
         {
             SizeFlagsHorizontal = SizeFlags.ShrinkBegin
@@ -168,7 +181,6 @@ public partial class DeckEditorScreen : CardToolScreen
         };
         actions.AddThemeConstantOverride("separation", 8);
         layout.AddChild(actions);
-        AddIconButton(actions, BrowseIconPath, "Choose deck back image", OpenBackImageDialog);
         AddIconButton(actions, ClearIconPath, "Use default backs", ClearBackImage);
 
         _backImageDialog = new FileDialog
@@ -210,6 +222,18 @@ public partial class DeckEditorScreen : CardToolScreen
             });
         }
 
+        if (_availableCards.Count == 0)
+        {
+            _availableCardsPanel.AddChild(new Label
+            {
+                Text = "No saved cards available yet.",
+                AutowrapMode = TextServer.AutowrapMode.WordSmart,
+                CustomMinimumSize = new Vector2(220, 0),
+                SizeFlagsHorizontal = SizeFlags.ExpandFill
+            });
+            return;
+        }
+
         var scroll = new HorizontalWheelScrollContainer
         {
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
@@ -225,16 +249,6 @@ public partial class DeckEditorScreen : CardToolScreen
         };
         row.AddThemeConstantOverride("separation", 10);
         scroll.AddChild(row);
-
-        if (_availableCards.Count == 0)
-        {
-            row.AddChild(new Label
-            {
-                Text = "No saved cards available yet.",
-                AutowrapMode = TextServer.AutowrapMode.WordSmart
-            });
-            return;
-        }
 
         foreach (var card in _availableCards)
         {
@@ -255,6 +269,11 @@ public partial class DeckEditorScreen : CardToolScreen
         _entriesPanel.AddChild(new Label
         {
             Text = $"Deck Contents ({GetEntryCardCount()} cards)",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+        _entriesPanel.AddChild(new Label
+        {
+            Text = "Use < and > on a card to choose its order before saving.",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
@@ -312,6 +331,8 @@ public partial class DeckEditorScreen : CardToolScreen
                 Math.Max(1, entry.Count),
                 _selectedDeckCardIds.Contains(entry.Card.Id),
                 [
+                    new CardTileAction(string.Empty, "Move earlier", () => MoveEntry(entry, -1), Toggle: false, Pressed: false, Text: "<"),
+                    new CardTileAction(string.Empty, "Move later", () => MoveEntry(entry, 1), Toggle: false, Pressed: false, Text: ">"),
                     new CardTileAction(DeleteIconPath, "Remove card type", () => RemoveEntry(entry), Toggle: false, Pressed: false),
                     new CardTileAction(CopyIconPath, "Duplicate one copy", () => AddCard(entry.Card), Toggle: false, Pressed: false),
                     new CardTileAction(CheckIconPath, "Select for bulk remove", () => ToggleDeckSelection(entry.Card.Id), Toggle: true, Pressed: _selectedDeckCardIds.Contains(entry.Card.Id))
@@ -377,11 +398,12 @@ public partial class DeckEditorScreen : CardToolScreen
     {
         var button = new Button
         {
+            Text = action.Text,
             CustomMinimumSize = minimumSize,
             ToggleMode = action.Toggle,
             ButtonPressed = action.Pressed,
             TooltipText = action.Tooltip,
-            Icon = LoadIcon(action.IconPath),
+            Icon = string.IsNullOrWhiteSpace(action.IconPath) ? null : LoadIcon(action.IconPath),
             ExpandIcon = true
         };
         button.Pressed += action.OnPressed;
@@ -467,6 +489,22 @@ public partial class DeckEditorScreen : CardToolScreen
         SetStatus("Removed card type from deck.");
     }
 
+    private void MoveEntry(CardDeckEntryResource entry, int direction)
+    {
+        var index = _entries.IndexOf(entry);
+        var targetIndex = index + direction;
+        if (index < 0 || targetIndex < 0 || targetIndex >= _entries.Count)
+        {
+            SetStatus("Card is already at the edge of the deck order.");
+            return;
+        }
+
+        _entries.RemoveAt(index);
+        _entries.Insert(targetIndex, entry);
+        RenderEntries();
+        SetStatus("Updated deck card order.");
+    }
+
     private static StyleBoxFlat BuildTileStyle(bool selected)
     {
         return new StyleBoxFlat
@@ -488,7 +526,7 @@ public partial class DeckEditorScreen : CardToolScreen
     {
         EnsureId();
         ApplyFieldsToDeck();
-        var result = CardToolService.SaveDeck(_editingDeck);
+        var result = CardToolService.SaveDeckToExistingResource(_editingDeck, _originalResourcePath);
         SetStatus(result.Message, !result.Success);
     }
 
@@ -504,7 +542,7 @@ public partial class DeckEditorScreen : CardToolScreen
     private void SaveDeckAsNew()
     {
         EnsureId();
-        var outputDirectory = ProjectPaths.ToGlobalPath("resources/user/decks");
+        var outputDirectory = ProjectSettings.GlobalizePath(CardGeneration.Services.DeckRepository.UserDecksRootPath);
         Directory.CreateDirectory(outputDirectory);
         _saveAsDialog.CurrentDir = outputDirectory;
         _saveAsDialog.CurrentFile = $"{SanitizeFileName(CreateCopyId(_id.Text))}.tres";
@@ -517,6 +555,11 @@ public partial class DeckEditorScreen : CardToolScreen
         _id.Text = fileId;
         ApplyFieldsToDeck();
         var result = CardToolService.ExportDeckResource(_editingDeck, EnsureTresExtension(filePath));
+        if (result.Success)
+        {
+            _originalResourcePath = EnsureTresExtension(filePath);
+        }
+
         SetStatus(result.Message, !result.Success);
     }
 
@@ -557,8 +600,9 @@ public partial class DeckEditorScreen : CardToolScreen
             .ToArray();
     }
 
-    private void OpenBackImageDialog()
+    private void OpenBackImageDialog(CardType cardType)
     {
+        _backImageTargetType = cardType;
         _backImageDialog.PopupCenteredRatio(0.72f);
     }
 
@@ -571,15 +615,17 @@ public partial class DeckEditorScreen : CardToolScreen
             return;
         }
 
-        _editingDeck.BackImageTexture = ImageTexture.CreateFromImage(image);
+        _editingDeck.SetBackImageTexture(_backImageTargetType, ImageTexture.CreateFromImage(image));
         image.Dispose();
         RefreshBackPreview();
-        SetStatus($"Loaded deck back image '{filePath}'.");
+        SetStatus($"Loaded {_backImageTargetType} back image '{filePath}'.");
     }
 
     private void ClearBackImage()
     {
-        _editingDeck.BackImageTexture = null;
+        _editingDeck.MonsterBackImageTexture = null;
+        _editingDeck.TerrainBackImageTexture = null;
+        _editingDeck.KingBackImageTexture = null;
         RefreshBackPreview();
         SetStatus("Using default backs.");
     }
@@ -617,6 +663,7 @@ public partial class DeckEditorScreen : CardToolScreen
             Text = title,
             HorizontalAlignment = HorizontalAlignment.Center
         });
+        AddIconButton(column, BrowseIconPath, $"Choose {title} back image", () => OpenBackImageDialog(cardType), new Vector2(36, 34));
     }
 
     private CardResource CreateBackPreviewCard(CardType cardType)
@@ -627,7 +674,7 @@ public partial class DeckEditorScreen : CardToolScreen
             CardType.King => new KingCardResource { Id = "king_back_preview" },
             _ => new MonsterCardResource { Id = "monster_back_preview" }
         };
-        card.BackImageTexture = _editingDeck.BackImageTexture;
+        card.BackImageTexture = _editingDeck.GetBackImageTexture(cardType);
         return card;
     }
 
@@ -641,7 +688,9 @@ public partial class DeckEditorScreen : CardToolScreen
         return new CardDeckResource
         {
             Id = source.Id,
-            BackImageTexture = source.BackImageTexture,
+            MonsterBackImageTexture = source.MonsterBackImageTexture,
+            TerrainBackImageTexture = source.TerrainBackImageTexture,
+            KingBackImageTexture = source.KingBackImageTexture,
             Entries = (source.Entries ?? Array.Empty<CardDeckEntryResource>())
                 .Select(entry => new CardDeckEntryResource
                 {
@@ -678,5 +727,5 @@ public partial class DeckEditorScreen : CardToolScreen
         }
     }
 
-    private sealed record CardTileAction(string IconPath, string Tooltip, Action OnPressed, bool Toggle, bool Pressed);
+    private sealed record CardTileAction(string IconPath, string Tooltip, Action OnPressed, bool Toggle, bool Pressed, string Text = "");
 }

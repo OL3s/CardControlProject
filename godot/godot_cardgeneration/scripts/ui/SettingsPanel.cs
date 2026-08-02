@@ -9,6 +9,8 @@ namespace CardGeneration.Ui;
 public partial class SettingsPanel : PanelContainer
 {
     private const string BackIconPath = "res://assets/icons/actions/back.svg";
+    private const string ClearIconPath = "res://assets/icons/actions/clear.svg";
+    private const string DeleteIconPath = "res://assets/icons/actions/delete.svg";
     private const string RefreshIconPath = "res://assets/icons/actions/refresh.svg";
     private const string SaveIconPath = "res://assets/icons/actions/save.svg";
 
@@ -19,6 +21,7 @@ public partial class SettingsPanel : PanelContainer
     private OptionButton _defaultFormat = null!;
     private OptionButton _defaultPaper = null!;
     private OptionButton _defaultDpi = null!;
+    private OptionButton _defaultBackMirror = null!;
     private OptionButton _defaultDeckLayout = null!;
     private SpinBox _defaultGridColumns = null!;
     private SpinBox _defaultSpacing = null!;
@@ -34,7 +37,7 @@ public partial class SettingsPanel : PanelContainer
 
     private void BuildUi()
     {
-        CustomMinimumSize = new Vector2(520, 360);
+        CustomMinimumSize = new Vector2(720, 460);
 
         var scroll = new ScrollContainer
         {
@@ -53,7 +56,8 @@ public partial class SettingsPanel : PanelContainer
 
         var form = new VBoxContainer
         {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            CustomMinimumSize = new Vector2(560, 0)
         };
         form.AddThemeConstantOverride("separation", 10);
         margin.AddChild(form);
@@ -61,7 +65,7 @@ public partial class SettingsPanel : PanelContainer
         var title = new Label
         {
             Text = "Settings",
-            HorizontalAlignment = HorizontalAlignment.Center
+            HorizontalAlignment = HorizontalAlignment.Left
         };
         title.AddThemeFontSizeOverride("font_size", 26);
         form.AddChild(title);
@@ -69,7 +73,7 @@ public partial class SettingsPanel : PanelContainer
         var description = new Label
         {
             Text = "These are startup and CLI defaults. Change one-off export choices in Export; CLI flags override these for one run.",
-            HorizontalAlignment = HorizontalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Left,
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
         form.AddChild(description);
@@ -80,6 +84,7 @@ public partial class SettingsPanel : PanelContainer
         _defaultFormat = AddOptionButton(form, "Default Format", ["png"]);
         _defaultPaper = AddOptionButton(form, "Default Paper", ["a4", "a3"]);
         _defaultDpi = AddOptionButton(form, "Default DPI", ["150", "300", "600", "1200"]);
+        _defaultBackMirror = AddOptionButton(form, "Default Back Mirror", ["none", "width", "height", "both"]);
         _defaultDeckLayout = AddOptionButton(form, "Default Deck Layout", ["individual", "grid", "strip"]);
         _defaultGridColumns = AddSpinBox(form, "Default Grid Columns", 0, 24, 1);
         _defaultSpacing = AddSpinBox(form, "Default Spacing", 0, 256, 1);
@@ -107,6 +112,14 @@ public partial class SettingsPanel : PanelContainer
         reloadButton.Pressed += LoadConfigIntoFields;
         buttons.AddChild(reloadButton);
 
+        var resetConfigButton = CreateIconButton(ClearIconPath, "Reset settings defaults");
+        resetConfigButton.Pressed += ResetSettingsDefaults;
+        buttons.AddChild(resetConfigButton);
+
+        var resetContentButton = CreateIconButton(DeleteIconPath, "Delete saved cards/decks and regenerate defaults");
+        resetContentButton.Pressed += ResetSavedContent;
+        buttons.AddChild(resetContentButton);
+
         var backButton = CreateIconButton(BackIconPath, "Back");
         backButton.Pressed += () => BackRequested?.Invoke();
         buttons.AddChild(backButton);
@@ -132,6 +145,7 @@ public partial class SettingsPanel : PanelContainer
         SelectOption(_defaultFormat, config.DefaultFormat);
         SelectOption(_defaultPaper, config.DefaultPaper);
         SelectOption(_defaultDpi, config.DefaultDpi.ToString());
+        SelectOption(_defaultBackMirror, config.DefaultBackMirror);
         SelectOption(_defaultDeckLayout, config.DefaultDeckLayout);
         _defaultGridColumns.Value = config.DefaultGridColumns;
         _defaultSpacing.Value = config.DefaultSpacing;
@@ -148,6 +162,7 @@ public partial class SettingsPanel : PanelContainer
             DefaultFormat = GetSelectedText(_defaultFormat),
             DefaultPaper = GetSelectedText(_defaultPaper),
             DefaultDpi = int.Parse(GetSelectedText(_defaultDpi)),
+            DefaultBackMirror = GetSelectedText(_defaultBackMirror),
             DefaultDeckLayout = GetSelectedText(_defaultDeckLayout),
             DefaultGridColumns = (int)_defaultGridColumns.Value,
             DefaultSpacing = (int)_defaultSpacing.Value
@@ -160,12 +175,36 @@ public partial class SettingsPanel : PanelContainer
         }
     }
 
+    private void ResetSettingsDefaults()
+    {
+        var result = _cardToolService.ResetConfig();
+        LoadConfigIntoFields();
+        _status.Text = result.Message;
+        if (!result.Success)
+        {
+            GD.PushError(result.Message);
+        }
+    }
+
+    private void ResetSavedContent()
+    {
+        var result = _cardToolService.ResetSavedContent();
+        _status.Text = result.Message;
+        if (!result.Success)
+        {
+            GD.PushError(result.Message);
+        }
+    }
+
     private static LineEdit AddLineEdit(VBoxContainer form, string labelText)
     {
         var label = new Label { Text = labelText };
         form.AddChild(label);
 
-        var lineEdit = new LineEdit();
+        var lineEdit = new LineEdit
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
         form.AddChild(lineEdit);
         return lineEdit;
     }
@@ -175,7 +214,10 @@ public partial class SettingsPanel : PanelContainer
         var label = new Label { Text = labelText };
         form.AddChild(label);
 
-        var optionButton = new OptionButton();
+        var optionButton = new OptionButton
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
         foreach (var option in options)
         {
             optionButton.AddItem(option);
@@ -194,7 +236,8 @@ public partial class SettingsPanel : PanelContainer
         {
             MinValue = minValue,
             MaxValue = maxValue,
-            Step = step
+            Step = step,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
         form.AddChild(spinBox);
         return spinBox;

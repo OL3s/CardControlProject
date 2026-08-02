@@ -15,6 +15,7 @@ public abstract partial class CardToolScreen : Control
     protected const string CardCountIconPath = "res://assets/icons/actions/card_count.svg";
     protected const string CheckIconPath = "res://assets/icons/actions/check.svg";
     protected const string ClearIconPath = "res://assets/icons/actions/clear.svg";
+    protected const string CopyIconPath = "res://assets/icons/actions/copy.svg";
     protected const string DeckIconPath = "res://assets/icons/actions/deck.svg";
     protected const string DeleteIconPath = "res://assets/icons/actions/delete.svg";
     protected const string EditIconPath = "res://assets/icons/actions/edit.svg";

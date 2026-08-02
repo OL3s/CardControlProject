@@ -5,6 +5,7 @@ using System.Text;
 using System.Collections.Generic;
 using CardGeneration.App;
 using CardGeneration.Resources;
+using CardGeneration.Resources.Enums;
 
 namespace CardGeneration.Services;
 
@@ -77,6 +78,7 @@ public sealed class CardToolService
         message.AppendLine($"- format: {config.DefaultFormat}");
         message.AppendLine($"- paper: {config.DefaultPaper}");
         message.AppendLine($"- dpi: {config.DefaultDpi}");
+        message.AppendLine($"- back_mirror: {config.DefaultBackMirror}");
         message.AppendLine($"- deck_layout: {config.DefaultDeckLayout}");
         message.AppendLine($"- grid_columns: {config.DefaultGridColumns}");
         message.AppendLine($"- spacing: {config.DefaultSpacing}");
@@ -132,6 +134,16 @@ public sealed class CardToolService
             config.DefaultDpi = update.DefaultDpi.Value;
         }
 
+        if (!string.IsNullOrWhiteSpace(update.DefaultBackMirror))
+        {
+            if (!IsSupportedBackMirror(update.DefaultBackMirror))
+            {
+                return ToolResult.Fail($"Back mirror '{update.DefaultBackMirror}' is not supported. Use none, width, height, or both.");
+            }
+
+            config.DefaultBackMirror = update.DefaultBackMirror;
+        }
+
         if (!string.IsNullOrWhiteSpace(update.DefaultDeckLayout))
         {
             if (update.DefaultDeckLayout != "individual" && update.DefaultDeckLayout != "grid" && update.DefaultDeckLayout != "strip")
@@ -165,9 +177,99 @@ public sealed class CardToolService
         return _configRepository.SaveConfig(config);
     }
 
+    public ToolResult ResetConfig()
+    {
+        return _configRepository.ResetConfig();
+    }
+
+    public ToolResult ResetSavedContent()
+    {
+        var deletedCards = _cardRepository.DeleteAllSavedCards();
+        var deletedDecks = _deckRepository.DeleteAllSavedDecks();
+        var ensureResult = EnsureDefaultResources();
+        if (!ensureResult.Success)
+        {
+            return ensureResult;
+        }
+
+        return ToolResult.Ok($"Reset saved content. Deleted {deletedCards} card resource(s) and {deletedDecks} deck resource(s). {ensureResult.Message}");
+    }
+
+    public ToolResult EnsureDefaultResources()
+    {
+        var existingCards = LoadAllCards()
+            .Where(card => !string.IsNullOrWhiteSpace(card.Id))
+            .GroupBy(card => card.Id)
+            .ToDictionary(group => group.Key, group => group.First());
+
+        var defaultDeck = DefaultDeckFactory.CreateDefault52CardDeck(LoadAllElements(), existingCards);
+        var defaultCards = defaultDeck.Entries
+            .Select(entry => entry.Card)
+            .OfType<CardResource>()
+            .Where(card => !string.IsNullOrWhiteSpace(card.Id))
+            .GroupBy(card => card.Id)
+            .Select(group => group.First())
+            .ToArray();
+
+        var savedCardCount = 0;
+        foreach (var card in defaultCards)
+        {
+            if (existingCards.ContainsKey(card.Id))
+            {
+                continue;
+            }
+
+            var cardSaveResult = _cardRepository.SaveDefaultCard(card);
+            if (!cardSaveResult.Success)
+            {
+                return cardSaveResult;
+            }
+
+            existingCards[card.Id] = card;
+            savedCardCount++;
+        }
+
+        var hasDefaultDeck = _deckRepository.LoadAllDecks()
+            .Any(deck => deck.Id == DefaultDeckFactory.Default52CardDeckId);
+        var savedDeck = false;
+        if (!hasDefaultDeck)
+        {
+            var deckSaveResult = _deckRepository.SaveDefaultDeck(defaultDeck);
+            if (!deckSaveResult.Success)
+            {
+                return deckSaveResult;
+            }
+
+            savedDeck = true;
+        }
+
+        if (savedCardCount == 0 && !savedDeck)
+        {
+            return ToolResult.Ok("Default resources are available.");
+        }
+
+        var generated = new List<string>();
+        if (savedCardCount > 0)
+        {
+            generated.Add($"{savedCardCount} card resource(s)");
+        }
+
+        if (savedDeck)
+        {
+            generated.Add($"deck '{defaultDeck.Id}'");
+        }
+
+        return ToolResult.Ok($"Generated missing default resources: {string.Join(", ", generated)}.");
+    }
+
     private static bool IsSupportedDpi(int dpi)
     {
         return dpi is 150 or 300 or 600 or 1200;
+    }
+
+    private static bool IsSupportedBackMirror(string backMirror)
+    {
+        return backMirror is "none" or "width" or "height" or "both";
     }
 
     public ToolResult ListCards()
@@ -206,6 +308,31 @@ public sealed class CardToolService
         return _cardRepository.SaveCard(card);
     }
 
+    public ToolResult DeleteCard(string? cardId)
+    {
+        return _cardRepository.DeleteCard(cardId ?? string.Empty);
+    }
+
+    public ToolResult DuplicateCard(string? cardId, string? newCardId = null)
+    {
+        if (string.IsNullOrWhiteSpace(cardId))
+        {
+            return ToolResult.Fail("Missing card id. Use --card <card_id>.");
+        }
+
+        var card = LoadCardById(cardId);
+        if (card is null)
+        {
+            return ToolResult.Fail($"Card '{cardId}' was not found.");
+        }
+
+        var copy = CloneCard(card);
+        copy.Id = string.IsNullOrWhiteSpace(newCardId)
+            ? CreateUniqueCardId(card.Id)
+            : MakeResourceId(newCardId, card.Id);
+        return _cardRepository.SaveCard(copy);
+    }
+
     public ToolResult ImportCardResource(string? filePath)
     {
         if (string.IsNullOrWhiteSpace(filePath))
@@ -234,13 +361,7 @@ public sealed class CardToolService
 
     public IReadOnlyList<CardDeckResource> LoadAllDecks()
     {
-        var decks = _deckRepository.LoadAllDecks().ToList();
-        if (decks.All(deck => deck.Id != DefaultDeckFactory.Default52CardDeckId))
-        {
-            decks.Insert(0, CreateDefault52CardDeck());
-        }
-
-        return decks;
+        return _deckRepository.LoadAllDecks();
     }
 
     public CardDeckResource CreateEmptyDeck()
@@ -258,18 +379,42 @@ public sealed class CardToolService
 
     public CardDeckResource? LoadDeckById(string deckId)
     {
-        var deck = _deckRepository.LoadDeckById(deckId);
-        if (deck is not null)
-        {
-            return deck;
-        }
-
-        return deckId == DefaultDeckFactory.Default52CardDeckId ? CreateDefault52CardDeck() : null;
+        return _deckRepository.LoadDeckById(deckId);
     }
 
     public ToolResult SaveDeck(CardDeckResource deck)
     {
         return _deckRepository.SaveDeck(deck);
+    }
+
+    public ToolResult DeleteDeck(string? deckId)
+    {
+        return _deckRepository.DeleteDeck(deckId ?? string.Empty);
+    }
+
+    public ToolResult DuplicateDeck(string? deckId, string? newDeckId = null)
+    {
+        if (string.IsNullOrWhiteSpace(deckId))
+        {
+            return ToolResult.Fail("Missing deck id. Use --deck <deck_id>.");
+        }
+
+        var deck = LoadDeckById(deckId);
+        if (deck is null)
+        {
+            return ToolResult.Fail($"Deck '{deckId}' was not found.");
+        }
+
+        var copy = CloneDeck(deck);
+        copy.Id = string.IsNullOrWhiteSpace(newDeckId)
+            ? CreateUniqueDeckId(deck.Id)
+            : MakeResourceId(newDeckId, deck.Id);
+        return _deckRepository.SaveDeck(copy);
+    }
+
+    public ToolResult SaveDeckToExistingResource(CardDeckResource deck, string resourcePath)
+    {
+        return _deckRepository.SaveDeckToExistingResource(deck, resourcePath);
     }
 
     public ToolResult ImportDeckResource(string? filePath)
@@ -308,6 +453,21 @@ public sealed class CardToolService
             : _deckValidator.Validate(deck);
     }
 
+    public ToolResult ValidateDecks()
+    {
+        var decks = LoadAllDecks();
+        foreach (var deck in decks)
+        {
+            var result = _deckValidator.Validate(deck);
+            if (!result.Success)
+            {
+                return result;
+            }
+        }
+
+        return ToolResult.Ok($"Validated {decks.Count} deck(s).");
+    }
+
     public ToolResult RenderCard(string? cardId, string outputPath)
     {
         if (string.IsNullOrWhiteSpace(cardId))
@@ -344,7 +504,7 @@ public sealed class CardToolService
         return _deckExportService.ExportDeck(deck, outputPath, format, layout, columns, spacing, progress);
     }
 
-    public ToolResult ExportSheet(string? deckId, string outputPath, string paper, int dpi)
+    public ToolResult ExportSheet(string? deckId, string outputPath, string paper, int dpi, string backMirror = "none")
     {
         if (string.IsNullOrWhiteSpace(deckId))
         {
@@ -354,12 +514,12 @@ public sealed class CardToolService
         var deck = LoadDeckById(deckId);
         return deck is null
             ? ToolResult.Fail($"Deck '{deckId}' was not found.")
-            : _sheetExportService.ExportSheet(deck, outputPath, paper, dpi);
+            : _sheetExportService.ExportSheet(deck, outputPath, paper, dpi, backMirror);
     }
 
-    public ToolResult ExportSheet(CardDeckResource deck, string outputPath, string paper, int dpi, Action<ExportProgress>? progress = null)
+    public ToolResult ExportSheet(CardDeckResource deck, string outputPath, string paper, int dpi, string backMirror = "none", Action<ExportProgress>? progress = null)
     {
-        return _sheetExportService.ExportSheet(deck, outputPath, paper, dpi, progress);
+        return _sheetExportService.ExportSheet(deck, outputPath, paper, dpi, backMirror, progress);
     }
 
     public ToolResult ExportDiy(string? deckId, string outputPath, string paper)
@@ -415,6 +575,121 @@ public sealed class CardToolService
             sheetExportService,
             diyExportService,
             configRepository);
+    }
+
+    private string CreateUniqueCardId(string sourceId)
+    {
+        var baseId = MakeResourceId(sourceId, "card");
+        var existingIds = LoadAllCards()
+            .Select(card => card.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return CreateUniqueCopyId(baseId, existingIds);
+    }
+
+    private string CreateUniqueDeckId(string sourceId)
+    {
+        var baseId = MakeResourceId(sourceId, "deck");
+        var existingIds = LoadAllDecks()
+            .Select(deck => deck.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return CreateUniqueCopyId(baseId, existingIds);
+    }
+
+    private static string CreateUniqueCopyId(string baseId, HashSet<string> existingIds)
+    {
+        for (var index = 1; index < 1000; index++)
+        {
+            var candidate = $"{baseId}_copy_{index}";
+            if (!existingIds.Contains(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return $"{baseId}_copy_{DateTime.Now:yyyyMMddHHmmss}";
+    }
+
+    private static string MakeResourceId(string value, string fallback)
+    {
+        var builder = new StringBuilder();
+        foreach (var character in value.Trim().ToLowerInvariant())
+        {
+            if (char.IsLetterOrDigit(character))
+            {
+                builder.Append(character);
+            }
+            else if (character is '_' or '-' or ' ')
+            {
+                builder.Append('_');
+            }
+        }
+
+        var id = builder.ToString().Trim('_');
+        while (id.Contains("__", StringComparison.Ordinal))
+        {
+            id = id.Replace("__", "_", StringComparison.Ordinal);
+        }
+
+        return string.IsNullOrWhiteSpace(id) ? fallback : id;
+    }
+
+    private static CardResource CloneCard(CardResource source)
+    {
+        var clone = CreateCardForType(source.CardType);
+        clone.Id = source.Id;
+        clone.CardType = source.CardType;
+        clone.CardImageTexture = source.CardImageTexture;
+        clone.CardImageSourcePath = source.CardImageSourcePath;
+        clone.BackImageTexture = source.BackImageTexture;
+
+        if (source is MonsterCardResource sourceMonster && clone is MonsterCardResource cloneMonster)
+        {
+            cloneMonster.Requirements = sourceMonster.Requirements;
+            cloneMonster.BasePower = sourceMonster.BasePower;
+            cloneMonster.PowerBonuses = sourceMonster.PowerBonuses;
+            cloneMonster.Effect = sourceMonster.Effect;
+        }
+        else if (source is TerrainCardResource sourceTerrain && clone is TerrainCardResource cloneTerrain)
+        {
+            cloneTerrain.ProducedResources = sourceTerrain.ProducedResources;
+        }
+        else if (source is KingCardResource sourceKing && clone is KingCardResource cloneKing)
+        {
+            cloneKing.ElementFocus = sourceKing.ElementFocus;
+            cloneKing.Health = sourceKing.Health;
+            cloneKing.QuestText = sourceKing.QuestText;
+            cloneKing.QuestRequirements = sourceKing.QuestRequirements;
+        }
+
+        return clone;
+    }
+
+    private static CardDeckResource CloneDeck(CardDeckResource source)
+    {
+        return new CardDeckResource
+        {
+            Id = source.Id,
+            MonsterBackImageTexture = source.MonsterBackImageTexture,
+            TerrainBackImageTexture = source.TerrainBackImageTexture,
+            KingBackImageTexture = source.KingBackImageTexture,
+            Entries = (source.Entries ?? Array.Empty<CardDeckEntryResource>())
+                .Select(entry => new CardDeckEntryResource
+                {
+                    Card = entry.Card,
+                    Count = entry.Count
+                })
+                .ToArray()
+        };
+    }
+
+    private static CardResource CreateCardForType(CardType cardType)
+    {
+        return cardType switch
+        {
+            CardType.Terrain => new TerrainCardResource(),
+            CardType.King => new KingCardResource(),
+            _ => new MonsterCardResource()
+        };
     }
 
     private sealed record DefaultServices(

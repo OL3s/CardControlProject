@@ -49,11 +49,11 @@ Elementikonene peker til importerte textures fra SVG-er under `assets/icons/elem
 
 `CardElementResolver.GetSingleNonNeutralElementType(ResourceAmount[])` er delt API for å utlede monster-element fra kost-/ressursliste. Nøytrale krav gir nøytralt monster; ett ikke-nøytralt krav gir dette elementet. Terreng bruker ikke resolveren som elementfokus.
 
-En deck kan inneholde flere korttyper samtidig, for eksempel konger, terreng og monstre i samme 52-korts produkt. Printark renderer derfor bakside per korttype for hvert kort. `BackImageTexture` kan brukes som en felles override hvis hele decken skal ha en spesialbakside.
+En deck kan inneholde flere korttyper samtidig, for eksempel konger, terreng og monstre i samme 52-korts produkt. Printark renderer derfor bakside per korttype for hvert kort. `MonsterBackImageTexture`, `TerrainBackImageTexture` og `KingBackImageTexture` kan brukes som deck-spesifikke overrides per korttype.
 
-`CardToolConfigResource` lagrer langvarige verktøyinnstillinger som default card, deck, output, format, papir, DPI, deck layout, gridkolonner og spacing. Denne ligger som redigerbar Godot resource i `resources/config/card_tool_config.tres`.
+`CardToolConfigResource` lagrer langvarige verktøyinnstillinger som default card, deck, output, format, papir, DPI, bakside-speiling, deck layout, gridkolonner og spacing. Default card er tom etter fabrikkreset; default deck er `default_deck`. Configen ligger som redigerbar Godot resource i `resources/config/card_tool_config.tres`.
 
-Configen er felles for GUI og CLI. GUI Settings-panelet og CLI-kommandoene `show-config`/`set-config` leser og skriver samme resource.
+Configen er felles for GUI og CLI. GUI Settings-panelet og CLI-kommandoene `show-config`/`set-config`/`reset-config` leser og skriver samme resource.
 
 ## Service-Lag
 
@@ -78,12 +78,18 @@ CardToolService
 
 `CardFactory` lager nye tomme kort basert på valgt korttype. Den setter startverdier som matcher modellforskjellene mellom monster, terreng og konge.
 
-Repositories skal eie lasting og lagring av kort og kortstokker.
+Repositories skal eie lasting og lagring av kort og kortstokker. Vanlig GUI-listing leser curated/default resources under `res://resources/...` og brukerbiblioteket under `user://resources/...`, der user resources overstyrer default resources med samme ID.
 
-Første repository-implementasjon laster `.tres` og `.res` rekursivt fra:
+Repository-implementasjonen kan lese `.tres` og `.res` rekursivt fra:
 
 * `res://resources/cards`
 * `res://resources/decks`
+* `user://resources/cards`
+* `user://resources/decks`
+
+Cards/Decks-listene viser både default resources og `user://resources/...`. Ved oppstart sørger `CardToolService.EnsureDefaultResources()` for at decken `default_deck` og alle kortene fra den finnes. Manglende defaultkort lagres under `user://resources/cards/default/...` med `default_`-prefix, og manglende defaultdeck lagres under `user://resources/decks/default/default_deck.tres`.
+
+Default resources er read-only. Repositoryene nekter å overskrive eller slette `res://` resources og genererte `user://resources/.../default` resources. Endringer i defaults må lagres via `Save as new` eller duplicate, som skriver til vanlige user resource-mapper.
 
 `ConfigRepository` laster og lagrer `res://resources/config/card_tool_config.tres`.
 
@@ -99,9 +105,9 @@ Første `CardRenderService` renderer PNG direkte fra `CardResource`.
 * `grid`: ett samlet PNG-bilde med kortene i rutenett.
 * `strip`: ett langt vertikalt PNG-bilde.
 
-`SheetExportService` støtter A4 og A3 som printark. Den lager nummererte front- og baksideark. Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, beregnet fra valgt DPI.
+`SheetExportService` støtter A4 og A3 som printark. Den lager nummererte front- og baksideark. Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, beregnet fra valgt DPI. Baksidearket kan speiles langs width, height eller begge etter at baksidene er plassert.
 
-`DefaultDeckFactory` lager deck-startpunkter for GUI: tom deck og default 52-korts deck basert på tabellene i `shared/docs/king-cards.md`, `shared/docs/terrain-cards.md` og `shared/docs/monster-cards.md`. Factoryen bruker eksisterende lagrede kortresources når ID finnes, og lager ellers preset-kort som subresources i decken. `default_52_card_deck` er også standardverdien i config og eksponeres via `CardToolService.LoadAllDecks()`/`LoadDeckById()` selv når den ikke er lagret som `.tres`.
+`DefaultDeckFactory` lager deck-startpunkter for GUI: tom deck og default 52-korts deck basert på tabellene i `shared/docs/king-cards.md`, `shared/docs/terrain-cards.md` og `shared/docs/monster-cards.md`. Factoryen bruker eksisterende lagrede kortresources når `default_`-ID finnes, og lager ellers preset-kort med `default_`-prefix. De manglende preset-kortene lagres som card resources før decken `default_deck` lagres.
 
 DPI velges fra faste normalverdier: `150`, `300`, `600` og `1200`. `600 DPI` er default og print-master-kvalitet.
 
@@ -157,8 +163,8 @@ Opprettelse av nye kort og kortstokker skal ligge inne i `Cards` og `Decks` som 
 
 Implementerte skjermer:
 
-* `SavedCardsScreen`: driver `Cards`-skjermen, laster lagrede kort via `CardToolService`, viser preview, eksporterer ett kort og kan legge kortet til valgt deck.
-* `SavedDecksScreen`: driver `Decks`-skjermen, laster lagrede deckresources, viser korttelling, korttypesammensetning, preview av første kort, edit, export og deckoppretting fra tom/preset.
+* `SavedCardsScreen`: driver `Cards`-skjermen, laster lagrede kort via `CardToolService`, viser preview, edit, duplicate og delete.
+* `SavedDecksScreen`: driver `Decks`-skjermen, laster lagrede deckresources, viser korttelling, korttypesammensetning, full preview, edit, duplicate, delete og deckoppretting fra tom/preset.
 * `CardTypePickerScreen`: velger korttype før nytt kort åpnes i editor.
 * `CardEditorScreen`: lager eller redigerer kort med ID, image source path, front/back preview, fullscreen preview, save og PNG-export. Korttypen er låst etter typevalg. Bare kongekort har eksplisitt elementvalg.
 * `DeckEditorScreen`: lager eller redigerer kortstokk med deck-ID, tilgjengelige kort, entries med count, `Save` og `Save New`. Tilgjengelige kort vises som horisontalt scrollbare preview-fliser med kompakte ikonknapper for add og select. Deckinnhold vises som preview-fliser med count-badge og ikonknapper for delete, duplicate og select. Multiselect brukes for batch add/remove. Skjermen eksporterer ikke.
@@ -176,7 +182,7 @@ CLI-kode ligger i `scripts/cli/`. CLI skal parse argumenter, kalle `CardToolServ
 
 CLI skal ikke ha egne varianter av validering, rendering eller eksport.
 
-CLI bruker lagret config som defaults for repeterende arbeid. Hvis et flagg ikke er oppgitt, hentes verdien fra `CardToolConfigResource`. `set-config` endrer bare feltene som faktisk oppgis i kommandoen.
+CLI bruker lagret config som defaults for repeterende arbeid. Hvis et flagg ikke er oppgitt, hentes verdien fra `CardToolConfigResource`. `set-config` endrer bare feltene som faktisk oppgis i kommandoen. `reset-content` sletter lagrede kort- og deckresources og regenererer defaultkort og decken `default_deck`.
 
 ## Kortlag
 

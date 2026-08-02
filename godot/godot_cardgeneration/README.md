@@ -31,11 +31,13 @@ Første GUI-retning bruker en smal hovedmeny:
 * `Export`
 * `Settings`
 
-`Cards` viser lagrede kort, preview, enkel korteksport og hurtigvalg for å legge et kort til en valgt kortstokk. Nye kort opprettes med `+` inne på denne skjermen. Før editoren åpnes velges korttype, fordi monster-, terreng- og kongekort har ulik data og oppsett.
+`Cards` viser kort fra default resources og brukerbiblioteket, preview, edit, duplicate og delete. Nye kort opprettes med `+` inne på denne skjermen. Før editoren åpnes velges korttype, fordi monster-, terreng- og kongekort har ulik data og oppsett.
 
-`Decks` viser lagrede kortstokker, korttelling, preview av første kort, redigering og kortstokkeksport med lagrede defaults. Nye kortstokker opprettes med `+` inne på denne skjermen. `+` kan starte en tom kortstokk eller en default 52-korts preset fra `shared/docs`.
+`Decks` viser kortstokker fra default resources og brukerbiblioteket, korttelling, preview, edit, duplicate og delete. Nye kortstokker opprettes med `+` inne på denne skjermen. `+` kan starte en tom kortstokk eller en default 52-korts preset fra `shared/docs`. Ved oppstart sjekker appen om decken `default_deck` og alle kortene fra den finnes i default- eller brukerressurser, og genererer manglende resources til `user://`.
 
-Default deck er `default_52_card_deck`. Den lages av `DefaultDeckFactory` fra `shared/docs` og er tilgjengelig i GUI og CLI selv om den ikke er lagret som `.tres` ennå. `sample_monster_deck` er bare en liten smoke-test resource.
+Default deck er `default_deck`. Den lages av `DefaultDeckFactory` fra `shared/docs`. Ved oppstart lagres manglende defaultkort med `default_`-prefix til `user://resources/cards/default/...` og manglende defaultdeck til `user://resources/decks/default/default_deck.tres`, slik at de kommer tilbake etter sletting og ny appstart. `sample_monster_deck` er bare en liten smoke-test resource.
+
+Default resources er read-only i appen. De kan åpnes i editoren for inspeksjon og som utgangspunkt, men `Save` nekter å overskrive dem. Bruk `Save as new` eller duplicate for å lage en vanlig user resource før endringer lagres eller slettes.
 
 Hovedmenyen skal ikke vise et tilfeldig kortpreview og skal ikke ha egne `New Card`/`New Deck` valg. Kortpreview hører hjemme i `Cards`, `Decks`, editor- og eksportskjermene. Preview viser både front og bakside der det er relevant, og dobbelklikk på preview åpner større visning.
 
@@ -43,11 +45,11 @@ Korteditoren støtter felles kortfelt, image source path, preview, lagring og PN
 
 Deckeditoren støtter deck-ID, tilgjengelige kort på tvers av korttyper, deck entries med antall, `Save` og `Save New`. Venstre side viser lagrede kort som preview-fliser i en horisontal scrollrad med ikonknapper for å legge til én kopi eller velge flere kort. Høyre side viser deckinnhold som preview-fliser med ikonknapper for slett, dupliser og multiselect. Eksport gjøres bare fra `Export`-skjermen. En deck er et ferdig produkt med alle relevante korttyper, ikke en separat monster-/terreng-/kongebunke.
 
-`Export` er eneste eksportflate. Den kan eksportere ett lagret kort som PNG, eller en lagret kortstokk som vanlige deck images, showcase eller printarkexport med A4/A3 og DPI-valg. Verdiene starter fra lagrede defaults, men kan endres direkte i Export for den ene eksporten uten å lagres som nye defaults.
+`Export` er eneste eksportflate. Den kan eksportere ett lagret kort som PNG, eller en lagret kortstokk som vanlige deck images, showcase eller printarkexport med A4/A3, DPI og bakside-speiling. Verdiene starter fra lagrede defaults, men kan endres direkte i Export for den ene eksporten uten å lagres som nye defaults.
 
 Export-knappen åpner Godots file dialog i valgt/default exportmappe. Cancel avbryter eksporten, og Save eller mappevalg starter eksporten.
 
-`Settings` redigerer den samme config-resourcen som CLI bruker. Dette er oppstarts- og CLI-defaults, ikke valg som normalt må endres før hver eksport. Endringer gjort i GUI skal derfor påvirke senere CLI-kjøringer uten tilsvarende `--`-flagg, og `set-config` i CLI skal påvirke GUI-innstillingene.
+`Settings` redigerer den samme config-resourcen som CLI bruker. Dette er oppstarts- og CLI-defaults, ikke valg som normalt må endres før hver eksport. Endringer gjort i GUI skal derfor påvirke senere CLI-kjøringer uten tilsvarende `--`-flagg, og `set-config` i CLI skal påvirke GUI-innstillingene. Settings har også handlinger for å nullstille config-defaults og for å slette lagrede kort/decks før defaultkort og decken `default_deck` regenereres.
 
 ## Nåværende Flyt
 
@@ -55,7 +57,7 @@ Export-knappen åpner Godots file dialog i valgt/default exportmappe. Cancel avb
 2. Bygg kortet i lag med den felles `Image`-baserte rendereren.
 3. Bruk samme renderer i GUI-preview og CLI/headless eksport.
 4. Eksporter individuelle kortbilder, grid, strip eller printark som PNG.
-5. Plasser kortene på A4/A3-ark i pokerkortstørrelse basert på valgt DPI.
+5. Plasser kortene på A4/A3-ark i pokerkortstørrelse basert på valgt DPI, med valgfri speiling av hele baksidearket for tosidig print.
 
 ## Lagmodell
 
@@ -114,6 +116,15 @@ DPI skal velges fra faste normalverdier i eksportmenyen:
 * `600 DPI`: print-master og default.
 * `1200 DPI`: ekstra høy detaljgrad.
 
+Baksidearket kan eksporteres med speiling hvis skriveroppsettet trenger det for tosidig print:
+
+* `none`: samme plassering som frontarket.
+* `width`: speil hele baksidearket venstre/høyre.
+* `height`: speil hele baksidearket opp/ned.
+* `both`: speil begge veier.
+
+Front- og baksideark bruker samme kortstørrelse og slot-beregning. For best fysisk treff må utskrift normalt kjøres uten skalering, og skriveren må ha god nok mating/duplex-presisjon.
+
 Verktøyet bør støtte:
 
 * Arkstørrelser som A4 og A3.
@@ -166,8 +177,14 @@ Planlagte kommandoer:
 * `list-decks`
 * `show-config`
 * `set-config`
+* `reset-config`
+* `reset-content`
 * `import-card`
 * `import-deck`
+* `delete-card`
+* `duplicate-card`
+* `delete-deck`
+* `duplicate-deck`
 * `validate-cards`
 * `validate-deck`
 * `render-card`
@@ -184,13 +201,19 @@ Første implementerte CLI-funksjoner:
 * `list-decks` laster lagrede deckresources.
 * `show-config` viser lagrede CLI-/eksportdefaults.
 * `set-config` lagrer nye CLI-/eksportdefaults.
+* `reset-config` nullstiller settings/config til fabrikkverdier.
+* `reset-content` sletter lagrede kort- og deckresources og regenererer defaultkort og decken `default_deck`.
 * `import-card` importerer en ekstern `.tres` kortresource til brukerressursene.
 * `import-deck` importerer en ekstern `.tres` deckresource til brukerressursene.
+* `delete-card` sletter en vanlig user card resource, men nekter read-only defaults.
+* `duplicate-card` kopierer et kort til en vanlig user card resource.
+* `delete-deck` sletter en vanlig user deck resource, men nekter read-only defaults.
+* `duplicate-deck` kopierer en deck til en vanlig user deck resource.
 * `validate-cards` validerer lagrede kortresources.
 * `validate-deck` validerer en lagret eller innebygd deck.
 * `render-card` renderer ett kort til PNG.
 * `export-deck` renderer en kortstokk til PNG som enkeltbilder, samlet grid eller lang strip.
-* `export-sheet` renderer A4/A3-printark med egne front- og baksideark og valgbar DPI.
+* `export-sheet` renderer A4/A3-printark med egne front- og baksideark, valgbar DPI og valgfri bakside-speiling.
 * `export-showcase` renderer en showcase-grid for en kortstokk.
 
 `export-diy` finnes foreløpig som service-/CLI-stub. `export-showcase` bruker foreløpig samme grid-output som `export-deck --layout grid`.
@@ -238,18 +261,17 @@ godot/godot_cardgeneration/
 
 `resources/` skal inneholde lagrede Godot resources for elementer, kort og kortstokker.
 
-Kuraterte/default resources ligger under `resources/cards/` og `resources/decks/`. Kort og kortstokker som brukeren lagrer fra GUI/CLI skrives under `resources/user/`, som er ignorert av git.
+Kuraterte/default resources ligger under `res://resources/cards/` og `res://resources/decks/` og lastes automatisk sammen med brukerbiblioteket. Repository-laget leser `.tres` og `.res` rekursivt fra både `res://` og `user://`. Kort og kortstokker som brukeren importerer eller lagrer fra GUI/CLI skrives under `user://resources/`, slik at det fungerer også i eksportert app.
 
-`resources/config/card_tool_config.tres` inneholder langvarige defaults for CLI og eksport.
+`resources/config/card_tool_config.tres` inneholder langvarige defaults for CLI og eksport. Brukerinnhold ligger i Godot `user://resources/...`.
 
 Første sample-data ligger i:
 
 * `resources/elements/`
 * `resources/config/card_tool_config.tres`
-* `resources/cards/monsters/monster_flame_1_a.tres`
 * `resources/decks/sample_monster_deck.tres`
 
-I tillegg finnes `default_52_card_deck` som innebygd preset fra `DefaultDeckFactory`.
+I tillegg genererer `DefaultDeckFactory` decken `default_deck` og de 52 tilhørende kortene med `default_`-prefix ved oppstart hvis de mangler.
 
 `scripts/resources/` inneholder `Resource`-modellene som kortverktøyet lagrer og leser.
 

@@ -17,6 +17,12 @@ public partial class MainMenu : Control
 
     public override void _Ready()
     {
+        var defaultResult = _cardToolService.EnsureDefaultResources();
+        if (!defaultResult.Success)
+        {
+            GD.PushError(defaultResult.Message);
+        }
+
         var userArgs = OS.GetCmdlineUserArgs();
         if (DisplayServer.GetName() == "headless" || userArgs.Length > 0)
         {

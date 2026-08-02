@@ -87,7 +87,7 @@ public partial class SavedCardsScreen : CardToolScreen
 
         _details = new Label
         {
-            Text = "Select a card to preview it.",
+            Text = $"Card Count: {_cards.Count}",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
         previewColumn.AddChild(_details);
@@ -96,7 +96,7 @@ public partial class SavedCardsScreen : CardToolScreen
         {
             list.AddChild(new Label
             {
-                Text = "No saved cards found in res://resources/cards.",
+                Text = "No cards found in default resources or user://resources/cards.",
                 AutowrapMode = TextServer.AutowrapMode.WordSmart
             });
             return;
@@ -162,17 +162,14 @@ public partial class SavedCardsScreen : CardToolScreen
 
         AddIconButton(buttons, PreviewIconPath, "Preview", () => ShowCard(card));
         AddIconButton(buttons, EditIconPath, "Edit", () => EditCardRequested?.Invoke(card));
+        AddIconButton(buttons, CopyIconPath, "Duplicate", () => DuplicateCard(card));
+        AddIconButton(buttons, DeleteIconPath, "Delete", () => DeleteCard(card));
     }
 
     private void ShowCard(CardResource card)
     {
         _frontPreview.SetCard(card);
-        _details.Text = card switch
-        {
-            MonsterCardResource => $"ID: {card.Id}\nType: {card.CardType}\nDerived Element: {CardElementResolver.GetCardElementType(card)}",
-            KingCardResource king => $"ID: {card.Id}\nType: {card.CardType}\nElement Focus: {king.ElementFocus?.DisplayName ?? CardElementResolver.GetCardElementType(card).ToString()}",
-            _ => $"ID: {card.Id}\nType: {card.CardType}"
-        };
+        _details.Text = $"Card Count: {_cards.Count}";
     }
 
     private static void AddCardTypeRow(VBoxContainer parent, CardType cardType)
@@ -230,7 +227,7 @@ public partial class SavedCardsScreen : CardToolScreen
 
     private void OpenImportDialog()
     {
-        var outputDirectory = ProjectPaths.ToGlobalPath("resources/user/cards");
+        var outputDirectory = ProjectSettings.GlobalizePath(CardGeneration.Services.CardRepository.UserCardsRootPath);
         Directory.CreateDirectory(outputDirectory);
         _importDialog.CurrentDir = outputDirectory;
         _importDialog.PopupCenteredRatio(0.72f);
@@ -246,6 +243,20 @@ public partial class SavedCardsScreen : CardToolScreen
     private void ValidateCards()
     {
         var result = CardToolService.ValidateCards();
+        SetStatus(result.Message, !result.Success);
+    }
+
+    private void DuplicateCard(CardResource card)
+    {
+        var result = CardToolService.DuplicateCard(card.Id);
+        BuildUi();
+        SetStatus(result.Message, !result.Success);
+    }
+
+    private void DeleteCard(CardResource card)
+    {
+        var result = CardToolService.DeleteCard(card.Id);
+        BuildUi();
         SetStatus(result.Message, !result.Success);
     }
 

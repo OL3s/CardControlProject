@@ -15,8 +15,6 @@ public partial class SavedDecksScreen : CardToolScreen
     private PopupMenu _createDeckMenu = null!;
     private Label _details = null!;
     private FileDialog _importDialog = null!;
-    private CardDeckResource? _selectedDeck;
-
     public event Action<CardDeckResource?>? EditDeckRequested;
     public event Action<CardDeckResource?>? NewDeckRequested;
     public event Action<CardDeckResource>? PreviewDeckRequested;
@@ -36,7 +34,7 @@ public partial class SavedDecksScreen : CardToolScreen
         content.AddChild(toolbar);
         AddIconButton(toolbar, DeckIconPath, "Create deck", ShowCreateDeckMenu);
         AddIconButton(toolbar, ImportIconPath, "Import deck resource", OpenImportDialog);
-        AddIconButton(toolbar, CheckIconPath, "Validate selected deck", ValidateSelectedDeck);
+        AddIconButton(toolbar, CheckIconPath, "Validate decks", ValidateDecks);
         AddIconButton(toolbar, RefreshIconPath, "Refresh", BuildUi);
         AddResourceDialogs();
 
@@ -64,7 +62,7 @@ public partial class SavedDecksScreen : CardToolScreen
 
         _details = new Label
         {
-            Text = "Select a deck to inspect it.",
+            Text = $"Deck Count: {_decks.Count}",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
         list.AddChild(_details);
@@ -73,7 +71,7 @@ public partial class SavedDecksScreen : CardToolScreen
         {
             list.AddChild(new Label
             {
-                Text = "No saved decks found in res://resources/decks.",
+                Text = "No decks found in default resources or user://resources/decks.",
                 AutowrapMode = TextServer.AutowrapMode.WordSmart
             });
             return;
@@ -84,7 +82,6 @@ public partial class SavedDecksScreen : CardToolScreen
             AddDeckRow(list, deck);
         }
 
-        ShowDeck(_decks[0]);
         SetStatus($"Loaded {_decks.Count} saved deck(s).");
     }
 
@@ -136,16 +133,16 @@ public partial class SavedDecksScreen : CardToolScreen
         row.AddChild(buttons);
         AddIconButton(buttons, PreviewIconPath, "Preview full deck", () =>
         {
-            ShowDeck(deck);
             PreviewDeckRequested?.Invoke(deck);
         });
         AddIconButton(buttons, EditIconPath, "Edit", () => EditDeckRequested?.Invoke(deck));
+        AddIconButton(buttons, CopyIconPath, "Duplicate", () => DuplicateDeck(deck));
+        AddIconButton(buttons, DeleteIconPath, "Delete", () => DeleteDeck(deck));
     }
 
     private void ShowDeck(CardDeckResource deck)
     {
-        _selectedDeck = deck;
-        _details.Text = $"ID: {deck.Id}\nCards: {GetCardCount(deck)}\nEntries: {(deck.Entries ?? Array.Empty<CardDeckEntryResource>()).Length}\n{GetCardComposition(deck)}";
+        _details.Text = $"Deck Count: {_decks.Count}";
     }
 
     private void AddDeckStatsRow(VBoxContainer parent, CardDeckResource deck)
@@ -251,7 +248,7 @@ public partial class SavedDecksScreen : CardToolScreen
 
     private void OpenImportDialog()
     {
-        var outputDirectory = ProjectPaths.ToGlobalPath("resources/user/decks");
+        var outputDirectory = ProjectSettings.GlobalizePath(CardGeneration.Services.DeckRepository.UserDecksRootPath);
         Directory.CreateDirectory(outputDirectory);
         _importDialog.CurrentDir = outputDirectory;
         _importDialog.PopupCenteredRatio(0.72f);
@@ -264,15 +261,23 @@ public partial class SavedDecksScreen : CardToolScreen
         SetStatus(result.Message, !result.Success);
     }
 
-    private void ValidateSelectedDeck()
+    private void ValidateDecks()
     {
-        if (_selectedDeck is null)
-        {
-            SetStatus("Select a deck before validating.", true);
-            return;
-        }
+        var result = CardToolService.ValidateDecks();
+        SetStatus(result.Message, !result.Success);
+    }
 
-        var result = CardToolService.ValidateDeck(_selectedDeck.Id);
+    private void DuplicateDeck(CardDeckResource deck)
+    {
+        var result = CardToolService.DuplicateDeck(deck.Id);
+        BuildUi();
+        SetStatus(result.Message, !result.Success);
+    }
+
+    private void DeleteDeck(CardDeckResource deck)
+    {
+        var result = CardToolService.DeleteDeck(deck.Id);
+        BuildUi();
         SetStatus(result.Message, !result.Success);
     }
 

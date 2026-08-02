@@ -8,7 +8,7 @@ namespace CardGeneration.Services;
 
 public static class DefaultDeckFactory
 {
-    public const string Default52CardDeckId = "default_52_card_deck";
+    public const string Default52CardDeckId = "default_deck";
 
     public static CardDeckResource CreateEmptyDeck()
     {
@@ -113,9 +113,22 @@ public static class DefaultDeckFactory
 
     private static CardResource UseExisting(IReadOnlyDictionary<string, CardResource>? existingCards, string id, Func<CardResource> createCard)
     {
-        return existingCards is not null && existingCards.TryGetValue(id, out var existingCard)
-            ? existingCard
-            : createCard();
+        var defaultId = CreateDefaultCardId(id);
+        if (existingCards is not null && existingCards.TryGetValue(defaultId, out var existingCard))
+        {
+            return existingCard;
+        }
+
+        var card = createCard();
+        card.Id = defaultId;
+        return card;
+    }
+
+    private static string CreateDefaultCardId(string id)
+    {
+        return id.StartsWith("default_", StringComparison.OrdinalIgnoreCase)
+            ? id
+            : $"default_{id}";
     }
 
     private static KingCardResource King(IReadOnlyDictionary<ElementType, ElementResource> elements, string id, ElementType elementType, string questText)

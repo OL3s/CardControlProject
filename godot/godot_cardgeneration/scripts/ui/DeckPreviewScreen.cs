@@ -51,7 +51,7 @@ public partial class DeckPreviewScreen : CardToolScreen
         AddBackPreview(backs, "King", new KingCardResource { Id = "king_back_preview" });
     }
 
-    private static void AddBackPreview(HBoxContainer parent, string title, CardResource card)
+    private void AddBackPreview(HBoxContainer parent, string title, CardResource card)
     {
         var column = new VBoxContainer
         {
@@ -60,6 +60,7 @@ public partial class DeckPreviewScreen : CardToolScreen
         column.AddThemeConstantOverride("separation", 6);
         parent.AddChild(column);
 
+        card.BackImageTexture = _deck?.GetBackImageTexture(card.CardType);
         column.AddChild(CardPreviewControl.Create(
             card,
             showBack: true,

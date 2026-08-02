@@ -21,4 +21,9 @@ public sealed class ConfigRepository
             ? ToolResult.Ok($"Saved config to {ConfigPath}.")
             : ToolResult.Fail($"Failed to save config to {ConfigPath}: {error}.");
     }
+
+    public ToolResult ResetConfig()
+    {
+        return SaveConfig(new CardToolConfigResource());
+    }
 }

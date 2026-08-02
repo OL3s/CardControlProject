@@ -1,0 +1,34 @@
+ELEMENT WAR - DIY CARDBOARD PACKAGE TEMPLATE
+All dimensions are in millimetres. Print PNG/SVG at 100% scale.
+
+Source dimensions from physical/mesurement diagrams:
+Outer box target: 97.0 x 72.0 x 43.0
+Closed production target with rigid lid: 97.0 x 72.0 x 45.0
+Internal tray reference: 92.0 x 67.0 x 21.5
+
+DIY tuck/lock net panels:
+Bottom: 97.0 x 72.0
+Front wall: 97.0 x 43.0
+Back wall: 97.0 x 43.0
+Left side wall: 43.0 x 72.0
+Right side wall: 43.0 x 72.0
+Lid: 97.0 x 72.0
+Lid insert tab: 87.0 x 20.0
+Inner front flap: 87.0 x 16.0
+
+Locking details:
+Lock tab protrusion: 8.0
+Lock tab height: 16.0
+Lock slot: 1.8 x 22.0
+Slot centre from left/right panel edge: 18.0
+
+Canvas and fit:
+A4 transparent sheet: 210.0 x 297.0
+A3 transparent sheet: 297.0 x 420.0
+Net footprint including lock tabs: 199.0 x 266.0
+A4 true-scale remaining margin: 5.5 mm left/right, 15.5 mm top/bottom
+A3 true-scale remaining margin: 49.0 mm left/right, 77.0 mm top/bottom
+
+Practical note:
+A4 technically fits but is tight for printer non-printable margins. A3 is safer
+for real DIY cutting, labels, and alignment marks.

@@ -22,6 +22,7 @@ public partial class ExportCenterScreen : CardToolScreen
     private OptionButton _layout = null!;
     private OptionButton _paper = null!;
     private OptionButton _dpi = null!;
+    private OptionButton _backMirror = null!;
     private SpinBox _columns = null!;
     private SpinBox _spacing = null!;
     private Button _exportButton = null!;
@@ -58,7 +59,8 @@ public partial class ExportCenterScreen : CardToolScreen
             return;
         }
 
-        _targetType = AddOptionButton(content, "Export Target", ["Deck", "Card"]);
+        var targetOptions = BuildTargetOptions();
+        _targetType = AddOptionButton(content, "Export Target", targetOptions);
         if (_decks.Count == 0 && _cards.Count > 0)
         {
             SelectOption(_targetType, "Card");
@@ -91,6 +93,8 @@ public partial class ExportCenterScreen : CardToolScreen
         SelectOption(_paper, config.DefaultPaper);
         _dpi = AddOptionButton(_printSheetOptions, "Print DPI", ["150", "300", "600", "1200"]);
         SelectOption(_dpi, config.DefaultDpi.ToString());
+        _backMirror = AddOptionButton(_printSheetOptions, "Back Mirror", ["none", "width", "height", "both"]);
+        SelectOption(_backMirror, config.DefaultBackMirror);
 
         var buttons = new HBoxContainer();
         buttons.AddThemeConstantOverride("separation", 8);
@@ -273,6 +277,14 @@ public partial class ExportCenterScreen : CardToolScreen
             option.AddItem(deck.Id);
         }
 
+        if (option.ItemCount == 0)
+        {
+            option.AddItem("No decks available");
+            option.Disabled = true;
+            content.AddChild(option);
+            return option;
+        }
+
         var selectedIndex = 0;
         for (var index = 0; index < _decks.Count; index++)
         {
@@ -302,6 +314,14 @@ public partial class ExportCenterScreen : CardToolScreen
             option.AddItem(card.Id);
         }
 
+        if (option.ItemCount == 0)
+        {
+            option.AddItem("No cards available");
+            option.Disabled = true;
+            content.AddChild(option);
+            return option;
+        }
+
         var selectedIndex = 0;
         for (var index = 0; index < _cards.Count; index++)
         {
@@ -315,6 +335,21 @@ public partial class ExportCenterScreen : CardToolScreen
         option.Select(selectedIndex);
         content.AddChild(option);
         return option;
+    }
+
+    private string[] BuildTargetOptions()
+    {
+        if (_decks.Count > 0 && _cards.Count > 0)
+        {
+            return ["Deck", "Card"];
+        }
+
+        if (_cards.Count > 0)
+        {
+            return ["Card"];
+        }
+
+        return ["Deck"];
     }
 
     private void ExportSelected()
@@ -386,8 +421,9 @@ public partial class ExportCenterScreen : CardToolScreen
         {
             var paper = GetSelectedText(_paper);
             var dpi = int.Parse(GetSelectedText(_dpi));
+            var backMirror = GetSelectedText(_backMirror);
             var sheetOutputPath = ResolveMultiOutputPath(outputPath, $"{selectedDeck.Id}_{paper}_{dpi}dpi_sheets");
-            return () => CardToolService.ExportSheet(selectedDeck, sheetOutputPath, paper, dpi, progress);
+            return () => CardToolService.ExportSheet(selectedDeck, sheetOutputPath, paper, dpi, backMirror, progress);
         }
 
         if (exportType == "Showcase")
@@ -505,6 +541,7 @@ public partial class ExportCenterScreen : CardToolScreen
         _layout.Disabled = disabled;
         _paper.Disabled = disabled;
         _dpi.Disabled = disabled;
+        _backMirror.Disabled = disabled;
         _columns.Editable = !disabled;
         _spacing.Editable = !disabled;
     }

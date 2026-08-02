@@ -16,7 +16,7 @@ public sealed class SheetExportService
     private const double CardWidthMillimeters = 63.0;
     private const double CardHeightMillimeters = 88.0;
 
-    public ToolResult ExportSheet(CardDeckResource deck, string outputPath, string paper, int dpi, Action<ExportProgress>? progress = null)
+    public ToolResult ExportSheet(CardDeckResource deck, string outputPath, string paper, int dpi, string backMirror = "none", Action<ExportProgress>? progress = null)
     {
         if (!TryGetPaperSpec(paper, out var paperSpec))
         {
@@ -26,6 +26,11 @@ public sealed class SheetExportService
         if (!IsSupportedDpi(dpi))
         {
             return ToolResult.Fail($"DPI '{dpi}' is not supported. Use one of: {string.Join(", ", SupportedDpiValues)}.");
+        }
+
+        if (!IsSupportedBackMirror(backMirror))
+        {
+            return ToolResult.Fail($"Back mirror '{backMirror}' is not supported. Use none, width, height, or both.");
         }
 
         var cards = ExpandDeckCards(deck);
@@ -86,11 +91,13 @@ public sealed class SheetExportService
             {
                 progress?.Invoke(new ExportProgress(currentProgress, totalProgress, $"Placing back {cardIndex + 1}/{cards.Count}: {cards[cardIndex].Id}"));
                 var position = GetCardPosition(cardIndex - firstCardIndex, columns, cardWidth, cardHeight, xGap, yGap);
-                var backImage = GetBackImage(cards[cardIndex].CardType, deck.BackImageTexture, cardWidth, cardHeight, backImages);
+                var backImage = GetBackImage(cards[cardIndex].CardType, deck.GetBackImageTexture(cards[cardIndex].CardType), cardWidth, cardHeight, backImages);
                 backSheet.BlendRect(backImage, new Rect2I(Vector2I.Zero, backImage.GetSize()), position);
                 currentProgress++;
                 progress?.Invoke(new ExportProgress(currentProgress, totalProgress, $"Placed back {cardIndex + 1}/{cards.Count}: {cards[cardIndex].Id}"));
             }
+
+            ApplyBackMirror(backSheet, backMirror);
 
             var backPath = Path.Combine(outputDirectory, $"{deck.Id}_{paperSpec.Name}_{dpi}dpi_back_{sheetIndex + 1:000}.png");
             var backError = backSheet.SavePng(backPath);
@@ -166,6 +173,28 @@ public sealed class SheetExportService
         }
 
         return false;
+    }
+
+    private static bool IsSupportedBackMirror(string backMirror)
+    {
+        return backMirror is "none" or "width" or "height" or "both";
+    }
+
+    private static void ApplyBackMirror(Image image, string backMirror)
+    {
+        switch (backMirror)
+        {
+            case "width":
+                image.FlipX();
+                break;
+            case "height":
+                image.FlipY();
+                break;
+            case "both":
+                image.FlipX();
+                image.FlipY();
+                break;
+        }
     }
 
     private static int MillimetersToPixels(double millimeters, int dpi)

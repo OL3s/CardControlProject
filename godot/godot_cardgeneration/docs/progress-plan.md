@@ -43,7 +43,7 @@ Mål:
 * Lage enkle skjermer for `Cards` og `Decks`. Gjort.
 * Lage første kortopprettingsflyt via `+` i `Cards`. Gjort med korttypevalg før editor, felles kortfelt, type-spesifikke basisfelt, image source path, save og export.
 * Lage første deckopprettingsflyt via `+` i `Decks`. Gjort med valg mellom tom deck og default 52-korts preset, deckfelt, tilgjengelige kort, entries, save og export.
-* Bruke default 52-korts deck som standarddeck i stedet for én-korts placeholder. Gjort med innebygd `default_52_card_deck` i `CardToolService`.
+* Bruke default 52-korts deck som standarddeck i stedet for én-korts placeholder. Gjort med innebygd deck `default_deck` i `CardToolService`, og oppstart genererer også de 52 kortene som `default_`-prefiksede card resources.
 * Legge til type-spesifikke editorfelt for monster, terreng og konge. Delvis gjort for monsterkrav/grunnstyrke, terrengressurser og kongeliv/oppdragstekst.
 
 ## Fase 4: Rendering
@@ -85,6 +85,7 @@ Mål:
 * Eksportere A3-printark med fronter og baksider. Gjort som PNG.
 * Sikre pokerkortstørrelse `63 x 88 mm` ved print. Gjort ved valgbar DPI-pikselberegning.
 * Støtte normale DPI-valg for printark. Gjort for `150`, `300`, `600` og `1200`.
+* Støtte valgfri speiling av baksideark for tosidig print. Gjort med `none`, `width`, `height` og `both`.
 * Lage nye nummererte ark automatisk når arket er fullt. Gjort.
 * Legge inn safe margin, bleed og kuttemerker. Gjenstår.
 * Lage DIY-eksport med kortbilder, printark og måleinformasjon. Gjenstår.
@@ -116,6 +117,8 @@ Mål:
 * Lagre langvarige CLI-/eksportinnstillinger i redigerbar Godot resource. Gjort med `resources/config/card_tool_config.tres`.
 * La CLI bruke configverdier som defaults når flagg ikke oppgis. Gjort.
 * La CLI endre config uten å åpne GUI. Gjort med `set-config`.
+* La CLI nullstille config uten å åpne GUI. Gjort med `reset-config`.
+* La GUI/CLI slette lagrede kort/decks og generere default deck. Gjort med `reset-content` og Settings-handling. Default resources er read-only, og GUI/CLI har delete/duplicate for vanlige user resources.
 * Lage GUI for å redigere samme config. Gjort med `SettingsPanel`.
 * Gjøre Settings-panelet scrollbart for små vinduer. Gjort.
 * Koble Settings-panelet til endelige export-/preview-skjermer når de finnes. Delvis gjort ved at kort-, deck- og exportskjermene leser config-defaults via `CardToolService`.

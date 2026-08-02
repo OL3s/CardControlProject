@@ -9,11 +9,13 @@ public sealed class CliOptions
     public string Command { get; private set; } = string.Empty;
     public string? CardId { get; private set; }
     public string? DeckId { get; private set; }
+    public string? NewId { get; private set; }
     public string? InputPath { get; private set; }
     public string OutputPath { get; private set; } = "res://output";
     public string Format { get; private set; } = "png";
     public string Paper { get; private set; } = "a4";
     public int Dpi { get; private set; } = 600;
+    public string BackMirror { get; private set; } = "none";
     public string Layout { get; private set; } = "individual";
     public int Columns { get; private set; }
     public int Spacing { get; private set; } = 24;
@@ -21,11 +23,13 @@ public sealed class CliOptions
 
     public bool HasCardId { get; private set; }
     public bool HasDeckId { get; private set; }
+    public bool HasNewId { get; private set; }
     public bool HasInputPath { get; private set; }
     public bool HasOutputPath { get; private set; }
     public bool HasFormat { get; private set; }
     public bool HasPaper { get; private set; }
     public bool HasDpi { get; private set; }
+    public bool HasBackMirror { get; private set; }
     public bool HasLayout { get; private set; }
     public bool HasColumns { get; private set; }
     public bool HasSpacing { get; private set; }
@@ -54,6 +58,10 @@ public sealed class CliOptions
                     options.DeckId = ReadValue(args, ref index, "--deck");
                     options.HasDeckId = true;
                     break;
+                case "--new-id":
+                    options.NewId = ReadValue(args, ref index, "--new-id");
+                    options.HasNewId = true;
+                    break;
                 case "--input":
                     options.InputPath = ReadValue(args, ref index, "--input");
                     options.HasInputPath = true;
@@ -74,6 +82,10 @@ public sealed class CliOptions
                     options.Dpi = int.Parse(ReadValue(args, ref index, "--dpi"));
                     options.HasDpi = true;
                     break;
+                case "--back-mirror":
+                    options.BackMirror = ReadValue(args, ref index, "--back-mirror");
+                    options.HasBackMirror = true;
+                    break;
                 case "--layout":
                     options.Layout = ReadValue(args, ref index, "--layout");
                     options.HasLayout = true;
@@ -91,6 +103,12 @@ public sealed class CliOptions
                     break;
                 case "--set-config":
                     options.Command = "set-config";
+                    break;
+                case "--reset-config":
+                    options.Command = "reset-config";
+                    break;
+                case "--reset-content":
+                    options.Command = "reset-content";
                     break;
                 case "--list-cards":
                     options.Command = "list-cards";
@@ -113,6 +131,42 @@ public sealed class CliOptions
                     {
                         options.InputPath ??= importDeckPath;
                         options.HasInputPath = true;
+                    }
+
+                    break;
+                case "--delete-card":
+                    options.Command = "delete-card";
+                    if (TryReadOptionalValue(args, ref index, out var deleteCardId))
+                    {
+                        options.CardId ??= deleteCardId;
+                        options.HasCardId = true;
+                    }
+
+                    break;
+                case "--duplicate-card":
+                    options.Command = "duplicate-card";
+                    if (TryReadOptionalValue(args, ref index, out var duplicateCardId))
+                    {
+                        options.CardId ??= duplicateCardId;
+                        options.HasCardId = true;
+                    }
+
+                    break;
+                case "--delete-deck":
+                    options.Command = "delete-deck";
+                    if (TryReadOptionalValue(args, ref index, out var deleteDeckId))
+                    {
+                        options.DeckId ??= deleteDeckId;
+                        options.HasDeckId = true;
+                    }
+
+                    break;
+                case "--duplicate-deck":
+                    options.Command = "duplicate-deck";
+                    if (TryReadOptionalValue(args, ref index, out var duplicateDeckId))
+                    {
+                        options.DeckId ??= duplicateDeckId;
+                        options.HasDeckId = true;
                     }
 
                     break;
@@ -179,11 +233,25 @@ public sealed class CliOptions
                         options.Command = arg;
                     }
                     else if (!arg.StartsWith("--", StringComparison.Ordinal)
-                             && options.Command is "import-card" or "import-deck"
-                             && string.IsNullOrWhiteSpace(options.InputPath))
+                              && options.Command is "import-card" or "import-deck"
+                              && string.IsNullOrWhiteSpace(options.InputPath))
                     {
                         options.InputPath = arg;
                         options.HasInputPath = true;
+                    }
+                    else if (!arg.StartsWith("--", StringComparison.Ordinal)
+                             && options.Command is "delete-card" or "duplicate-card"
+                             && string.IsNullOrWhiteSpace(options.CardId))
+                    {
+                        options.CardId = arg;
+                        options.HasCardId = true;
+                    }
+                    else if (!arg.StartsWith("--", StringComparison.Ordinal)
+                             && options.Command is "delete-deck" or "duplicate-deck"
+                             && string.IsNullOrWhiteSpace(options.DeckId))
+                    {
+                        options.DeckId = arg;
+                        options.HasDeckId = true;
                     }
 
                     break;
@@ -225,6 +293,11 @@ public sealed class CliOptions
             Dpi = config.DefaultDpi;
         }
 
+        if (!HasBackMirror)
+        {
+            BackMirror = config.DefaultBackMirror;
+        }
+
         if (!HasLayout)
         {
             Layout = config.DefaultDeckLayout;
@@ -251,6 +324,7 @@ public sealed class CliOptions
             DefaultFormat = HasFormat ? Format : null,
             DefaultPaper = HasPaper ? Paper : null,
             DefaultDpi = HasDpi ? Dpi : null,
+            DefaultBackMirror = HasBackMirror ? BackMirror : null,
             DefaultDeckLayout = HasLayout ? Layout : null,
             DefaultGridColumns = HasColumns ? Columns : null,
             DefaultSpacing = HasSpacing ? Spacing : null

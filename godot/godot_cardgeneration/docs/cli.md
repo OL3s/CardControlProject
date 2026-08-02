@@ -25,8 +25,14 @@ list-cards
 list-decks
 show-config
 set-config
+reset-config
+reset-content
 import-card
 import-deck
+delete-card
+duplicate-card
+delete-deck
+duplicate-deck
 validate-cards
 validate-deck
 render-card
@@ -42,13 +48,19 @@ Status:
 * `list-decks`: implementert.
 * `show-config`: implementert.
 * `set-config`: implementert.
+* `reset-config`: implementert for å nullstille config/settings til fabrikkverdier.
+* `reset-content`: implementert for å slette lagrede kort/decks og regenerere defaultkort og decken `default_deck`.
 * `import-card`: implementert for `.tres` kortresource.
 * `import-deck`: implementert for `.tres` deckresource.
+* `delete-card`: implementert for vanlige user card resources; read-only defaults kan ikke slettes.
+* `duplicate-card`: implementert for å kopiere et kort til en vanlig user card resource.
+* `delete-deck`: implementert for vanlige user deck resources; read-only defaults kan ikke slettes.
+* `duplicate-deck`: implementert for å kopiere en deck til en vanlig user deck resource.
 * `validate-cards`: implementert.
 * `validate-deck`: implementert for lagrede og innebygde deckresources.
 * `render-card`: implementert for PNG.
 * `export-deck`: implementert for PNG-layoutene `individual`, `grid` og `strip`.
-* `export-sheet`: implementert for A4 og A3 PNG-printark med front/back og valgbar DPI.
+* `export-sheet`: implementert for A4 og A3 PNG-printark med front/back, valgbar DPI og valgfri bakside-speiling.
 * `export-diy`: stub.
 * `export-showcase`: implementert som grid-output og delt med GUI Showcase-export.
 
@@ -66,6 +78,18 @@ Lagre defaults for repeterende eksport:
 godot --headless --path godot/godot_cardgeneration -- --command set-config --deck sample_monster_deck --output output/sheets --paper a4 --dpi 600 --layout grid --columns 3 --spacing 24
 ```
 
+Nullstille settings/config til fabrikkverdier:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command reset-config
+```
+
+Slette lagrede kort/decks og regenerere defaultkort/defaultdeck:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command reset-content
+```
+
 Importere et kortresource:
 
 ```sh
@@ -78,7 +102,31 @@ Importere et deckresource:
 godot --headless --path godot/godot_cardgeneration -- --command import-deck --input /path/to/deck.tres
 ```
 
-Etterpå kan mange kommandoer kjøres kortere. Denne bruker lagret deck, output, papir og DPI:
+Duplisere et defaultkort før endring:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command duplicate-card --card default_monster_flame_1_a --new-id my_flame_monster
+```
+
+Slette en vanlig user card resource:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command delete-card --card my_flame_monster
+```
+
+Duplisere defaultdecken før endring:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command duplicate-deck --deck default_deck --new-id my_deck
+```
+
+Slette en vanlig user deck resource:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command delete-deck --deck my_deck
+```
+
+Etterpå kan mange kommandoer kjøres kortere. Denne bruker lagret deck, output, papir, DPI og bakside-speiling:
 
 ```sh
 godot --headless --path godot/godot_cardgeneration -- --command export-sheet
@@ -93,7 +141,7 @@ godot --headless --path godot/godot_cardgeneration -- --command validate-cards
 Rendere ett kort:
 
 ```sh
-godot --headless --path godot/godot_cardgeneration -- --command render-card --card monster_flame_1_a --output output/cards/preview
+godot --headless --path godot/godot_cardgeneration -- --command render-card --card default_monster_flame_1_a --output output/cards/preview
 ```
 
 Eksportere en kortstokk som bilder:
@@ -132,6 +180,12 @@ Eksportere printark:
 godot --headless --path godot/godot_cardgeneration -- --command export-sheet --deck monster_cards --paper a4 --dpi 600 --output output/sheets
 ```
 
+Speile baksidearket venstre/høyre for tosidig print:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command export-sheet --deck monster_cards --paper a4 --dpi 600 --back-mirror width --output output/sheets
+```
+
 A3 bruker samme kommando med `--paper a3`:
 
 ```sh
@@ -145,6 +199,13 @@ DPI må velges fra faste normalverdier:
 * `600`: print-master og default.
 * `1200`: ekstra høy detaljgrad.
 
+Bakside-speiling for printark:
+
+* `none`: samme slot-plassering som frontarket.
+* `width`: speil hele baksidearket venstre/høyre.
+* `height`: speil hele baksidearket opp/ned.
+* `both`: speil begge veier.
+
 Printark eksporteres som nummererte PNG-par:
 
 ```text
@@ -154,7 +215,7 @@ monster_cards_a4_600dpi_front_002.png
 monster_cards_a4_600dpi_back_002.png
 ```
 
-Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, ved valgt DPI. En deck kan inneholde flere korttyper, så baksiden renderes per korttype for hvert kort.
+Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, ved valgt DPI. En deck kan inneholde flere korttyper, så baksiden renderes per korttype for hvert kort. Front- og baksideark bruker samme slot-beregning; speiling skjer på hele baksidearket etter at alle baksider er plassert.
 
 Når et ark er fullt, lager eksporten automatisk neste nummererte front/back-par. Arkdelingen bruker antall kort som får plass på valgt papir og `ceil(cardCount / cardsPerSheet)`.
 
@@ -187,6 +248,14 @@ godot --headless --path godot/godot_cardgeneration -- --set-config --deck sample
 ```
 
 ```sh
+godot --headless --path godot/godot_cardgeneration -- --reset-config
+```
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --reset-content
+```
+
+```sh
 godot --headless --path godot/godot_cardgeneration -- --import-card /path/to/card.tres
 ```
 
@@ -195,7 +264,23 @@ godot --headless --path godot/godot_cardgeneration -- --import-deck /path/to/dec
 ```
 
 ```sh
-godot --headless --path godot/godot_cardgeneration -- --render-card monster_flame_1_a --output output/cards/preview
+godot --headless --path godot/godot_cardgeneration -- --duplicate-card default_monster_flame_1_a --new-id my_flame_monster
+```
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --delete-card my_flame_monster
+```
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --duplicate-deck default_deck --new-id my_deck
+```
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --delete-deck my_deck
+```
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --render-card default_monster_flame_1_a --output output/cards/preview
 ```
 
 ## Designregel
@@ -214,12 +299,17 @@ Felt som brukes som defaults:
 * `DefaultFormat`
 * `DefaultPaper`
 * `DefaultDpi`
+* `DefaultBackMirror`
 * `DefaultDeckLayout`
 * `DefaultGridColumns`
 * `DefaultSpacing`
 
-CLI bruker configverdier når tilsvarende flagg ikke er oppgitt. Direkte CLI-flagg overstyrer config for den ene kjøringen uten å lagre endringen. `set-config` lagrer bare feltene som oppgis.
+Default card er tom etter fabrikkreset; default deck er `default_deck`. CLI bruker configverdier når tilsvarende flagg ikke er oppgitt. Direkte CLI-flagg overstyrer config for den ene kjøringen uten å lagre endringen. `set-config` lagrer bare feltene som oppgis.
 
 GUI Settings-panelet bruker samme config-resource. Export-skjermen bruker disse verdiene som startverdier, men endringer i Export gjelder bare den ene eksporten og lagres ikke som nye defaults. Endringer i GUI Settings og CLI `set-config` skal derfor være synlige for hverandre.
 
-Default deck er `default_52_card_deck`. Den er en innebygd 52-korts preset fra `DefaultDeckFactory` og kan brukes av CLI uten at decken først er lagret som `.tres`.
+Cards/Decks-listene viser både default resources under `res://resources/...` og brukerbiblioteket under `user://resources/...`. User resources overstyrer default resources med samme ID. Ved oppstart genereres manglende defaultkort til `user://resources/cards/default/...` med `default_`-prefix, og decken `default_deck` genereres til `user://resources/decks/default/default_deck.tres` hvis den mangler fra både default- og brukerressurser.
+
+Default resources er read-only også i CLI. `delete-card`/`delete-deck` nekter defaults, og endringer skal starte med `duplicate-card`/`duplicate-deck` eller GUI `Save as new`.
+
+Default deck er `default_deck`. Den er en innebygd 52-korts preset fra `DefaultDeckFactory`, og de 52 kortene fra decken blir også tilgjengelige som card resources med `default_`-prefix ved oppstart.

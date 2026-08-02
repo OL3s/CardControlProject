@@ -153,10 +153,7 @@ public static class CardImageRenderer
 
     private static void DrawMonsterPanels(Image image, MonsterCardResource card)
     {
-        var requirementWidth = Math.Max(150, 52 + card.Requirements.Length * 70);
-        var requirementPanel = new Rect2I(95, 85, requirementWidth, 70);
-        FillRoundedRect(image, requirementPanel, 30, new Color(0.035f, 0.02f, 0.02f, 0.78f));
-        DrawResourceAmounts(image, card.Requirements, new Vector2I(116, 94), 52, 8);
+        DrawResourceAmounts(image, card.Requirements, new Vector2I(96, 86), 68, 10);
 
         var bonusCount = card.PowerBonuses?.Length ?? 0;
         var bonusPanelBottom = 950;
@@ -170,7 +167,7 @@ public static class CardImageRenderer
         var lineY = basePowerY + 78;
         foreach (var bonus in card.PowerBonuses ?? Array.Empty<PowerBonusResource>())
         {
-            var nextX = DrawResourceAmounts(image, bonus.Requirements, new Vector2I(165, lineY), 42, 6);
+            var nextX = DrawResourceAmounts(image, bonus.Requirements, new Vector2I(150, lineY - 3), 48, 6);
             DrawArrowRight(image, new Rect2I(nextX + 18, lineY - 6, 70, 54));
             DrawPowerIcons(image, bonus.PowerGain, new Vector2I(nextX + 112, lineY), 42, 6);
             lineY += 50;
@@ -193,17 +190,9 @@ public static class CardImageRenderer
             return;
         }
 
-        const int iconSize = 62;
-        const int gap = 8;
-        const int padding = 14;
+        const int iconSize = 78;
+        const int gap = 10;
         var count = Math.Max(1, amount.Amount);
-        var iconWidth = count * iconSize + Math.Max(0, count - 1) * gap;
-        var panelWidth = iconWidth + padding * 2;
-        var panel = drawRightToLeft
-            ? new Rect2I(anchor.X - panelWidth, anchor.Y - padding, panelWidth, iconSize + padding * 2)
-            : new Rect2I(anchor.X - padding, anchor.Y - padding, panelWidth, iconSize + padding * 2);
-
-        FillRoundedRect(image, panel, 24, new Color(0.02f, 0.025f, 0.02f, 0.72f));
 
         if (drawRightToLeft)
         {
@@ -216,12 +205,11 @@ public static class CardImageRenderer
 
     private static void DrawKingPanels(Image image, KingCardResource card)
     {
-        FillRoundedRect(image, new Rect2I(92, 85, 84, 84), 34, new Color(0.035f, 0.028f, 0.045f, 0.78f));
-        DrawElementIcons(image, card.ElementFocus, 1, new Vector2I(108, 101), 52, 0);
+        DrawElementIcons(image, card.ElementFocus, 1, new Vector2I(96, 88), 72, 0);
 
         FillRoundedRect(image, new Rect2I(92, 790, 566, 160), 26, new Color(0.035f, 0.028f, 0.045f, 0.78f));
         FillRoundedRect(image, new Rect2I(118, 820, 60, 60), 30, new Color(0.88f, 0.76f, 0.36f));
-        DrawResourceAmounts(image, card.QuestRequirements, new Vector2I(205, 820), 52, 8);
+        DrawResourceAmounts(image, card.QuestRequirements, new Vector2I(205, 816), 60, 8);
     }
 
     private static int DrawResourceAmounts(Image image, ResourceAmount[] amounts, Vector2I start, int size, int gap)

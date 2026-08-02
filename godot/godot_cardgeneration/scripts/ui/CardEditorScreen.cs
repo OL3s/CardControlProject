@@ -449,7 +449,7 @@ public partial class CardEditorScreen : CardToolScreen
     private void OpenSaveAsDialog()
     {
         EnsureId();
-        var outputDirectory = ProjectPaths.ToGlobalPath("resources/user/cards");
+        var outputDirectory = ProjectSettings.GlobalizePath(CardGeneration.Services.CardRepository.UserCardsRootPath);
         Directory.CreateDirectory(outputDirectory);
         _saveAsDialog.CurrentDir = outputDirectory;
         _saveAsDialog.CurrentFile = $"{SanitizeFileName(CreateCopyId(_id.Text))}.tres";
