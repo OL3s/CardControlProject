@@ -14,19 +14,16 @@ public static class CardFactory
         {
             CardType.Terrain => new TerrainCardResource
             {
-                InternalTier = 1,
                 ProducedResources = [Amount(element, 1)]
             },
             CardType.King => new KingCardResource
             {
                 ElementFocus = element,
-                InternalTier = 0,
                 Health = 6,
                 QuestText = "Control 6 terrain."
             },
             _ => new MonsterCardResource
             {
-                InternalTier = 1,
                 Requirements = [Amount(element, 1)],
                 BasePower = 1
             }

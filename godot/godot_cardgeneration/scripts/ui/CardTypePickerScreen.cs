@@ -1,4 +1,5 @@
 using System;
+using CardGeneration.Resources;
 using CardGeneration.Resources.Enums;
 using Godot;
 
@@ -42,7 +43,7 @@ public partial class CardTypePickerScreen : CardToolScreen
     {
         var panel = new PanelContainer
         {
-            CustomMinimumSize = new Vector2(240, 180),
+            CustomMinimumSize = new Vector2(240, 360),
             SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
         parent.AddChild(panel);
@@ -70,6 +71,17 @@ public partial class CardTypePickerScreen : CardToolScreen
         titleLabel.AddThemeFontSizeOverride("font_size", 22);
         layout.AddChild(titleLabel);
 
+        var previewRow = new CenterContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        layout.AddChild(previewRow);
+        previewRow.AddChild(CardPreviewControl.Create(
+            CreatePreviewCard(cardType),
+            showBack: true,
+            minimumSize: new Vector2(120, 168),
+            renderSize: new Vector2I(120, 168)));
+
         layout.AddChild(new Label
         {
             Text = description,
@@ -78,5 +90,15 @@ public partial class CardTypePickerScreen : CardToolScreen
         });
 
         AddButton(layout, $"Create {title}", () => CardTypeSelected?.Invoke(cardType), 0);
+    }
+
+    private static CardResource CreatePreviewCard(CardType cardType)
+    {
+        return cardType switch
+        {
+            CardType.Terrain => new TerrainCardResource { Id = "terrain_back_preview" },
+            CardType.King => new KingCardResource { Id = "king_back_preview" },
+            _ => new MonsterCardResource { Id = "monster_back_preview" }
+        };
     }
 }

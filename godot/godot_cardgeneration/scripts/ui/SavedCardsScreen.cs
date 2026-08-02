@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using CardGeneration.App;
 using CardGeneration.Resources;
+using CardGeneration.Resources.Enums;
 using Godot;
 
 namespace CardGeneration.Ui;
@@ -9,8 +12,8 @@ public partial class SavedCardsScreen : CardToolScreen
 {
     private IReadOnlyList<CardResource> _cards = Array.Empty<CardResource>();
     private CardPreviewControl _frontPreview = null!;
-    private CardPreviewControl _backPreview = null!;
     private Label _details = null!;
+    private FileDialog _importDialog = null!;
 
     public event Action<CardResource?>? EditCardRequested;
     public event Action? NewCardRequested;
@@ -33,8 +36,10 @@ public partial class SavedCardsScreen : CardToolScreen
         };
         toolbar.AddThemeConstantOverride("separation", 10);
         content.AddChild(toolbar);
-        AddButton(toolbar, "+", () => NewCardRequested?.Invoke(), 44).TooltipText = "Create card";
-        AddButton(toolbar, "Refresh", BuildUi);
+        AddIconButton(toolbar, CardIconPath, "Create card", () => NewCardRequested?.Invoke());
+        AddIconButton(toolbar, ImportIconPath, "Import card resource", OpenImportDialog);
+        AddIconButton(toolbar, RefreshIconPath, "Refresh", BuildUi);
+        AddResourceDialogs();
 
         var body = new HBoxContainer
         {
@@ -44,30 +49,40 @@ public partial class SavedCardsScreen : CardToolScreen
         body.AddThemeConstantOverride("separation", 16);
         content.AddChild(body);
 
+        var listScroll = new ScrollContainer
+        {
+            CustomMinimumSize = new Vector2(420, 0),
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsVertical = SizeFlags.ExpandFill,
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            VerticalScrollMode = ScrollContainer.ScrollMode.Auto
+        };
+        body.AddChild(listScroll);
+
         var list = new VBoxContainer
         {
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            SizeFlagsVertical = SizeFlags.ExpandFill
+            SizeFlagsVertical = SizeFlags.ShrinkBegin
         };
         list.AddThemeConstantOverride("separation", 10);
-        body.AddChild(list);
+        listScroll.AddChild(list);
 
         var previewColumn = new VBoxContainer
         {
-            CustomMinimumSize = new Vector2(300, 0),
+            CustomMinimumSize = new Vector2(260, 0),
             SizeFlagsHorizontal = SizeFlags.ShrinkEnd,
-            SizeFlagsVertical = SizeFlags.ExpandFill
+            SizeFlagsVertical = SizeFlags.ShrinkBegin
         };
         previewColumn.AddThemeConstantOverride("separation", 8);
         body.AddChild(previewColumn);
 
-        previewColumn.AddChild(new Label { Text = "Front" });
+        previewColumn.AddChild(new Label
+        {
+            Text = "Front",
+            HorizontalAlignment = HorizontalAlignment.Center
+        });
         _frontPreview = CardPreviewControl.Create(minimumSize: new Vector2(220, 308), renderSize: new Vector2I(220, 308));
         previewColumn.AddChild(_frontPreview);
-
-        previewColumn.AddChild(new Label { Text = "Back" });
-        _backPreview = CardPreviewControl.Create(showBack: true, minimumSize: new Vector2(220, 308), renderSize: new Vector2I(220, 308));
-        previewColumn.AddChild(_backPreview);
 
         _details = new Label
         {
@@ -111,38 +126,120 @@ public partial class SavedCardsScreen : CardToolScreen
         rowMargin.AddThemeConstantOverride("margin_bottom", 8);
         panel.AddChild(rowMargin);
 
-        var row = new VBoxContainer
+        var row = new HBoxContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            Alignment = BoxContainer.AlignmentMode.Center
+        };
+        row.AddThemeConstantOverride("separation", 12);
+        rowMargin.AddChild(row);
+
+        var info = new VBoxContainer
         {
             SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
-        row.AddThemeConstantOverride("separation", 6);
-        rowMargin.AddChild(row);
+        info.AddThemeConstantOverride("separation", 6);
+        row.AddChild(info);
 
-        row.AddChild(new Label
+        info.AddChild(new Label
         {
-            Text = $"{card.Id} | {card.CardType}",
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
+            Text = card.Id,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            VerticalAlignment = VerticalAlignment.Center
         });
 
-        var buttons = new HBoxContainer();
-        buttons.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        AddCardTypeRow(info, card.CardType);
+
+        var buttons = new HBoxContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ShrinkEnd,
+            Alignment = BoxContainer.AlignmentMode.End
+        };
         buttons.AddThemeConstantOverride("separation", 8);
         row.AddChild(buttons);
 
-        AddButton(buttons, "Preview", () => ShowCard(card), 86);
-        AddButton(buttons, "Edit", () => EditCardRequested?.Invoke(card), 76);
+        AddIconButton(buttons, PreviewIconPath, "Preview", () => ShowCard(card));
+        AddIconButton(buttons, EditIconPath, "Edit", () => EditCardRequested?.Invoke(card));
     }
 
     private void ShowCard(CardResource card)
     {
         _frontPreview.SetCard(card);
-        _backPreview.SetCard(card, showBack: true);
         _details.Text = card switch
         {
-            MonsterCardResource => $"ID: {card.Id}\nType: {card.CardType}\nTier: {card.InternalTier}\nDerived Element: {CardElementResolver.GetCardElementType(card)}",
-            KingCardResource king => $"ID: {card.Id}\nType: {card.CardType}\nTier: {card.InternalTier}\nElement Focus: {king.ElementFocus?.DisplayName ?? CardElementResolver.GetCardElementType(card).ToString()}",
-            _ => $"ID: {card.Id}\nType: {card.CardType}\nTier: {card.InternalTier}"
+            MonsterCardResource => $"ID: {card.Id}\nType: {card.CardType}\nDerived Element: {CardElementResolver.GetCardElementType(card)}",
+            KingCardResource king => $"ID: {card.Id}\nType: {card.CardType}\nElement Focus: {king.ElementFocus?.DisplayName ?? CardElementResolver.GetCardElementType(card).ToString()}",
+            _ => $"ID: {card.Id}\nType: {card.CardType}"
         };
+    }
+
+    private static void AddCardTypeRow(VBoxContainer parent, CardType cardType)
+    {
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 4);
+        parent.AddChild(row);
+
+        var tooltip = cardType.ToString();
+        row.AddChild(new TextureRect
+        {
+            Texture = LoadIcon(GetCardTypeIconPath(cardType)),
+            CustomMinimumSize = new Vector2(24, 24),
+            ExpandMode = TextureRect.ExpandModeEnum.FitWidthProportional,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            TooltipText = tooltip
+        });
+        row.AddChild(new Label
+        {
+            Text = tooltip,
+            VerticalAlignment = VerticalAlignment.Center,
+            TooltipText = tooltip
+        });
+    }
+
+    private static string GetCardTypeIconPath(CardType cardType)
+    {
+        return cardType switch
+        {
+            CardType.Monster => MonsterTypeIconPath,
+            CardType.Terrain => TerrainTypeIconPath,
+            CardType.King => KingTypeIconPath,
+            _ => CardIconPath
+        };
+    }
+
+    private void AddResourceDialogs()
+    {
+        _importDialog = CreateResourceDialog("Import Card Resource", FileDialog.FileModeEnum.OpenFile);
+        _importDialog.FileSelected += OnImportFileSelected;
+        AddChild(_importDialog);
+
+    }
+
+    private static FileDialog CreateResourceDialog(string title, FileDialog.FileModeEnum fileMode)
+    {
+        return new FileDialog
+        {
+            Access = FileDialog.AccessEnum.Filesystem,
+            FileMode = fileMode,
+            Title = title,
+            Filters = ["*.tres ; Godot Resource"]
+        };
+    }
+
+    private void OpenImportDialog()
+    {
+        var outputDirectory = ProjectPaths.ToGlobalPath("resources/user/cards");
+        Directory.CreateDirectory(outputDirectory);
+        _importDialog.CurrentDir = outputDirectory;
+        _importDialog.PopupCenteredRatio(0.72f);
+    }
+
+    private void OnImportFileSelected(string filePath)
+    {
+        var result = CardToolService.ImportCardResource(filePath);
+        BuildUi();
+        SetStatus(result.Message, !result.Success);
     }
 
 }

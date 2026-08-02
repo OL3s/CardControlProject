@@ -8,6 +8,26 @@ namespace CardGeneration.Ui;
 
 public abstract partial class CardToolScreen : Control
 {
+    protected const string AddIconPath = "res://assets/icons/actions/add.svg";
+    protected const string BackIconPath = "res://assets/icons/actions/back.svg";
+    protected const string BrowseIconPath = "res://assets/icons/actions/browse.svg";
+    protected const string CardIconPath = "res://assets/icons/actions/card.svg";
+    protected const string CardCountIconPath = "res://assets/icons/actions/card_count.svg";
+    protected const string CheckIconPath = "res://assets/icons/actions/check.svg";
+    protected const string ClearIconPath = "res://assets/icons/actions/clear.svg";
+    protected const string DeckIconPath = "res://assets/icons/actions/deck.svg";
+    protected const string DeleteIconPath = "res://assets/icons/actions/delete.svg";
+    protected const string EditIconPath = "res://assets/icons/actions/edit.svg";
+    protected const string ExportIconPath = "res://assets/icons/actions/export.svg";
+    protected const string ImportIconPath = "res://assets/icons/actions/import.svg";
+    protected const string KingTypeIconPath = "res://assets/icons/actions/king_type.svg";
+    protected const string MonsterTypeIconPath = "res://assets/icons/actions/monster_type.svg";
+    protected const string PreviewIconPath = "res://assets/icons/actions/preview.svg";
+    protected const string RefreshIconPath = "res://assets/icons/actions/refresh.svg";
+    protected const string SaveIconPath = "res://assets/icons/actions/save.svg";
+    protected const string SaveAddIconPath = "res://assets/icons/actions/save_add.svg";
+    protected const string TerrainTypeIconPath = "res://assets/icons/actions/terrain_type.svg";
+
     protected CardToolService CardToolService { get; private set; } = null!;
 
     private Label? _status;
@@ -81,7 +101,9 @@ public abstract partial class CardToolScreen : Control
 
         var backButton = new Button
         {
-            Text = "Back",
+            Icon = LoadIcon(BackIconPath),
+            ExpandIcon = true,
+            TooltipText = "Back",
             CustomMinimumSize = new Vector2(110, 42)
         };
         backButton.Pressed += () => BackRequested?.Invoke();
@@ -161,6 +183,26 @@ public abstract partial class CardToolScreen : Control
         button.Pressed += onPressed;
         parent.AddChild(button);
         return button;
+    }
+
+    protected static Button AddIconButton(Container parent, string iconPath, string tooltip, Action onPressed, Vector2? minimumSize = null)
+    {
+        var button = new Button
+        {
+            Icon = LoadIcon(iconPath),
+            ExpandIcon = true,
+            TooltipText = tooltip,
+            CustomMinimumSize = minimumSize ?? new Vector2(42, 40),
+            SizeFlagsVertical = SizeFlags.ShrinkCenter
+        };
+        button.Pressed += onPressed;
+        parent.AddChild(button);
+        return button;
+    }
+
+    protected static Texture2D? LoadIcon(string iconPath)
+    {
+        return ResourceLoader.Load<Texture2D>(iconPath);
     }
 
     protected static LineEdit AddLineEdit(VBoxContainer parent, string labelText, string initialText = "")

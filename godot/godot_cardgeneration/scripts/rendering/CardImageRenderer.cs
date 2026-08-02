@@ -158,13 +158,17 @@ public static class CardImageRenderer
         FillRoundedRect(image, requirementPanel, 30, new Color(0.035f, 0.02f, 0.02f, 0.78f));
         DrawResourceAmounts(image, card.Requirements, new Vector2I(116, 94), 52, 8);
 
-        var bonusPanel = new Rect2I(92, 760, 566, 190);
+        var bonusCount = card.PowerBonuses?.Length ?? 0;
+        var bonusPanelBottom = 950;
+        var bonusPanelHeight = Math.Clamp(116 + bonusCount * 50, 116, 300);
+        var bonusPanel = new Rect2I(92, bonusPanelBottom - bonusPanelHeight, 566, bonusPanelHeight);
         FillRoundedRect(image, bonusPanel, 26, new Color(0.025f, 0.018f, 0.018f, 0.82f));
 
-        DrawPowerIcons(image, card.BasePower, new Vector2I(335, 776), 64, 6);
+        var basePowerY = bonusPanelBottom - 24 - 64 - bonusCount * 50;
+        DrawPowerIconsCentered(image, card.BasePower, basePowerY, 64, 6);
 
-        var lineY = 852;
-        foreach (var bonus in card.PowerBonuses)
+        var lineY = basePowerY + 78;
+        foreach (var bonus in card.PowerBonuses ?? Array.Empty<PowerBonusResource>())
         {
             var nextX = DrawResourceAmounts(image, bonus.Requirements, new Vector2I(165, lineY), 42, 6);
             DrawArrowRight(image, new Rect2I(nextX + 18, lineY - 6, 70, 54));
@@ -272,6 +276,13 @@ public static class CardImageRenderer
         }
     }
 
+    private static void DrawPowerIconsCentered(Image image, int count, int y, int size, int gap)
+    {
+        var iconCount = Math.Max(0, count);
+        var width = iconCount * size + Math.Max(0, iconCount - 1) * gap;
+        DrawPowerIcons(image, iconCount, new Vector2I((PreviewWidth - width) / 2, y), size, gap);
+    }
+
     private static void DrawRepeatedTexture(Image image, Texture2D? texture, int count, Vector2I start, int size, int gap)
     {
         for (var index = 0; index < count; index++)
@@ -304,11 +315,7 @@ public static class CardImageRenderer
     {
         FillRoundedRect(image, rect, 28, GetMutedBaseColor(card.CardType));
 
-        if (card.CardType == CardType.Monster)
-        {
-            FillRoundedRect(image, new Rect2I(rect.Position.X + 170, rect.Position.Y + 120, 286, 286), 143, new Color(0.82f, 0.22f, 0.12f, 0.18f));
-            FillRoundedRect(image, new Rect2I(rect.Position.X + 260, rect.Position.Y + 280, 110, 360), 55, new Color(0.07f, 0.025f, 0.025f, 0.92f));
-        }
+        // Intentionally plain: placeholder art must stay local and not imply final illustration.
     }
 
     private static void DrawElementFallback(Image image, ElementType elementType, Rect2I rect)

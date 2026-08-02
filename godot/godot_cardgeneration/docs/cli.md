@@ -25,6 +25,8 @@ list-cards
 list-decks
 show-config
 set-config
+import-card
+import-deck
 validate-cards
 validate-deck
 render-card
@@ -40,6 +42,8 @@ Status:
 * `list-decks`: implementert.
 * `show-config`: implementert.
 * `set-config`: implementert.
+* `import-card`: implementert for `.tres` kortresource.
+* `import-deck`: implementert for `.tres` deckresource.
 * `validate-cards`: implementert.
 * `validate-deck`: implementert for lagrede deckresources.
 * `render-card`: implementert for PNG.
@@ -60,6 +64,18 @@ Lagre defaults for repeterende eksport:
 
 ```sh
 godot --headless --path godot/godot_cardgeneration -- --command set-config --deck sample_monster_deck --output output/sheets --paper a4 --dpi 600 --layout grid --columns 3 --spacing 24
+```
+
+Importere et kortresource:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command import-card --input /path/to/card.tres
+```
+
+Importere et deckresource:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command import-deck --input /path/to/deck.tres
 ```
 
 Etterpå kan mange kommandoer kjøres kortere. Denne bruker lagret deck, output, papir og DPI:
@@ -171,6 +187,14 @@ godot --headless --path godot/godot_cardgeneration -- --set-config --deck sample
 ```
 
 ```sh
+godot --headless --path godot/godot_cardgeneration -- --import-card /path/to/card.tres
+```
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --import-deck /path/to/deck.tres
+```
+
+```sh
 godot --headless --path godot/godot_cardgeneration -- --render-card monster_flame_1_a --output output/cards/preview
 ```
 
@@ -196,6 +220,6 @@ Felt som brukes som defaults:
 
 CLI bruker configverdier når tilsvarende flagg ikke er oppgitt. Direkte CLI-flagg overstyrer config for den ene kjøringen uten å lagre endringen. `set-config` lagrer bare feltene som oppgis.
 
-GUI Settings-panelet bruker samme config-resource. Endringer i GUI og CLI skal derfor være synlige for hverandre.
+GUI Settings-panelet bruker samme config-resource. Export-skjermen bruker disse verdiene som startverdier, men endringer i Export gjelder bare den ene eksporten og lagres ikke som nye defaults. Endringer i GUI Settings og CLI `set-config` skal derfor være synlige for hverandre.
 
 Default deck er `default_52_card_deck`. Den er en innebygd 52-korts preset fra `DefaultDeckFactory` og kan brukes av CLI uten at decken først er lagret som `.tres`.

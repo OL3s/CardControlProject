@@ -57,6 +57,8 @@ public sealed class CliRunner
             "list-decks" => _cardToolService.ListDecks(),
             "show-config" => _cardToolService.ShowConfig(),
             "set-config" => _cardToolService.SetConfig(options.ToConfigUpdate()),
+            "import-card" => _cardToolService.ImportCardResource(options.InputPath),
+            "import-deck" => _cardToolService.ImportDeckResource(options.InputPath),
             "validate-cards" => _cardToolService.ValidateCards(),
             "validate-deck" => _cardToolService.ValidateDeck(options.DeckId),
             "render-card" => _cardToolService.RenderCard(options.CardId, options.OutputPath),
@@ -81,6 +83,8 @@ public sealed class CliRunner
           list-decks
           show-config
           set-config [options]
+          import-card --input <path.tres>
+          import-deck --input <path.tres>
           validate-cards
           validate-deck --deck <deck_id>
           render-card --card <card_id> --output <path>
@@ -93,6 +97,8 @@ public sealed class CliRunner
           --validate-cards
           --show-config
           --set-config
+          --import-card <path.tres>
+          --import-deck <path.tres>
           --render-card <card_id>
           --export-deck <deck_id>
           --export-sheet <deck_id>

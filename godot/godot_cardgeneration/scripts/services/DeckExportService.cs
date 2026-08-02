@@ -22,7 +22,7 @@ public sealed class DeckExportService
         _cardRenderService = cardRenderService;
     }
 
-    public ToolResult ExportDeck(CardDeckResource deck, string outputPath, string format, string layout, int columns, int spacing)
+    public ToolResult ExportDeck(CardDeckResource deck, string outputPath, string format, string layout, int columns, int spacing, Action<ExportProgress>? progress = null)
     {
         if (format != "png")
         {
@@ -37,9 +37,9 @@ public sealed class DeckExportService
 
         return layout switch
         {
-            "individual" => ExportIndividualCards(deck, cards, outputPath),
-            "grid" => ExportCombinedImage(deck, cards, outputPath, ResolveGridColumns(cards.Count, columns), spacing, "grid"),
-            "strip" => ExportCombinedImage(deck, cards, outputPath, 1, spacing, "strip"),
+            "individual" => ExportIndividualCards(deck, cards, outputPath, progress),
+            "grid" => ExportCombinedImage(deck, cards, outputPath, ResolveGridColumns(cards.Count, columns), spacing, "grid", progress),
+            "strip" => ExportCombinedImage(deck, cards, outputPath, 1, spacing, "strip", progress),
             _ => ToolResult.Fail($"Deck layout '{layout}' is not supported. Use individual, grid, or strip.")
         };
     }
@@ -49,7 +49,7 @@ public sealed class DeckExportService
         return ExportDeck(deck, outputPath, format, "grid", 0, 32);
     }
 
-    private ToolResult ExportIndividualCards(CardDeckResource deck, IReadOnlyList<CardResource> cards, string outputPath)
+    private ToolResult ExportIndividualCards(CardDeckResource deck, IReadOnlyList<CardResource> cards, string outputPath, Action<ExportProgress>? progress)
     {
         var outputDirectory = ProjectPaths.ToGlobalPath(outputPath);
         if (Path.GetExtension(outputDirectory).Equals(".png", StringComparison.OrdinalIgnoreCase))
@@ -70,18 +70,21 @@ public sealed class DeckExportService
         for (var index = 0; index < cards.Count; index++)
         {
             var card = cards[index];
+            progress?.Invoke(new ExportProgress(index, cards.Count, $"Rendering {index + 1}/{cards.Count}: {card.Id}"));
             var fileNameStem = $"{deck.Id}_{index + 1:000}_{card.Id}";
             var result = _cardRenderService.RenderCard(card, outputDirectory, fileNameStem);
             if (!result.Success)
             {
                 return result;
             }
+
+            progress?.Invoke(new ExportProgress(index + 1, cards.Count, $"Saved {index + 1}/{cards.Count}: {card.Id}"));
         }
 
         return ToolResult.Ok($"Exported {cards.Count} individual card PNGs from deck '{deck.Id}' to {outputDirectory}.");
     }
 
-    private static ToolResult ExportCombinedImage(CardDeckResource deck, IReadOnlyList<CardResource> cards, string outputPath, int columns, int spacing, string layout)
+    private static ToolResult ExportCombinedImage(CardDeckResource deck, IReadOnlyList<CardResource> cards, string outputPath, int columns, int spacing, string layout, Action<ExportProgress>? progress)
     {
         columns = Math.Max(1, columns);
         spacing = Math.Max(0, spacing);
@@ -98,12 +101,16 @@ public sealed class DeckExportService
             var row = index / columns;
             var x = spacing + column * (CardImageRenderer.PreviewWidth + spacing);
             var y = spacing + row * (CardImageRenderer.PreviewHeight + spacing);
+            progress?.Invoke(new ExportProgress(index, cards.Count, $"Rendering {index + 1}/{cards.Count}: {cards[index].Id}"));
             var cardImage = CardImageRenderer.Render(cards[index]);
             combined.BlendRect(cardImage, new Rect2I(Vector2I.Zero, cardImage.GetSize()), new Vector2I(x, y));
+            cardImage.Dispose();
+            progress?.Invoke(new ExportProgress(index + 1, cards.Count, $"Placed {index + 1}/{cards.Count}: {cards[index].Id}"));
         }
 
         var filePath = ProjectPaths.GetPngOutputPath(outputPath, $"{deck.Id}_{layout}");
         var error = combined.SavePng(filePath);
+        combined.Dispose();
         return error == Error.Ok
             ? ToolResult.Ok($"Exported deck '{deck.Id}' as {layout} PNG to {filePath}.")
             : ToolResult.Fail($"Failed to export deck '{deck.Id}' as {layout} PNG to {filePath}: {error}.");

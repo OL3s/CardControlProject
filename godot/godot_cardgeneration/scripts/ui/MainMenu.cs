@@ -8,6 +8,11 @@ namespace CardGeneration.Ui;
 
 public partial class MainMenu : Control
 {
+    private const string CardIconPath = "res://assets/icons/actions/card.svg";
+    private const string DeckIconPath = "res://assets/icons/actions/deck.svg";
+    private const string ExportIconPath = "res://assets/icons/actions/export.svg";
+    private const string SettingsIconPath = "res://assets/icons/actions/settings.svg";
+
     private readonly CardToolService _cardToolService = new();
 
     public override void _Ready()
@@ -84,19 +89,33 @@ public partial class MainMenu : Control
         };
         menu.AddChild(subtitle);
 
-        AddMenuButton(menu, "Cards", ShowCards);
-        AddMenuButton(menu, "Decks", ShowDecks);
-        AddMenuButton(menu, "Export", ShowExportCenter);
-        AddMenuButton(menu, "Settings", ShowSettings);
+        var grid = new GridContainer
+        {
+            Columns = 2,
+            SizeFlagsHorizontal = SizeFlags.ShrinkCenter
+        };
+        grid.AddThemeConstantOverride("h_separation", 14);
+        grid.AddThemeConstantOverride("v_separation", 14);
+        menu.AddChild(grid);
+
+        AddMenuButton(grid, "Cards", CardIconPath, ShowCards);
+        AddMenuButton(grid, "Decks", DeckIconPath, ShowDecks);
+        AddMenuButton(grid, "Export", ExportIconPath, ShowExportCenter);
+        AddMenuButton(grid, "Settings", SettingsIconPath, ShowSettings);
 
     }
 
-    private static void AddMenuButton(VBoxContainer parent, string text, Action? onPressed = null)
+    private static void AddMenuButton(GridContainer parent, string text, string iconPath, Action? onPressed = null)
     {
         var button = new Button
         {
             Text = text,
-            CustomMinimumSize = new Vector2(0, 44)
+            Icon = ResourceLoader.Load<Texture2D>(iconPath),
+            ExpandIcon = true,
+            IconAlignment = HorizontalAlignment.Center,
+            VerticalIconAlignment = VerticalAlignment.Top,
+            CustomMinimumSize = new Vector2(170, 132),
+            TooltipText = text
         };
         button.Pressed += onPressed ?? (() => GD.Print($"{text} is not implemented yet."));
         parent.AddChild(button);
@@ -136,6 +155,14 @@ public partial class MainMenu : Control
         var screen = new SavedDecksScreen();
         screen.EditDeckRequested += ShowDeckEditor;
         screen.NewDeckRequested += ShowDeckEditor;
+        screen.PreviewDeckRequested += ShowDeckPreview;
+        ShowScreen(screen);
+    }
+
+    private void ShowDeckPreview(CardGeneration.Resources.CardDeckResource deck)
+    {
+        var screen = new DeckPreviewScreen();
+        screen.SetDeck(deck);
         ShowScreen(screen);
     }
 
@@ -150,7 +177,6 @@ public partial class MainMenu : Control
     {
         var screen = new DeckEditorScreen();
         screen.SetDeck(deck);
-        screen.NewCardRequested += ShowCardTypePicker;
         ShowScreen(screen);
     }
 

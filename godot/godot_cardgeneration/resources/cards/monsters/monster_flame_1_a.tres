@@ -24,7 +24,6 @@ PowerGain = 1
 script = ExtResource("1_monster")
 Id = "monster_flame_1_a"
 CardType = 1
-InternalTier = 1
 Requirements = Array[Resource]([SubResource("ResourceAmount_requirement_flame_1")])
 BasePower = 1
 PowerBonuses = Array[Resource]([SubResource("PowerBonus_flame_2")])

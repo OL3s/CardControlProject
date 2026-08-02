@@ -1,9 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="750" height="1050" viewBox="0 0 750 1050" role="img" aria-labelledby="title desc">
   <title id="title">Terrain card image placeholder</title>
-  <desc id="desc">Placeholder image for terrain cards until final artwork exists.</desc>
+  <desc id="desc">Plain color placeholder image for terrain cards until final artwork exists.</desc>
   <rect width="750" height="1050" fill="#1f2d1d"/>
-  <circle cx="530" cy="180" r="185" fill="#a4d878" opacity="0.25"/>
-  <path d="M0 750 L190 505 L315 660 L445 405 L750 760 L750 1050 L0 1050 Z" fill="#4b753b"/>
-  <path d="M0 790 L250 625 L400 720 L585 560 L750 780 L750 1050 L0 1050 Z" fill="#172518" opacity="0.88"/>
-  <text x="375" y="930" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" fill="#dcf3be">TERRAIN PLACEHOLDER</text>
 </svg>

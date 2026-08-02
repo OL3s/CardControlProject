@@ -8,6 +8,10 @@ namespace CardGeneration.Ui;
 
 public partial class SettingsPanel : PanelContainer
 {
+    private const string BackIconPath = "res://assets/icons/actions/back.svg";
+    private const string RefreshIconPath = "res://assets/icons/actions/refresh.svg";
+    private const string SaveIconPath = "res://assets/icons/actions/save.svg";
+
     private readonly CardToolService _cardToolService = new();
     private LineEdit _defaultCardId = null!;
     private LineEdit _defaultDeckId = null!;
@@ -64,7 +68,7 @@ public partial class SettingsPanel : PanelContainer
 
         var description = new Label
         {
-            Text = "These settings are saved to the same config resource used by CLI defaults.",
+            Text = "These are startup and CLI defaults. Change one-off export choices in Export; CLI flags override these for one run.",
             HorizontalAlignment = HorizontalAlignment.Center,
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
@@ -95,29 +99,28 @@ public partial class SettingsPanel : PanelContainer
         buttons.AddThemeConstantOverride("separation", 10);
         form.AddChild(buttons);
 
-        var saveButton = new Button
-        {
-            Text = "Save Settings",
-            CustomMinimumSize = new Vector2(140, 42)
-        };
+        var saveButton = CreateIconButton(SaveIconPath, "Save settings");
         saveButton.Pressed += SaveSettings;
         buttons.AddChild(saveButton);
 
-        var reloadButton = new Button
-        {
-            Text = "Reload",
-            CustomMinimumSize = new Vector2(100, 42)
-        };
+        var reloadButton = CreateIconButton(RefreshIconPath, "Reload");
         reloadButton.Pressed += LoadConfigIntoFields;
         buttons.AddChild(reloadButton);
 
-        var backButton = new Button
-        {
-            Text = "Back",
-            CustomMinimumSize = new Vector2(100, 42)
-        };
+        var backButton = CreateIconButton(BackIconPath, "Back");
         backButton.Pressed += () => BackRequested?.Invoke();
         buttons.AddChild(backButton);
+    }
+
+    private static Button CreateIconButton(string iconPath, string tooltip)
+    {
+        return new Button
+        {
+            Icon = ResourceLoader.Load<Texture2D>(iconPath),
+            ExpandIcon = true,
+            TooltipText = tooltip,
+            CustomMinimumSize = new Vector2(42, 40)
+        };
     }
 
     private void LoadConfigIntoFields()

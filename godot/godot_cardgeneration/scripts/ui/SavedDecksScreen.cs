@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using CardGeneration.App;
 using CardGeneration.Resources;
+using CardGeneration.Resources.Enums;
 using Godot;
 
 namespace CardGeneration.Ui;
@@ -10,12 +13,12 @@ public partial class SavedDecksScreen : CardToolScreen
 {
     private IReadOnlyList<CardDeckResource> _decks = Array.Empty<CardDeckResource>();
     private PopupMenu _createDeckMenu = null!;
-    private CardPreviewControl _frontPreview = null!;
-    private CardPreviewControl _backPreview = null!;
     private Label _details = null!;
+    private FileDialog _importDialog = null!;
 
     public event Action<CardDeckResource?>? EditDeckRequested;
     public event Action<CardDeckResource?>? NewDeckRequested;
+    public event Action<CardDeckResource>? PreviewDeckRequested;
 
     public override void _Ready()
     {
@@ -30,8 +33,10 @@ public partial class SavedDecksScreen : CardToolScreen
         var toolbar = new HBoxContainer();
         toolbar.AddThemeConstantOverride("separation", 10);
         content.AddChild(toolbar);
-        AddButton(toolbar, "+", ShowCreateDeckMenu, 44).TooltipText = "Create deck";
-        AddButton(toolbar, "Refresh", BuildUi);
+        AddIconButton(toolbar, DeckIconPath, "Create deck", ShowCreateDeckMenu);
+        AddIconButton(toolbar, ImportIconPath, "Import deck resource", OpenImportDialog);
+        AddIconButton(toolbar, RefreshIconPath, "Refresh", BuildUi);
+        AddResourceDialogs();
 
         _createDeckMenu = new PopupMenu();
         _createDeckMenu.AddItem("New Empty Deck", 0);
@@ -55,28 +60,12 @@ public partial class SavedDecksScreen : CardToolScreen
         list.AddThemeConstantOverride("separation", 10);
         body.AddChild(list);
 
-        var previewColumn = new VBoxContainer
-        {
-            CustomMinimumSize = new Vector2(300, 0),
-            SizeFlagsHorizontal = SizeFlags.ShrinkEnd,
-            SizeFlagsVertical = SizeFlags.ExpandFill
-        };
-        previewColumn.AddThemeConstantOverride("separation", 8);
-        body.AddChild(previewColumn);
-
-        previewColumn.AddChild(new Label { Text = "First Card Front" });
-        _frontPreview = CardPreviewControl.Create(minimumSize: new Vector2(220, 308), renderSize: new Vector2I(220, 308));
-        previewColumn.AddChild(_frontPreview);
-
-        previewColumn.AddChild(new Label { Text = "First Card Back" });
-        _backPreview = CardPreviewControl.Create(showBack: true, minimumSize: new Vector2(220, 308), renderSize: new Vector2I(220, 308));
-        previewColumn.AddChild(_backPreview);
         _details = new Label
         {
-            Text = "Select a deck to preview its first card.",
+            Text = "Select a deck to inspect it.",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
-        previewColumn.AddChild(_details);
+        list.AddChild(_details);
 
         if (_decks.Count == 0)
         {
@@ -113,33 +102,93 @@ public partial class SavedDecksScreen : CardToolScreen
         rowMargin.AddThemeConstantOverride("margin_bottom", 8);
         panel.AddChild(rowMargin);
 
-        var row = new VBoxContainer
+        var row = new HBoxContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            Alignment = BoxContainer.AlignmentMode.Center
+        };
+        row.AddThemeConstantOverride("separation", 12);
+        rowMargin.AddChild(row);
+
+        var info = new VBoxContainer
         {
             SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
-        row.AddThemeConstantOverride("separation", 6);
-        rowMargin.AddChild(row);
+        info.AddThemeConstantOverride("separation", 6);
+        row.AddChild(info);
 
-        row.AddChild(new Label
+        info.AddChild(new Label
         {
-            Text = $"{deck.Id} | {GetCardCount(deck)} cards | {GetCardComposition(deck)}",
+            Text = deck.Id,
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
-        var buttons = new HBoxContainer();
-        buttons.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        AddDeckStatsRow(info, deck);
+
+        var buttons = new HBoxContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ShrinkEnd,
+            Alignment = BoxContainer.AlignmentMode.End
+        };
         buttons.AddThemeConstantOverride("separation", 8);
         row.AddChild(buttons);
-        AddButton(buttons, "Preview", () => ShowDeck(deck), 86);
-        AddButton(buttons, "Edit", () => EditDeckRequested?.Invoke(deck), 76);
+        AddIconButton(buttons, PreviewIconPath, "Preview full deck", () =>
+        {
+            ShowDeck(deck);
+            PreviewDeckRequested?.Invoke(deck);
+        });
+        AddIconButton(buttons, EditIconPath, "Edit", () => EditDeckRequested?.Invoke(deck));
     }
 
     private void ShowDeck(CardDeckResource deck)
     {
-        var firstCard = (deck.Entries ?? Array.Empty<CardDeckEntryResource>()).FirstOrDefault(entry => entry.Card is not null)?.Card;
-        _frontPreview.SetCard(firstCard);
-        _backPreview.SetCard(firstCard, showBack: true);
         _details.Text = $"ID: {deck.Id}\nCards: {GetCardCount(deck)}\nEntries: {(deck.Entries ?? Array.Empty<CardDeckEntryResource>()).Length}\n{GetCardComposition(deck)}";
+    }
+
+    private void AddDeckStatsRow(VBoxContainer parent, CardDeckResource deck)
+    {
+        var stats = new HBoxContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        stats.AddThemeConstantOverride("separation", 12);
+        parent.AddChild(stats);
+
+        AddIconCount(stats, CardCountIconPath, "Cards", GetCardCount(deck));
+        AddIconCount(stats, MonsterTypeIconPath, "Monsters", GetCardTypeCount(deck, CardType.Monster));
+        AddIconCount(stats, TerrainTypeIconPath, "Terrain", GetCardTypeCount(deck, CardType.Terrain));
+        AddIconCount(stats, KingTypeIconPath, "Kings", GetCardTypeCount(deck, CardType.King));
+    }
+
+    private static void AddIconCount(HBoxContainer parent, string iconPath, string tooltip, int count)
+    {
+        if (count <= 0)
+        {
+            return;
+        }
+
+        var item = new HBoxContainer
+        {
+            Alignment = BoxContainer.AlignmentMode.Center,
+            TooltipText = tooltip
+        };
+        item.AddThemeConstantOverride("separation", 4);
+        parent.AddChild(item);
+
+        item.AddChild(new TextureRect
+        {
+            Texture = LoadIcon(iconPath),
+            CustomMinimumSize = new Vector2(24, 24),
+            ExpandMode = TextureRect.ExpandModeEnum.FitWidthProportional,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            TooltipText = tooltip
+        });
+        item.AddChild(new Label
+        {
+            Text = $"x {count}",
+            VerticalAlignment = VerticalAlignment.Center,
+            TooltipText = tooltip
+        });
     }
 
     private void ShowCreateDeckMenu()
@@ -160,6 +209,13 @@ public partial class SavedDecksScreen : CardToolScreen
         return (deck.Entries ?? Array.Empty<CardDeckEntryResource>()).Sum(entry => Math.Max(0, entry.Count));
     }
 
+    private static int GetCardTypeCount(CardDeckResource deck, CardType cardType)
+    {
+        return (deck.Entries ?? Array.Empty<CardDeckEntryResource>())
+            .Where(entry => entry.Card?.CardType == cardType)
+            .Sum(entry => Math.Max(0, entry.Count));
+    }
+
     private static string GetCardComposition(CardDeckResource deck)
     {
         var groups = (deck.Entries ?? Array.Empty<CardDeckEntryResource>())
@@ -170,4 +226,39 @@ public partial class SavedDecksScreen : CardToolScreen
             .ToArray();
         return groups.Length == 0 ? "empty" : string.Join(", ", groups);
     }
+
+    private void AddResourceDialogs()
+    {
+        _importDialog = CreateResourceDialog("Import Deck Resource", FileDialog.FileModeEnum.OpenFile);
+        _importDialog.FileSelected += OnImportFileSelected;
+        AddChild(_importDialog);
+
+    }
+
+    private static FileDialog CreateResourceDialog(string title, FileDialog.FileModeEnum fileMode)
+    {
+        return new FileDialog
+        {
+            Access = FileDialog.AccessEnum.Filesystem,
+            FileMode = fileMode,
+            Title = title,
+            Filters = ["*.tres ; Godot Resource"]
+        };
+    }
+
+    private void OpenImportDialog()
+    {
+        var outputDirectory = ProjectPaths.ToGlobalPath("resources/user/decks");
+        Directory.CreateDirectory(outputDirectory);
+        _importDialog.CurrentDir = outputDirectory;
+        _importDialog.PopupCenteredRatio(0.72f);
+    }
+
+    private void OnImportFileSelected(string filePath)
+    {
+        var result = CardToolService.ImportDeckResource(filePath);
+        BuildUi();
+        SetStatus(result.Message, !result.Success);
+    }
+
 }

@@ -16,7 +16,7 @@ public sealed class SheetExportService
     private const double CardWidthMillimeters = 63.0;
     private const double CardHeightMillimeters = 88.0;
 
-    public ToolResult ExportSheet(CardDeckResource deck, string outputPath, string paper, int dpi)
+    public ToolResult ExportSheet(CardDeckResource deck, string outputPath, string paper, int dpi, Action<ExportProgress>? progress = null)
     {
         if (!TryGetPaperSpec(paper, out var paperSpec))
         {
@@ -53,45 +53,69 @@ public sealed class SheetExportService
         var yGap = (sheetHeight - rows * cardHeight) / (rows + 1);
         var sheetCount = (int)Math.Ceiling(cards.Count / (double)cardsPerSheet);
         var backImages = new Dictionary<CardType, Image>();
+        var totalProgress = cards.Count * 2;
+        var currentProgress = 0;
 
         for (var sheetIndex = 0; sheetIndex < sheetCount; sheetIndex++)
         {
             var frontSheet = CreatePrintSheet(sheetWidth, sheetHeight);
-            var backSheet = CreatePrintSheet(sheetWidth, sheetHeight);
             var firstCardIndex = sheetIndex * cardsPerSheet;
             var lastCardIndexExclusive = Math.Min(firstCardIndex + cardsPerSheet, cards.Count);
 
             for (var cardIndex = firstCardIndex; cardIndex < lastCardIndexExclusive; cardIndex++)
             {
-                var slotIndex = cardIndex - firstCardIndex;
-                var column = slotIndex % columns;
-                var row = slotIndex / columns;
-                var position = new Vector2I(
-                    xGap + column * (cardWidth + xGap),
-                    yGap + row * (cardHeight + yGap));
-
+                progress?.Invoke(new ExportProgress(currentProgress, totalProgress, $"Rendering front {cardIndex + 1}/{cards.Count}: {cards[cardIndex].Id}"));
+                var position = GetCardPosition(cardIndex - firstCardIndex, columns, cardWidth, cardHeight, xGap, yGap);
                 var frontImage = CardImageRenderer.RenderResized(cards[cardIndex], cardWidth, cardHeight);
-                var backImage = GetBackImage(cards[cardIndex].CardType, deck.BackImageTexture, cardWidth, cardHeight, backImages);
                 frontSheet.BlendRect(frontImage, new Rect2I(Vector2I.Zero, frontImage.GetSize()), position);
-                backSheet.BlendRect(backImage, new Rect2I(Vector2I.Zero, backImage.GetSize()), position);
+                frontImage.Dispose();
+                currentProgress++;
+                progress?.Invoke(new ExportProgress(currentProgress, totalProgress, $"Placed front {cardIndex + 1}/{cards.Count}: {cards[cardIndex].Id}"));
             }
 
             var frontPath = Path.Combine(outputDirectory, $"{deck.Id}_{paperSpec.Name}_{dpi}dpi_front_{sheetIndex + 1:000}.png");
-            var backPath = Path.Combine(outputDirectory, $"{deck.Id}_{paperSpec.Name}_{dpi}dpi_back_{sheetIndex + 1:000}.png");
             var frontError = frontSheet.SavePng(frontPath);
+            frontSheet.Dispose();
             if (frontError != Error.Ok)
             {
                 return ToolResult.Fail($"Failed to save front sheet {frontPath}: {frontError}.");
             }
 
+            var backSheet = CreatePrintSheet(sheetWidth, sheetHeight);
+            for (var cardIndex = firstCardIndex; cardIndex < lastCardIndexExclusive; cardIndex++)
+            {
+                progress?.Invoke(new ExportProgress(currentProgress, totalProgress, $"Placing back {cardIndex + 1}/{cards.Count}: {cards[cardIndex].Id}"));
+                var position = GetCardPosition(cardIndex - firstCardIndex, columns, cardWidth, cardHeight, xGap, yGap);
+                var backImage = GetBackImage(cards[cardIndex].CardType, deck.BackImageTexture, cardWidth, cardHeight, backImages);
+                backSheet.BlendRect(backImage, new Rect2I(Vector2I.Zero, backImage.GetSize()), position);
+                currentProgress++;
+                progress?.Invoke(new ExportProgress(currentProgress, totalProgress, $"Placed back {cardIndex + 1}/{cards.Count}: {cards[cardIndex].Id}"));
+            }
+
+            var backPath = Path.Combine(outputDirectory, $"{deck.Id}_{paperSpec.Name}_{dpi}dpi_back_{sheetIndex + 1:000}.png");
             var backError = backSheet.SavePng(backPath);
+            backSheet.Dispose();
             if (backError != Error.Ok)
             {
                 return ToolResult.Fail($"Failed to save back sheet {backPath}: {backError}.");
             }
         }
 
+        foreach (var image in backImages.Values)
+        {
+            image.Dispose();
+        }
+
         return ToolResult.Ok($"Exported {sheetCount} {paperSpec.Name.ToUpperInvariant()} {dpi} DPI front/back sheet pair(s) for deck '{deck.Id}' to {outputDirectory}.");
+    }
+
+    private static Vector2I GetCardPosition(int slotIndex, int columns, int cardWidth, int cardHeight, int xGap, int yGap)
+    {
+        var column = slotIndex % columns;
+        var row = slotIndex / columns;
+        return new Vector2I(
+            xGap + column * (cardWidth + xGap),
+            yGap + row * (cardHeight + yGap));
     }
 
     private static Image CreatePrintSheet(int width, int height)

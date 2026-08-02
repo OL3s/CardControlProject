@@ -43,11 +43,11 @@ Korteditoren støtter felles kortfelt, image source path, preview, lagring og PN
 
 Deckeditoren støtter deck-ID, tilgjengelige kort på tvers av korttyper, deck entries med antall, `Save` og `Save New`. Venstre side viser lagrede kort som preview-fliser i en horisontal scrollrad med ikonknapper for å legge til én kopi eller velge flere kort. Høyre side viser deckinnhold som preview-fliser med ikonknapper for slett, dupliser og multiselect. Eksport gjøres bare fra `Export`-skjermen. En deck er et ferdig produkt med alle relevante korttyper, ikke en separat monster-/terreng-/kongebunke.
 
-`Export` er eneste eksportflate. Den kan eksportere ett lagret kort som PNG, eller en lagret kortstokk som vanlige deck images eller printarkexport med A4/A3 og DPI-valg.
+`Export` er eneste eksportflate. Den kan eksportere ett lagret kort som PNG, eller en lagret kortstokk som vanlige deck images eller printarkexport med A4/A3 og DPI-valg. Verdiene starter fra lagrede defaults, men kan endres direkte i Export for den ene eksporten uten å lagres som nye defaults.
 
 Export-skjermen har en output path-velger som åpner Godots file dialog i valgt/default exportmappe.
 
-`Settings` redigerer den samme config-resourcen som CLI bruker. Endringer gjort i GUI skal derfor påvirke senere CLI-kjøringer, og `set-config` i CLI skal påvirke GUI-innstillingene.
+`Settings` redigerer den samme config-resourcen som CLI bruker. Dette er oppstarts- og CLI-defaults, ikke valg som normalt må endres før hver eksport. Endringer gjort i GUI skal derfor påvirke senere CLI-kjøringer uten tilsvarende `--`-flagg, og `set-config` i CLI skal påvirke GUI-innstillingene.
 
 ## Nåværende Flyt
 
@@ -84,7 +84,7 @@ Monsterets elementvisning følger kravlisten: dersom kravlisten har ett ikke-nø
 
 `print_guides` er kun for fysisk produksjon, for eksempel kuttemerker, bleed eller hjelpelinjer. Slike lag skal ikke være del av vanlig preview med mindre brukeren eksplisitt velger det.
 
-Baksiden bygges også i lag. Nederst ligger samme korttypebaserte basefarge/kant som skiller korttypen. Oppå den ligger baksidebildet for korttypen. Baksiden skal ikke avsløre kortspesifikke data som element, krav, styrke, tier eller effekt. Printark bruker korttypen til hvert enkelt kort, siden én ferdig deck kan inneholde konger, terreng og monstre.
+Baksiden bygges også i lag. Nederst ligger samme korttypebaserte basefarge/kant som skiller korttypen. Oppå den ligger baksidebildet for korttypen. Baksiden skal ikke avsløre kortspesifikke data som element, krav, styrke eller effekt. Printark bruker korttypen til hvert enkelt kort, siden én ferdig deck kan inneholde konger, terreng og monstre.
 
 Kortbaksidene ligger som SVG under `assets/card_backs/` og er kopiert fra `shared/docs/images/svg/`. Monsterbaksiden er tonet litt ned i rødfargen for å fungere bedre med gress- og vannmonstre.
 
@@ -166,6 +166,8 @@ Planlagte kommandoer:
 * `list-decks`
 * `show-config`
 * `set-config`
+* `import-card`
+* `import-deck`
 * `validate-cards`
 * `validate-deck`
 * `render-card`
@@ -182,6 +184,8 @@ Første implementerte CLI-funksjoner:
 * `list-decks` laster lagrede deckresources.
 * `show-config` viser lagrede CLI-/eksportdefaults.
 * `set-config` lagrer nye CLI-/eksportdefaults.
+* `import-card` importerer en ekstern `.tres` kortresource til brukerressursene.
+* `import-deck` importerer en ekstern `.tres` deckresource til brukerressursene.
 * `validate-cards` validerer lagrede kortresources.
 * `render-card` renderer ett kort til PNG.
 * `export-deck` renderer en kortstokk til PNG som enkeltbilder, samlet grid eller lang strip.
@@ -189,7 +193,7 @@ Første implementerte CLI-funksjoner:
 
 `export-diy` finnes foreløpig som service-/CLI-stub. `export-showcase` bruker foreløpig samme grid-output som `export-deck --layout grid`.
 
-Langvarige innstillinger ligger i `resources/config/card_tool_config.tres`. CLI bruker denne configen som defaults når flagg ikke oppgis. Dette gjør repeterende kommandoer korte, for eksempel kan `--command export-sheet` bruke lagret deck, output, papir, DPI og layout. Den samme configen redigeres i GUI under `Settings`.
+Langvarige innstillinger ligger i `resources/config/card_tool_config.tres`. GUI bruker denne configen til å fylle inn startverdier når Export åpnes, men valg gjort i Export er bare for den ene eksporten. CLI bruker configen som defaults når flagg ikke oppgis. Dette gjør repeterende kommandoer korte, for eksempel kan `--command export-sheet` bruke lagret deck, output, papir, DPI og layout. Den samme configen redigeres i GUI under `Settings`.
 
 ## Mappestruktur
 

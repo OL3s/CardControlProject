@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Collections.Generic;
@@ -204,6 +206,24 @@ public sealed class CardToolService
         return _cardRepository.SaveCard(card);
     }
 
+    public ToolResult ImportCardResource(string? filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            return ToolResult.Fail("Missing input path. Use --input <path.tres>.");
+        }
+
+        var card = LoadExternalResource<CardResource>(filePath);
+        return card is null
+            ? ToolResult.Fail($"Could not import card resource from {filePath}.")
+            : _cardRepository.SaveCard(card);
+    }
+
+    public ToolResult ExportCardResource(CardResource card, string filePath)
+    {
+        return SaveResourceFile(card, filePath, card.Id, "card");
+    }
+
     public ToolResult ListDecks()
     {
         var decks = LoadAllDecks();
@@ -252,6 +272,24 @@ public sealed class CardToolService
         return _deckRepository.SaveDeck(deck);
     }
 
+    public ToolResult ImportDeckResource(string? filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            return ToolResult.Fail("Missing input path. Use --input <path.tres>.");
+        }
+
+        var deck = LoadExternalResource<CardDeckResource>(filePath);
+        return deck is null
+            ? ToolResult.Fail($"Could not import deck resource from {filePath}.")
+            : _deckRepository.SaveDeck(deck);
+    }
+
+    public ToolResult ExportDeckResource(CardDeckResource deck, string filePath)
+    {
+        return SaveResourceFile(deck, filePath, deck.Id, "deck");
+    }
+
     public ToolResult ValidateCards()
     {
         return _cardValidator.Validate(_cardRepository.LoadAllCards());
@@ -283,9 +321,9 @@ public sealed class CardToolService
             : _cardRenderService.RenderCard(card, outputPath);
     }
 
-    public ToolResult RenderCard(CardResource card, string outputPath)
+    public ToolResult RenderCard(CardResource card, string outputPath, Action<ExportProgress>? progress = null)
     {
-        return _cardRenderService.RenderCard(card, outputPath);
+        return _cardRenderService.RenderCard(card, outputPath, card.Id, progress);
     }
 
     public ToolResult ExportDeck(string? deckId, string outputPath, string format, string layout, int columns, int spacing)
@@ -301,9 +339,9 @@ public sealed class CardToolService
             : _deckExportService.ExportDeck(deck, outputPath, format, layout, columns, spacing);
     }
 
-    public ToolResult ExportDeck(CardDeckResource deck, string outputPath, string format, string layout, int columns, int spacing)
+    public ToolResult ExportDeck(CardDeckResource deck, string outputPath, string format, string layout, int columns, int spacing, Action<ExportProgress>? progress = null)
     {
-        return _deckExportService.ExportDeck(deck, outputPath, format, layout, columns, spacing);
+        return _deckExportService.ExportDeck(deck, outputPath, format, layout, columns, spacing, progress);
     }
 
     public ToolResult ExportSheet(string? deckId, string outputPath, string paper, int dpi)
@@ -319,9 +357,9 @@ public sealed class CardToolService
             : _sheetExportService.ExportSheet(deck, outputPath, paper, dpi);
     }
 
-    public ToolResult ExportSheet(CardDeckResource deck, string outputPath, string paper, int dpi)
+    public ToolResult ExportSheet(CardDeckResource deck, string outputPath, string paper, int dpi, Action<ExportProgress>? progress = null)
     {
-        return _sheetExportService.ExportSheet(deck, outputPath, paper, dpi);
+        return _sheetExportService.ExportSheet(deck, outputPath, paper, dpi, progress);
     }
 
     public ToolResult ExportDiy(string? deckId, string outputPath, string paper)
@@ -383,5 +421,86 @@ public sealed class CardToolService
         DeckExportService DeckExportService,
         SheetExportService SheetExportService,
         DiyExportService DiyExportService,
-        ConfigRepository ConfigRepository);
+            ConfigRepository ConfigRepository);
+
+    private static T? LoadExternalResource<T>(string filePath) where T : Godot.Resource
+    {
+        foreach (var candidate in GetResourceLoadCandidates(filePath))
+        {
+            var resource = Godot.ResourceLoader.Load<T>(candidate);
+            if (resource is not null)
+            {
+                return resource;
+            }
+        }
+
+        return null;
+    }
+
+    private static string[] GetResourceLoadCandidates(string filePath)
+    {
+        var globalPath = ProjectPaths.ToGlobalPath(filePath);
+        var localizedPath = Godot.ProjectSettings.LocalizePath(globalPath);
+        return new[] { filePath, localizedPath, globalPath }
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Distinct()
+            .ToArray();
+    }
+
+    private static ToolResult SaveResourceFile(Godot.Resource resource, string filePath, string id, string resourceType)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return ToolResult.Fail($"Cannot export {resourceType} resource without an id.");
+        }
+
+        var outputPath = ProjectPaths.ToGlobalPath(filePath);
+        if (!Path.GetExtension(outputPath).Equals(".tres", StringComparison.OrdinalIgnoreCase))
+        {
+            outputPath = Path.Combine(outputPath, $"{SanitizeFileName(id)}.tres");
+        }
+
+        Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? ProjectPaths.ToGlobalPath("output"));
+        var error = Godot.ResourceSaver.Save(resource, outputPath);
+        if (error != Godot.Error.Ok && Path.IsPathRooted(outputPath))
+        {
+            error = SaveResourceViaTemporaryPath(resource, outputPath);
+        }
+
+        return error == Godot.Error.Ok
+            ? ToolResult.Ok($"Exported {resourceType} resource '{id}' to {outputPath}.")
+            : ToolResult.Fail($"Failed to export {resourceType} resource '{id}' to {outputPath}: {error}.");
+    }
+
+    private static Godot.Error SaveResourceViaTemporaryPath(Godot.Resource resource, string outputPath)
+    {
+        var temporaryPath = $"user://resource_export_{Guid.NewGuid():N}.tres";
+        var error = Godot.ResourceSaver.Save(resource, temporaryPath);
+        if (error != Godot.Error.Ok)
+        {
+            return error;
+        }
+
+        var temporaryGlobalPath = Godot.ProjectSettings.GlobalizePath(temporaryPath);
+        try
+        {
+            File.Copy(temporaryGlobalPath, outputPath, overwrite: true);
+            File.Delete(temporaryGlobalPath);
+            return Godot.Error.Ok;
+        }
+        catch
+        {
+            return Godot.Error.FileCantWrite;
+        }
+    }
+
+    private static string SanitizeFileName(string fileName)
+    {
+        foreach (var invalidChar in Path.GetInvalidFileNameChars())
+        {
+            fileName = fileName.Replace(invalidChar, '_');
+        }
+
+        return string.IsNullOrWhiteSpace(fileName) ? "resource" : fileName;
+    }
 }

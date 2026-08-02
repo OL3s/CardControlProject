@@ -9,6 +9,7 @@ public sealed class CliOptions
     public string Command { get; private set; } = string.Empty;
     public string? CardId { get; private set; }
     public string? DeckId { get; private set; }
+    public string? InputPath { get; private set; }
     public string OutputPath { get; private set; } = "res://output";
     public string Format { get; private set; } = "png";
     public string Paper { get; private set; } = "a4";
@@ -20,6 +21,7 @@ public sealed class CliOptions
 
     public bool HasCardId { get; private set; }
     public bool HasDeckId { get; private set; }
+    public bool HasInputPath { get; private set; }
     public bool HasOutputPath { get; private set; }
     public bool HasFormat { get; private set; }
     public bool HasPaper { get; private set; }
@@ -51,6 +53,10 @@ public sealed class CliOptions
                 case "--deck":
                     options.DeckId = ReadValue(args, ref index, "--deck");
                     options.HasDeckId = true;
+                    break;
+                case "--input":
+                    options.InputPath = ReadValue(args, ref index, "--input");
+                    options.HasInputPath = true;
                     break;
                 case "--output":
                     options.OutputPath = ReadValue(args, ref index, "--output");
@@ -91,6 +97,24 @@ public sealed class CliOptions
                     break;
                 case "--list-decks":
                     options.Command = "list-decks";
+                    break;
+                case "--import-card":
+                    options.Command = "import-card";
+                    if (TryReadOptionalValue(args, ref index, out var importCardPath))
+                    {
+                        options.InputPath ??= importCardPath;
+                        options.HasInputPath = true;
+                    }
+
+                    break;
+                case "--import-deck":
+                    options.Command = "import-deck";
+                    if (TryReadOptionalValue(args, ref index, out var importDeckPath))
+                    {
+                        options.InputPath ??= importDeckPath;
+                        options.HasInputPath = true;
+                    }
+
                     break;
                 case "--validate-cards":
                     options.Command = "validate-cards";
@@ -153,6 +177,13 @@ public sealed class CliOptions
                     if (!arg.StartsWith("--", StringComparison.Ordinal) && string.IsNullOrWhiteSpace(options.Command))
                     {
                         options.Command = arg;
+                    }
+                    else if (!arg.StartsWith("--", StringComparison.Ordinal)
+                             && options.Command is "import-card" or "import-deck"
+                             && string.IsNullOrWhiteSpace(options.InputPath))
+                    {
+                        options.InputPath = arg;
+                        options.HasInputPath = true;
                     }
 
                     break;

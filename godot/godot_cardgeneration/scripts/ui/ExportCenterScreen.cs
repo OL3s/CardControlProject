@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
+using CardGeneration.App;
 using CardGeneration.Resources;
 using Godot;
 
@@ -23,11 +25,16 @@ public partial class ExportCenterScreen : CardToolScreen
     private SpinBox _columns = null!;
     private SpinBox _spacing = null!;
     private LineEdit _outputPath = null!;
+    private Button _exportButton = null!;
+    private Button _reloadButton = null!;
+    private ProgressBar _progressBar = null!;
+    private Label _progressLabel = null!;
     private VBoxContainer _deckImageOptions = null!;
     private VBoxContainer _gridColumnRow = null!;
     private VBoxContainer _spacingRow = null!;
     private VBoxContainer _printSheetOptions = null!;
     private FileDialog _outputPathDialog = null!;
+    private bool _startExportAfterPathSelection;
 
     public override void _Ready()
     {
@@ -39,7 +46,7 @@ public partial class ExportCenterScreen : CardToolScreen
         _decks = CardToolService.LoadAllDecks();
         _cards = CardToolService.LoadAllCards();
         var config = CardToolService.LoadConfig();
-        var content = BuildScreen("Export", "Export a saved card or deck. Decks can be exported as images or numbered print sheets.");
+        var content = BuildScreen("Export", "Export a saved card or deck. Values start from Settings defaults, but can be changed here for this export only.");
 
         if (_decks.Count == 0 && _cards.Count == 0)
         {
@@ -87,8 +94,26 @@ public partial class ExportCenterScreen : CardToolScreen
         var buttons = new HBoxContainer();
         buttons.AddThemeConstantOverride("separation", 8);
         content.AddChild(buttons);
-        AddButton(buttons, "Export", ExportSelected, 110);
-        AddButton(buttons, "Reload", BuildUi, 100);
+        _exportButton = AddIconButton(buttons, ExportIconPath, "Export", ExportSelected);
+        _reloadButton = AddIconButton(buttons, RefreshIconPath, "Reload", BuildUi);
+
+        _progressBar = new ProgressBar
+        {
+            Visible = false,
+            MinValue = 0,
+            MaxValue = 1,
+            Value = 0,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        content.AddChild(_progressBar);
+
+        _progressLabel = new Label
+        {
+            Visible = false,
+            Text = string.Empty,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        };
+        content.AddChild(_progressLabel);
 
         RefreshVisibleOptions();
         SetStatus($"Ready to export {_cards.Count} card(s) and {_decks.Count} deck(s).");
@@ -112,31 +137,79 @@ public partial class ExportCenterScreen : CardToolScreen
         };
         row.AddChild(_outputPath);
 
-        AddButton(row, "Browse", OpenOutputPathDialog, 100);
+        AddIconButton(row, BrowseIconPath, "Browse", () => OpenOutputPathDialog(false));
 
         _outputPathDialog = new FileDialog
         {
             Access = FileDialog.AccessEnum.Filesystem,
             FileMode = FileDialog.FileModeEnum.OpenDir,
-            Title = "Choose Export Folder"
+            Title = "Choose Export Folder",
+            Filters = ["*.png ; PNG"]
         };
         _outputPathDialog.DirSelected += OnOutputDirectorySelected;
+        _outputPathDialog.FileSelected += OnOutputFileSelected;
+        _outputPathDialog.Canceled += OnOutputPathDialogCanceled;
         AddChild(_outputPathDialog);
     }
 
-    private void OpenOutputPathDialog()
+    private void OpenOutputPathDialog(bool startExportAfterSelection)
     {
-        var outputDirectory = string.IsNullOrWhiteSpace(_outputPath.Text) ? "output" : _outputPath.Text;
-        var globalOutputDirectory = CardGeneration.App.ProjectPaths.ToGlobalPath(outputDirectory);
-        Directory.CreateDirectory(globalOutputDirectory);
+        _startExportAfterPathSelection = startExportAfterSelection;
+        var mode = GetOutputMode();
+        _outputPathDialog.FileMode = mode == ExportOutputMode.SaveFile
+            ? FileDialog.FileModeEnum.SaveFile
+            : FileDialog.FileModeEnum.OpenDir;
+        _outputPathDialog.Title = mode == ExportOutputMode.SaveFile ? "Choose Export File" : "Choose Export Folder";
 
-        _outputPathDialog.CurrentDir = globalOutputDirectory;
+        var outputPath = string.IsNullOrWhiteSpace(_outputPath.Text) ? "output" : _outputPath.Text;
+        var globalOutputPath = ProjectPaths.ToGlobalPath(outputPath);
+
+        if (mode == ExportOutputMode.SaveFile)
+        {
+            var currentDirectory = Path.GetDirectoryName(globalOutputPath);
+            if (string.IsNullOrWhiteSpace(currentDirectory))
+            {
+                currentDirectory = ProjectPaths.ToGlobalPath("output");
+            }
+
+            Directory.CreateDirectory(currentDirectory);
+            _outputPathDialog.CurrentDir = currentDirectory;
+            _outputPathDialog.CurrentFile = Path.GetExtension(globalOutputPath).Equals(".png", StringComparison.OrdinalIgnoreCase)
+                ? Path.GetFileName(globalOutputPath)
+                : GetDefaultOutputFileName();
+        }
+        else
+        {
+            Directory.CreateDirectory(globalOutputPath);
+            _outputPathDialog.CurrentDir = globalOutputPath;
+            _outputPathDialog.CurrentFile = string.Empty;
+        }
+
         _outputPathDialog.PopupCenteredRatio(0.72f);
     }
 
     private void OnOutputDirectorySelected(string directory)
     {
         _outputPath.Text = directory;
+        StartExportAfterPathSelection();
+    }
+
+    private void OnOutputFileSelected(string file)
+    {
+        _outputPath.Text = file;
+        StartExportAfterPathSelection();
+    }
+
+    private void OnOutputPathDialogCanceled()
+    {
+        if (!_startExportAfterPathSelection)
+        {
+            return;
+        }
+
+        _startExportAfterPathSelection = false;
+        ResetProgress();
+        SetStatus("Export cancelled.");
     }
 
     private static VBoxContainer AddOptionGroup(VBoxContainer parent, string? title = null)
@@ -170,6 +243,7 @@ public partial class ExportCenterScreen : CardToolScreen
 
         if (isCardExport)
         {
+            UpdateOutputTooltip();
             return;
         }
 
@@ -179,12 +253,14 @@ public partial class ExportCenterScreen : CardToolScreen
 
         if (isPrintSheet)
         {
+            UpdateOutputTooltip();
             return;
         }
 
         var layout = GetSelectedText(_layout);
         _gridColumnRow.Visible = layout == "grid";
         _spacingRow.Visible = layout is "grid" or "strip";
+        UpdateOutputTooltip();
     }
 
     private OptionButton AddDeckOption(VBoxContainer content, string defaultDeckId)
@@ -247,40 +323,191 @@ public partial class ExportCenterScreen : CardToolScreen
 
     private void ExportSelected()
     {
-        if (GetSelectedText(_targetType) == "Card")
-        {
-            ExportSelectedCard();
-            return;
-        }
-
-        ExportSelectedDeck();
+        ResetProgress();
+        SetStatus("Choose where to save the export.");
+        OpenOutputPathDialog(true);
     }
 
-    private void ExportSelectedCard()
+    private void StartExportAfterPathSelection()
     {
-        if (_card.Selected < 0 || _card.Selected >= _cards.Count)
+        if (!_startExportAfterPathSelection)
         {
-            SetStatus("Select a card before exporting.", true);
             return;
         }
 
-        var result = CardToolService.RenderCard(_cards[_card.Selected], _outputPath.Text);
+        _startExportAfterPathSelection = false;
+        StartExport();
+    }
+
+    private async void StartExport()
+    {
+        ResetProgress();
+        var exportOperation = CreateExportOperation();
+        if (exportOperation is null)
+        {
+            return;
+        }
+
+        SetExportControlsDisabled(true);
+        _progressBar.Visible = true;
+        _progressLabel.Visible = true;
+        SetStatus("Exporting. Large decks or high-DPI sheets can take a while...");
+
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+
+        var result = await Task.Run(exportOperation);
+
+        SetExportControlsDisabled(false);
+        ApplyExportProgress(1, 1, result.Message);
         SetStatus(result.Message, !result.Success);
     }
 
-    private void ExportSelectedDeck()
+    private Func<ToolResult>? CreateExportOperation()
     {
+        var outputPath = _outputPath.Text;
+        Action<ExportProgress> progress = ReportExportProgress;
+        if (GetSelectedText(_targetType) == "Card")
+        {
+            if (_card.Selected < 0 || _card.Selected >= _cards.Count)
+            {
+                SetStatus("Select a card before exporting.", true);
+                return null;
+            }
+
+            var selectedCard = _cards[_card.Selected];
+            return () => CardToolService.RenderCard(selectedCard, ResolveSingleOutputPath(outputPath), progress);
+        }
+
         if (_deck.Selected < 0 || _deck.Selected >= _decks.Count)
         {
             SetStatus("Select a deck before exporting.", true);
-            return;
+            return null;
         }
 
         var selectedDeck = _decks[_deck.Selected];
-        var outputPath = _outputPath.Text;
-        var result = GetSelectedText(_exportType) == "Print Sheet"
-            ? CardToolService.ExportSheet(selectedDeck, outputPath, GetSelectedText(_paper), int.Parse(GetSelectedText(_dpi)))
-            : CardToolService.ExportDeck(selectedDeck, outputPath, "png", GetSelectedText(_layout), (int)_columns.Value, (int)_spacing.Value);
-        SetStatus(result.Message, !result.Success);
+        if (GetSelectedText(_exportType) == "Print Sheet")
+        {
+            var paper = GetSelectedText(_paper);
+            var dpi = int.Parse(GetSelectedText(_dpi));
+            var sheetOutputPath = ResolveMultiOutputPath(outputPath, $"{selectedDeck.Id}_{paper}_{dpi}dpi_sheets");
+            return () => CardToolService.ExportSheet(selectedDeck, sheetOutputPath, paper, dpi, progress);
+        }
+
+        var layout = GetSelectedText(_layout);
+        var columns = (int)_columns.Value;
+        var spacing = (int)_spacing.Value;
+        var deckOutputPath = layout == "individual"
+            ? ResolveMultiOutputPath(outputPath, $"{selectedDeck.Id}_individual")
+            : ResolveSingleOutputPath(outputPath);
+        return () => CardToolService.ExportDeck(selectedDeck, deckOutputPath, "png", layout, columns, spacing, progress);
+    }
+
+    private void ReportExportProgress(ExportProgress progress)
+    {
+        if (!IsInstanceValid(this))
+        {
+            return;
+        }
+
+        CallDeferred(nameof(ApplyExportProgress), progress.Current, progress.Total, progress.Message);
+    }
+
+    private void ApplyExportProgress(int current, int total, string message)
+    {
+        _progressBar.MaxValue = Math.Max(1, total);
+        _progressBar.Value = Math.Clamp(current, 0, Math.Max(1, total));
+        _progressLabel.Text = total > 0 ? $"{message} ({Math.Clamp(current, 0, total)} / {total})" : message;
+    }
+
+    private void ResetProgress()
+    {
+        _progressBar.Visible = false;
+        _progressLabel.Visible = false;
+        _progressBar.Value = 0;
+        _progressLabel.Text = string.Empty;
+    }
+
+    private ExportOutputMode GetOutputMode()
+    {
+        if (GetSelectedText(_targetType) == "Card")
+        {
+            return ExportOutputMode.SaveFile;
+        }
+
+        if (GetSelectedText(_exportType) == "Print Sheet")
+        {
+            return ExportOutputMode.Folder;
+        }
+
+        return GetSelectedText(_layout) == "individual" ? ExportOutputMode.Folder : ExportOutputMode.SaveFile;
+    }
+
+    private string GetDefaultOutputFileName()
+    {
+        if (GetSelectedText(_targetType) == "Card" && _card.Selected >= 0 && _card.Selected < _cards.Count)
+        {
+            return $"{SanitizeFileName(_cards[_card.Selected].Id)}.png";
+        }
+
+        if (_deck.Selected >= 0 && _deck.Selected < _decks.Count)
+        {
+            return $"{SanitizeFileName(_decks[_deck.Selected].Id)}_{GetSelectedText(_layout)}.png";
+        }
+
+        return "export.png";
+    }
+
+    private string ResolveSingleOutputPath(string outputPath)
+    {
+        if (Path.GetExtension(outputPath).Equals(".png", StringComparison.OrdinalIgnoreCase))
+        {
+            return outputPath;
+        }
+
+        return Path.Combine(outputPath, GetDefaultOutputFileName());
+    }
+
+    private static string ResolveMultiOutputPath(string parentFolder, string subfolderName)
+    {
+        return Path.Combine(parentFolder, SanitizeFileName(subfolderName));
+    }
+
+    private void UpdateOutputTooltip()
+    {
+        _outputPath.TooltipText = GetOutputMode() == ExportOutputMode.SaveFile
+            ? "Choose the exact PNG file to write."
+            : "Choose a parent folder. Export creates a named subfolder there.";
+    }
+
+    private static string SanitizeFileName(string fileName)
+    {
+        foreach (var invalidChar in Path.GetInvalidFileNameChars())
+        {
+            fileName = fileName.Replace(invalidChar, '_');
+        }
+
+        return string.IsNullOrWhiteSpace(fileName) ? "export" : fileName;
+    }
+
+    private void SetExportControlsDisabled(bool disabled)
+    {
+        _exportButton.Disabled = disabled;
+        _reloadButton.Disabled = disabled;
+        _targetType.Disabled = disabled;
+        _card.Disabled = disabled;
+        _deck.Disabled = disabled;
+        _exportType.Disabled = disabled;
+        _layout.Disabled = disabled;
+        _paper.Disabled = disabled;
+        _dpi.Disabled = disabled;
+        _columns.Editable = !disabled;
+        _spacing.Editable = !disabled;
+        _outputPath.Editable = !disabled;
+    }
+
+    private enum ExportOutputMode
+    {
+        SaveFile,
+        Folder
     }
 }

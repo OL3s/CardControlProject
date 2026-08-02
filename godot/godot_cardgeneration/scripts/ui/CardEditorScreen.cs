@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using CardGeneration.App;
 using CardGeneration.Resources;
 using CardGeneration.Resources.Enums;
 using Godot;
@@ -9,14 +11,15 @@ namespace CardGeneration.Ui;
 
 public partial class CardEditorScreen : CardToolScreen
 {
+    private const string PowerIconPath = "res://assets/icons/symbols/power.svg";
+
     private CardResource _editingCard = new MonsterCardResource();
     private IReadOnlyList<ElementResource> _elements = Array.Empty<ElementResource>();
     private LineEdit _id = null!;
-    private SpinBox _internalTier = null!;
     private LineEdit _imageSourcePath = null!;
     private CardPreviewControl _frontPreview = null!;
-    private CardPreviewControl _backPreview = null!;
     private FileDialog _imageFileDialog = null!;
+    private FileDialog _saveAsDialog = null!;
     private SpinBox? _monsterBasePower;
     private SpinBox? _monsterRequirementNeutral;
     private SpinBox? _monsterRequirementGrass;
@@ -66,18 +69,20 @@ public partial class CardEditorScreen : CardToolScreen
         _id = AddLineEdit(form, "Card ID", _editingCard.Id);
         form.AddChild(new Label { Text = $"Card Type: {_editingCard.CardType}" });
 
-        _internalTier = AddSpinBox(form, "Internal Tier", 0, 20, 1, _editingCard.InternalTier);
-        _internalTier.ValueChanged += _ => RefreshPreview();
-        _imageSourcePath = AddLineEdit(form, "Card Image Source Path", _editingCard.CardImageSourcePath);
+        _imageSourcePath = AddImageSourcePathRow(form);
 
         AddTypeSpecificFields(form);
 
         var buttons = new HBoxContainer();
         buttons.AddThemeConstantOverride("separation", 8);
         form.AddChild(buttons);
-        AddButton(buttons, "Import Image", OpenImageDialog, 120);
-        AddButton(buttons, "Refresh Preview", RefreshPreview, 136);
-        AddButton(buttons, "Save", SaveCard, 86);
+        if (!isNewCard)
+        {
+            AddIconButton(buttons, SaveIconPath, "Save", SaveCard);
+        }
+
+        AddIconButton(buttons, SaveAddIconPath, "Save as new", OpenSaveAsDialog);
+        AddIconButton(buttons, RefreshIconPath, "Refresh preview", RefreshPreview);
 
         var previewColumn = new VBoxContainer
         {
@@ -86,16 +91,17 @@ public partial class CardEditorScreen : CardToolScreen
         previewColumn.AddThemeConstantOverride("separation", 10);
         body.AddChild(previewColumn);
 
-        previewColumn.AddChild(new Label { Text = "Front" });
+        previewColumn.AddChild(new Label
+        {
+            Text = "Front",
+            HorizontalAlignment = HorizontalAlignment.Center
+        });
         _frontPreview = CardPreviewControl.Create(minimumSize: new Vector2(220, 308), useCache: false);
         previewColumn.AddChild(_frontPreview);
 
-        previewColumn.AddChild(new Label { Text = "Back" });
-        _backPreview = CardPreviewControl.Create(showBack: true, minimumSize: new Vector2(220, 308), useCache: false);
-        previewColumn.AddChild(_backPreview);
         previewColumn.AddChild(new Label
         {
-            Text = "Preview uses the same Image renderer as CLI export.",
+            Text = "Front preview uses the same Image renderer as CLI export. Card backs are set by decks.",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
 
@@ -103,12 +109,49 @@ public partial class CardEditorScreen : CardToolScreen
         {
             Access = FileDialog.AccessEnum.Filesystem,
             FileMode = FileDialog.FileModeEnum.OpenFile,
-            Title = "Select Card Image"
+            Title = "Select Card Image",
+            Filters = [
+                "*.png, *.jpg, *.jpeg, *.webp, *.svg ; Supported Images",
+                "*.png ; PNG",
+                "*.jpg, *.jpeg ; JPEG",
+                "*.webp ; WebP",
+                "*.svg ; SVG"
+            ]
         };
         _imageFileDialog.FileSelected += OnImageFileSelected;
         AddChild(_imageFileDialog);
 
+        _saveAsDialog = new FileDialog
+        {
+            Access = FileDialog.AccessEnum.Filesystem,
+            FileMode = FileDialog.FileModeEnum.SaveFile,
+            Title = "Save Card As New Resource",
+            Filters = ["*.tres ; Godot Resource"]
+        };
+        _saveAsDialog.FileSelected += OnSaveAsFileSelected;
+        AddChild(_saveAsDialog);
+
         RefreshPreview();
+    }
+
+    private LineEdit AddImageSourcePathRow(VBoxContainer form)
+    {
+        form.AddChild(new Label { Text = "Card Image Source Path" });
+        var row = new HBoxContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        row.AddThemeConstantOverride("separation", 8);
+        form.AddChild(row);
+
+        var lineEdit = new LineEdit
+        {
+            Text = _editingCard.CardImageSourcePath,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        row.AddChild(lineEdit);
+        AddIconButton(row, BrowseIconPath, "Import image", OpenImageDialog);
+        return lineEdit;
     }
 
     private OptionButton AddElementOption(VBoxContainer form, string label, ElementResource? selectedElement)
@@ -148,10 +191,14 @@ public partial class CardEditorScreen : CardToolScreen
                     AutowrapMode = TextServer.AutowrapMode.WordSmart
                 });
                 _monsterBasePower = AddSpinBox(form, "Base Power", 0, 20, 1, monster.BasePower);
-                _monsterRequirementNeutral = AddSpinBox(form, "Requirement: Neutral", 0, 20, 1, CountAmount(monster.Requirements, ElementType.Neutral));
-                _monsterRequirementGrass = AddSpinBox(form, "Requirement: Grass", 0, 20, 1, CountAmount(monster.Requirements, ElementType.Grass));
-                _monsterRequirementFlame = AddSpinBox(form, "Requirement: Flame", 0, 20, 1, CountAmount(monster.Requirements, ElementType.Flame));
-                _monsterRequirementWater = AddSpinBox(form, "Requirement: Water", 0, 20, 1, CountAmount(monster.Requirements, ElementType.Water));
+                AddElementAmountGrid(
+                    form,
+                    "Requirements",
+                    monster.Requirements,
+                    out _monsterRequirementNeutral,
+                    out _monsterRequirementGrass,
+                    out _monsterRequirementFlame,
+                    out _monsterRequirementWater);
                 BindSpinPreview(_monsterBasePower, _monsterRequirementNeutral, _monsterRequirementGrass, _monsterRequirementFlame, _monsterRequirementWater);
                 AddMonsterPowerBonusEditor(form, monster);
                 break;
@@ -162,10 +209,14 @@ public partial class CardEditorScreen : CardToolScreen
                     Text = "Terrain cards do not store an element focus; produced resources define what the terrain provides.",
                     AutowrapMode = TextServer.AutowrapMode.WordSmart
                 });
-                _terrainProducedNeutral = AddSpinBox(form, "Produces: Neutral", 0, 20, 1, CountAmount(terrain.ProducedResources, ElementType.Neutral));
-                _terrainProducedGrass = AddSpinBox(form, "Produces: Grass", 0, 20, 1, CountAmount(terrain.ProducedResources, ElementType.Grass));
-                _terrainProducedFlame = AddSpinBox(form, "Produces: Flame", 0, 20, 1, CountAmount(terrain.ProducedResources, ElementType.Flame));
-                _terrainProducedWater = AddSpinBox(form, "Produces: Water", 0, 20, 1, CountAmount(terrain.ProducedResources, ElementType.Water));
+                AddElementAmountGrid(
+                    form,
+                    "Produces",
+                    terrain.ProducedResources,
+                    out _terrainProducedNeutral,
+                    out _terrainProducedGrass,
+                    out _terrainProducedFlame,
+                    out _terrainProducedWater);
                 BindSpinPreview(_terrainProducedNeutral, _terrainProducedGrass, _terrainProducedFlame, _terrainProducedWater);
                 break;
             case KingCardResource king:
@@ -205,7 +256,7 @@ public partial class CardEditorScreen : CardToolScreen
             AddMonsterPowerBonusRow(bonus, refreshPreview: false);
         }
 
-        AddButton(form, "+ Add Power Bonus", () => AddMonsterPowerBonusRow(new PowerBonusResource(), refreshPreview: true), 170);
+        AddIconButton(form, AddIconPath, "Add power bonus", () => AddMonsterPowerBonusRow(new PowerBonusResource(), refreshPreview: true));
     }
 
     private void AddMonsterPowerBonusRow(PowerBonusResource bonus, bool refreshPreview)
@@ -235,29 +286,28 @@ public partial class CardEditorScreen : CardToolScreen
         row.AddThemeConstantOverride("separation", 8);
         margin.AddChild(row);
 
-        row.AddChild(new Label
+        var needs = new VBoxContainer
         {
-            Text = "Needs",
-            VerticalAlignment = VerticalAlignment.Center
-        });
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        needs.AddThemeConstantOverride("separation", 4);
+        row.AddChild(needs);
 
-        var neutral = AddInlineSpin(row, "N", CountAmount(bonus.Requirements, ElementType.Neutral));
-        var grass = AddInlineSpin(row, "G", CountAmount(bonus.Requirements, ElementType.Grass));
-        var flame = AddInlineSpin(row, "F", CountAmount(bonus.Requirements, ElementType.Flame));
-        var water = AddInlineSpin(row, "W", CountAmount(bonus.Requirements, ElementType.Water));
+        needs.AddChild(new Label { Text = "Needs" });
+        var needsGrid = CreateElementAmountGrid();
+        needs.AddChild(needsGrid);
+        var neutral = AddElementAmountCell(needsGrid, ElementType.Neutral, CountAmount(bonus.Requirements, ElementType.Neutral));
+        var grass = AddElementAmountCell(needsGrid, ElementType.Grass, CountAmount(bonus.Requirements, ElementType.Grass));
+        var flame = AddElementAmountCell(needsGrid, ElementType.Flame, CountAmount(bonus.Requirements, ElementType.Flame));
+        var water = AddElementAmountCell(needsGrid, ElementType.Water, CountAmount(bonus.Requirements, ElementType.Water));
 
-        row.AddChild(new Label
-        {
-            Text = "-> Power",
-            VerticalAlignment = VerticalAlignment.Center
-        });
-        var powerGain = AddInlineSpin(row, "+", Math.Max(1, bonus.PowerGain), min: 1, max: 10);
+        var powerGain = AddPowerGainCell(row, Math.Max(1, bonus.PowerGain));
 
         var editorRow = new MonsterPowerBonusEditorRow(panel, neutral, grass, flame, water, powerGain);
         _monsterPowerBonusRows.Add(editorRow);
 
         BindSpinPreview(neutral, grass, flame, water, powerGain);
-        AddButton(row, "Remove", () => RemoveMonsterPowerBonusRow(editorRow), 90);
+        AddIconButton(row, DeleteIconPath, "Remove", () => RemoveMonsterPowerBonusRow(editorRow), new Vector2(36, 34));
 
         if (refreshPreview)
         {
@@ -265,13 +315,47 @@ public partial class CardEditorScreen : CardToolScreen
         }
     }
 
-    private SpinBox AddInlineSpin(HBoxContainer row, string label, int value, int min = 0, int max = 20)
+    private void AddElementAmountGrid(
+        VBoxContainer form,
+        string label,
+        ResourceAmount[] amounts,
+        out SpinBox neutral,
+        out SpinBox grass,
+        out SpinBox flame,
+        out SpinBox water)
     {
-        row.AddChild(new Label
+        form.AddChild(new Label { Text = label });
+        var grid = CreateElementAmountGrid();
+        form.AddChild(grid);
+
+        neutral = AddElementAmountCell(grid, ElementType.Neutral, CountAmount(amounts, ElementType.Neutral));
+        grass = AddElementAmountCell(grid, ElementType.Grass, CountAmount(amounts, ElementType.Grass));
+        flame = AddElementAmountCell(grid, ElementType.Flame, CountAmount(amounts, ElementType.Flame));
+        water = AddElementAmountCell(grid, ElementType.Water, CountAmount(amounts, ElementType.Water));
+    }
+
+    private static GridContainer CreateElementAmountGrid()
+    {
+        var grid = new GridContainer
         {
-            Text = label,
-            VerticalAlignment = VerticalAlignment.Center
-        });
+            Columns = 2,
+            SizeFlagsHorizontal = SizeFlags.ShrinkBegin
+        };
+        grid.AddThemeConstantOverride("h_separation", 12);
+        grid.AddThemeConstantOverride("v_separation", 8);
+        return grid;
+    }
+
+    private SpinBox AddElementAmountCell(GridContainer grid, ElementType elementType, int value, int min = 0, int max = 20)
+    {
+        var cell = new HBoxContainer
+        {
+            CustomMinimumSize = new Vector2(126, 0)
+        };
+        cell.AddThemeConstantOverride("separation", 6);
+        grid.AddChild(cell);
+
+        cell.AddChild(CreateElementIcon(elementType));
 
         var spinBox = new SpinBox
         {
@@ -279,10 +363,54 @@ public partial class CardEditorScreen : CardToolScreen
             MaxValue = max,
             Step = 1,
             Value = Math.Clamp(value, min, max),
-            CustomMinimumSize = new Vector2(64, 0)
+            CustomMinimumSize = new Vector2(76, 0),
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
-        row.AddChild(spinBox);
+        cell.AddChild(spinBox);
         return spinBox;
+    }
+
+    private SpinBox AddPowerGainCell(HBoxContainer row, int value)
+    {
+        var cell = new HBoxContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ShrinkEnd,
+            Alignment = BoxContainer.AlignmentMode.Center
+        };
+        cell.AddThemeConstantOverride("separation", 6);
+        row.AddChild(cell);
+
+        cell.AddChild(new TextureRect
+        {
+            Texture = ResourceLoader.Load<Texture2D>(PowerIconPath),
+            CustomMinimumSize = new Vector2(26, 26),
+            ExpandMode = TextureRect.ExpandModeEnum.FitWidthProportional,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            TooltipText = "Power gain"
+        });
+
+        var spinBox = new SpinBox
+        {
+            MinValue = 1,
+            MaxValue = 10,
+            Step = 1,
+            Value = Math.Clamp(value, 1, 10),
+            CustomMinimumSize = new Vector2(76, 0)
+        };
+        cell.AddChild(spinBox);
+        return spinBox;
+    }
+
+    private TextureRect CreateElementIcon(ElementType elementType)
+    {
+        return new TextureRect
+        {
+            Texture = GetElement(elementType)?.IconTexture,
+            CustomMinimumSize = new Vector2(26, 26),
+            ExpandMode = TextureRect.ExpandModeEnum.FitWidthProportional,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            TooltipText = elementType.ToString()
+        };
     }
 
     private void RemoveMonsterPowerBonusRow(MonsterPowerBonusEditorRow row)
@@ -308,7 +436,6 @@ public partial class CardEditorScreen : CardToolScreen
     {
         ApplyFieldsToCard();
         _frontPreview.SetCard(_editingCard);
-        _backPreview.SetCard(_editingCard, showBack: true);
     }
 
     private void SaveCard()
@@ -317,6 +444,26 @@ public partial class CardEditorScreen : CardToolScreen
         ApplyFieldsToCard();
         var result = CardToolService.SaveCard(_editingCard);
         SetStatus(result.Message, !result.Success);
+    }
+
+    private void OpenSaveAsDialog()
+    {
+        EnsureId();
+        var outputDirectory = ProjectPaths.ToGlobalPath("resources/user/cards");
+        Directory.CreateDirectory(outputDirectory);
+        _saveAsDialog.CurrentDir = outputDirectory;
+        _saveAsDialog.CurrentFile = $"{SanitizeFileName(CreateCopyId(_id.Text))}.tres";
+        _saveAsDialog.PopupCenteredRatio(0.72f);
+    }
+
+    private void OnSaveAsFileSelected(string filePath)
+    {
+        var fileId = MakeResourceId(Path.GetFileNameWithoutExtension(filePath), CreateCopyId(_id.Text));
+        _id.Text = fileId;
+        ApplyFieldsToCard();
+        var result = CardToolService.ExportCardResource(_editingCard, EnsureTresExtension(filePath));
+        SetStatus(result.Message, !result.Success);
+        RefreshPreview();
     }
 
     private void EnsureId()
@@ -329,10 +476,45 @@ public partial class CardEditorScreen : CardToolScreen
         _id.Text = MakeResourceId(_editingCard.CardType.ToString(), "new_card");
     }
 
+    private string CreateCopyId(string sourceId)
+    {
+        var baseId = MakeResourceId(sourceId, _editingCard.CardType.ToString().ToLowerInvariant());
+        var existingIds = CardToolService.LoadAllCards()
+            .Select(card => card.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        for (var index = 1; index < 1000; index++)
+        {
+            var candidate = $"{baseId}_copy_{index}";
+            if (!existingIds.Contains(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return $"{baseId}_copy_{DateTime.Now:yyyyMMddHHmmss}";
+    }
+
+    private static string EnsureTresExtension(string filePath)
+    {
+        return Path.GetExtension(filePath).Equals(".tres", StringComparison.OrdinalIgnoreCase)
+            ? filePath
+            : $"{filePath}.tres";
+    }
+
+    private static string SanitizeFileName(string fileName)
+    {
+        foreach (var invalidChar in Path.GetInvalidFileNameChars())
+        {
+            fileName = fileName.Replace(invalidChar, '_');
+        }
+
+        return string.IsNullOrWhiteSpace(fileName) ? "card" : fileName;
+    }
+
     private void ApplyFieldsToCard()
     {
         _editingCard.Id = _id.Text.Trim();
-        _editingCard.InternalTier = (int)_internalTier.Value;
         _editingCard.CardImageSourcePath = _imageSourcePath.Text.Trim();
         ApplyTypeSpecificFields();
     }
@@ -458,7 +640,6 @@ public partial class CardEditorScreen : CardToolScreen
     {
         target.Id = source.Id;
         target.CardType = source.CardType;
-        target.InternalTier = source.InternalTier;
         target.CardImageTexture = source.CardImageTexture;
         target.CardImageSourcePath = source.CardImageSourcePath;
         target.BackImageTexture = source.BackImageTexture;
