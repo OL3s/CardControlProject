@@ -22,7 +22,7 @@ Monstertier er eksplisitt kortdata og vises som én til tre små kobberdiamanter
 
 ## Eksplisitt Element
 
-Alle monster- og terrengkort har ett eksplisitt element: nøytral, gress, flamme eller vann.
+Alle monster- og terrengkort har ett eksplisitt element: nøytral, gress, flamme eller vann. Valgfri er en egen ressurs-/kravtype med eget ikon som visuelt blander flamme, gress og vann. Valgfri er ikke nøytral og brukes ikke som standard kortidentitet.
 
 Monsterets element er uavhengig av ressurskravene. Kravene avgjør om monsteret kan brukes; de skal ikke brukes til å utlede elementet. Monsterets elementmedaljong plasseres øverst til høyre.
 

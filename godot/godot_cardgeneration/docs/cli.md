@@ -35,7 +35,6 @@ delete-deck
 duplicate-deck
 validate-cards
 validate-deck
-render-card
 export-deck
 export-sheet
 export-diy
@@ -58,7 +57,6 @@ Status:
 * `duplicate-deck`: implementert for å kopiere en deck til en vanlig user deck resource.
 * `validate-cards`: implementert.
 * `validate-deck`: implementert for lagrede og innebygde deckresources.
-* `render-card`: implementert for PNG.
 * `export-deck`: implementert for PNG-layoutene `individual`, `grid` og `strip`.
 * `export-sheet`: implementert for A4 og A3 PNG-printark med front/back, valgbar DPI, valgfri bakside-speiling og valgfri 10 cm målelinje.
 * `export-diy`: implementert som A4- og A3-printark i egne undermapper med samme printvalg.
@@ -136,12 +134,6 @@ Validere alle kort:
 
 ```sh
 godot --headless --path godot/godot_cardgeneration -- --command validate-cards
-```
-
-Rendere ett kort:
-
-```sh
-godot --headless --path godot/godot_cardgeneration -- --command render-card --card default_monster_flame_1_a --output output/cards/preview
 ```
 
 Eksportere en kortstokk som bilder:
@@ -287,10 +279,6 @@ godot --headless --path godot/godot_cardgeneration -- --duplicate-deck default_d
 
 ```sh
 godot --headless --path godot/godot_cardgeneration -- --delete-deck my_deck
-```
-
-```sh
-godot --headless --path godot/godot_cardgeneration -- --render-card default_monster_flame_1_a --output output/cards/preview
 ```
 
 ## Designregel

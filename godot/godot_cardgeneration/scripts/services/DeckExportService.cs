@@ -12,18 +12,6 @@ namespace CardGeneration.Services;
 public sealed class DeckExportService
 {
     private static readonly Vector2I PreviewCardSize = new(150, 210);
-    private readonly CardRenderService _cardRenderService;
-
-    public DeckExportService()
-        : this(new CardRenderService())
-    {
-    }
-
-    public DeckExportService(CardRenderService cardRenderService)
-    {
-        _cardRenderService = cardRenderService;
-    }
-
     public ToolResult ExportDeck(CardDeckResource deck, string outputPath, string format, string layout, int columns, int spacing, Action<ExportProgress>? progress = null, ImageBackMode backMode = ImageBackMode.None)
     {
         if (format != "png")
@@ -202,7 +190,7 @@ public sealed class DeckExportService
 
         foreach (var card in cards)
         {
-            items.Add(DeckImageItem.ForFront(card));
+            items.Add(DeckImageItem.ForFront(card, deck.GetElementIconOverrides(), deck.PowerIconTexture));
         }
 
         return items;
@@ -225,7 +213,7 @@ public sealed class DeckExportService
     {
         return item.Card is null
             ? CardImageRenderer.RenderBack(item.CardType, item.BackImageTexture, size)
-            : CardImageRenderer.Render(item.Card, size);
+            : CardImageRenderer.Render(item.Card, size, item.ElementIconOverrides, item.PowerIconOverride);
     }
 
     private static void DisposePreviewItems(IEnumerable<ImagePreviewItem> items)
@@ -260,14 +248,22 @@ public sealed class DeckExportService
         return requestedColumns > 0 ? requestedColumns : (int)Math.Ceiling(Math.Sqrt(cardCount));
     }
 
-    private sealed record DeckImageItem(string Label, string FileNameStem, CardResource? Card, CardType CardType, Texture2D? BackImageTexture)
+    private sealed record DeckImageItem(
+        string Label,
+        string FileNameStem,
+        CardResource? Card,
+        CardType CardType,
+        Texture2D? BackImageTexture,
+        IReadOnlyDictionary<ElementType, Texture2D>? ElementIconOverrides,
+        Texture2D? PowerIconOverride)
     {
-        public static DeckImageItem ForFront(CardResource card) => new(card.Id, card.Id, card, card.CardType, null);
+        public static DeckImageItem ForFront(CardResource card, IReadOnlyDictionary<ElementType, Texture2D> elementIconOverrides, Texture2D? powerIconOverride)
+            => new(card.Id, card.Id, card, card.CardType, null, elementIconOverrides, powerIconOverride);
 
         public static DeckImageItem ForBack(CardType cardType, Texture2D? texture)
         {
             var typeName = cardType.ToString().ToLowerInvariant();
-            return new DeckImageItem($"{typeName} back", $"{typeName}_back", null, cardType, texture);
+            return new DeckImageItem($"{typeName} back", $"{typeName}_back", null, cardType, texture, null, null);
         }
     }
 }

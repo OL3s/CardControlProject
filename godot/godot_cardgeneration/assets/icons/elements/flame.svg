@@ -1,10 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
-  <title id="title">Flame element icon</title>
-  <desc id="desc">A red flame set in a dark, copper-rimmed medallion.</desc>
-  <circle cx="64" cy="64" r="61" fill="#17110d"/>
-  <circle cx="64" cy="64" r="55" fill="#9a6a3c"/>
-  <circle cx="64" cy="64" r="49" fill="#f4dfd8" stroke="#8f352b" stroke-width="3"/>
-  <path d="M24 44 A45 45 0 0 1 53 21" fill="none" stroke="#d6aa62" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
-  <path d="M68 24 C86 44 94 59 92 76 C90 96 75 106 58 103 C40 100 31 86 34 70 C37 57 47 48 52 37 C55 48 61 54 68 59 C64 45 64 34 68 24 Z" fill="#c94e36" stroke="#8f352b" stroke-width="4" stroke-linejoin="round"/>
-  <path d="M61 58 C72 69 76 78 72 87 C69 95 60 98 53 93 C46 88 48 79 53 71 C56 66 59 62 61 58 Z" fill="#ef9a4b" opacity="0.9"/>
+  <title id="title">Flame element glyph</title>
+  <desc id="desc">A simple red flame glyph with transparent surroundings.</desc>
+  <path d="M68 20 C88 42 99 60 96 79 C93 101 77 110 58 106 C38 102 28 87 32 68 C35 53 47 43 53 30 C57 44 62 51 69 57 C65 43 65 31 68 20 Z" fill="#c94e36" stroke="#6f2924" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M61 57 C74 69 79 79 74 90 C70 99 59 101 51 95 C43 89 45 78 51 68 C55 63 58 59 61 57 Z" fill="#ef9a4b" stroke="#8b3829" stroke-width="4"/>
 </svg>

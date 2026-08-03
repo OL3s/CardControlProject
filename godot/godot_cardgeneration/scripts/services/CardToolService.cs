@@ -11,14 +11,13 @@ namespace CardGeneration.Services;
 
 public sealed class CardToolService
 {
-    private const string DefaultContentVersion = "monster_tier_diamonds_v3";
+    private const string DefaultContentVersion = "deck_scoped_glyphs_any_post_cost_v7";
     private const string DefaultContentVersionPath = "user://resources/default_content_version.txt";
 
     private readonly CardRepository _cardRepository;
     private readonly DeckRepository _deckRepository;
     private readonly CardValidator _cardValidator;
     private readonly DeckValidator _deckValidator;
-    private readonly CardRenderService _cardRenderService;
     private readonly DeckExportService _deckExportService;
     private readonly SheetExportService _sheetExportService;
     private readonly DiyExportService _diyExportService;
@@ -35,7 +34,6 @@ public sealed class CardToolService
             services.DeckRepository,
             services.CardValidator,
             services.DeckValidator,
-            services.CardRenderService,
             services.DeckExportService,
             services.SheetExportService,
             services.DiyExportService,
@@ -48,7 +46,6 @@ public sealed class CardToolService
         DeckRepository deckRepository,
         CardValidator cardValidator,
         DeckValidator deckValidator,
-        CardRenderService cardRenderService,
         DeckExportService deckExportService,
         SheetExportService sheetExportService,
         DiyExportService diyExportService,
@@ -58,7 +55,6 @@ public sealed class CardToolService
         _deckRepository = deckRepository;
         _cardValidator = cardValidator;
         _deckValidator = deckValidator;
-        _cardRenderService = cardRenderService;
         _deckExportService = deckExportService;
         _sheetExportService = sheetExportService;
         _diyExportService = diyExportService;
@@ -308,10 +304,26 @@ public sealed class CardToolService
 
     public IReadOnlyList<ElementResource> LoadAllElements()
     {
-        return ResourceRepository.LoadAll<ElementResource>("res://resources/elements")
+        var elements = ResourceRepository.LoadAll<ElementResource>("res://resources/elements")
             .OrderBy(element => element.DisplayName)
             .ThenBy(element => element.ElementType)
             .ToArray();
+
+        foreach (var elementType in Enum.GetValues<ElementType>())
+        {
+            var element = elements.FirstOrDefault(candidate => candidate.ElementType == elementType);
+            if (element is null)
+            {
+                throw new InvalidOperationException($"Required element resource is missing for {elementType} under res://resources/elements.");
+            }
+
+            if (element.IconTexture is null)
+            {
+                throw new InvalidOperationException($"Required element glyph is missing for {elementType} under res://assets/icons/elements.");
+            }
+        }
+
+        return elements;
     }
 
     public IReadOnlyList<CardResource> LoadAllCards()
@@ -520,24 +532,6 @@ public sealed class CardToolService
         return ToolResult.Ok($"Validated {decks.Count} deck(s).");
     }
 
-    public ToolResult RenderCard(string? cardId, string outputPath)
-    {
-        if (string.IsNullOrWhiteSpace(cardId))
-        {
-            return ToolResult.Fail("Missing card id. Use --card <card_id>.");
-        }
-
-        var card = _cardRepository.LoadCardById(cardId);
-        return card is null
-            ? ToolResult.Fail($"Card '{cardId}' was not found.")
-            : _cardRenderService.RenderCard(card, outputPath);
-    }
-
-    public ToolResult RenderCard(CardResource card, string outputPath, Action<ExportProgress>? progress = null)
-    {
-        return _cardRenderService.RenderCard(card, outputPath, card.Id, progress);
-    }
-
     public Godot.Image RenderCardPreview(CardResource card, Action<ExportProgress>? progress = null)
     {
         progress?.Invoke(new ExportProgress(0, 1, $"Rendering preview: {card.Id}"));
@@ -634,8 +628,7 @@ public sealed class CardToolService
         var deckRepository = new DeckRepository();
         var cardValidator = new CardValidator();
         var deckValidator = new DeckValidator();
-        var cardRenderService = new CardRenderService();
-        var deckExportService = new DeckExportService(cardRenderService);
+        var deckExportService = new DeckExportService();
         var sheetExportService = new SheetExportService();
         var diyExportService = new DiyExportService(sheetExportService);
         var configRepository = new ConfigRepository();
@@ -645,7 +638,6 @@ public sealed class CardToolService
             deckRepository,
             cardValidator,
             deckValidator,
-            cardRenderService,
             deckExportService,
             sheetExportService,
             diyExportService,
@@ -741,6 +733,12 @@ public sealed class CardToolService
             Id = source.Id,
             MonsterBackImageTexture = source.MonsterBackImageTexture,
             TerrainBackImageTexture = source.TerrainBackImageTexture,
+            NeutralElementIconTexture = source.NeutralElementIconTexture,
+            GrassElementIconTexture = source.GrassElementIconTexture,
+            FlameElementIconTexture = source.FlameElementIconTexture,
+            WaterElementIconTexture = source.WaterElementIconTexture,
+            AnyElementIconTexture = source.AnyElementIconTexture,
+            PowerIconTexture = source.PowerIconTexture,
             Entries = (source.Entries ?? Array.Empty<CardDeckEntryResource>())
                 .Select(entry => new CardDeckEntryResource
                 {
@@ -766,11 +764,10 @@ public sealed class CardToolService
         DeckRepository DeckRepository,
         CardValidator CardValidator,
         DeckValidator DeckValidator,
-        CardRenderService CardRenderService,
         DeckExportService DeckExportService,
         SheetExportService SheetExportService,
         DiyExportService DiyExportService,
-            ConfigRepository ConfigRepository);
+        ConfigRepository ConfigRepository);
 
     private static T? LoadExternalResource<T>(string filePath) where T : Godot.Resource
     {

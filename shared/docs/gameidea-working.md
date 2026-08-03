@@ -91,6 +91,7 @@ Elementene følger et stein-saks-papir-system:
 * **Flamme slår gress**
 * **Gress slår vann**
 * **Nøytral** har ingen elementfordel eller svakhet
+* **Valgfri** kan brukes som én ressurs av valgfri type når et krav skal oppfylles
 
 Elementene har ikke faste roller. Flamme er derfor ikke automatisk offensivt, og vann er ikke automatisk defensivt. Elementene handler om hvilke andre elementer de er sterke eller svake mot.
 
@@ -119,6 +120,10 @@ Eksempel:
 Dette hindrer en spiller i å bruke sterke elementmonstre ved bare å kontrollere noen få spesialiserte ressurser.
 
 Et terreng uten eier kalles **eierløst**.
+
+## Valgfri ressurs
+
+Valgfri er en egen krav-/ressurstype og er ikke det samme som nøytral. Ett valgfri-ikon kan dekke ett krav av nøytral, gress, flamme eller vann. Valgfri representerer alle de tre spesialelementene visuelt, men har ingen egen matchup eller elementfordel. Den kan brukes i monsterkrav og kumulative bonuslinjer, men produseres ikke av standardterreng.
 
 ---
 
@@ -178,13 +183,15 @@ Bonuslinjer leses som:
 
 > Ressursikoner -> styrkeikon
 
+Bonuslinjer bruker ressurser som er igjen etter at kortets krav er betalt.
+
 Eksempel:
 
 > Styrkeikon 1  
-> 2 flammeikoner -> 1 styrkeikon  
-> 3 flammeikoner -> 1 styrkeikon
+> 1 flammeikon -> 1 styrkeikon
+> 2 flammeikoner -> 1 styrkeikon
 
-En spiller med 3 flammeressurser får styrke 3 før eventuell elementfordel.
+En spiller som betaler kortets krav og har 2 flammeressurser igjen, får begge bonusene.
 
 Styrken legges til spillerens kampverdi sammen med terningresultatet fra valgte kampbønder.
 
@@ -536,6 +543,8 @@ Monsteret må:
 
 * Være på hånden
 * Oppfylle ressurskravene
+
+Når monsteret brukes, betaler spilleren ressurskravene først. Deretter vurderes bonuslinjene mot ressursene som er igjen. En bonusgrense inkluderer derfor ikke ressursene som allerede ble brukt til kortets krav.
 
 Monsterkort velges i startspillerrekkefølge.
 

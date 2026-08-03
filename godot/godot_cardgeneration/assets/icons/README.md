@@ -6,7 +6,7 @@ Ikoner skal ligge her når de trengs av verktøyet, i stedet for å blandes med 
 
 Retning:
 
-* `elements/` brukes for element- og ressursikoner.
-* `symbols/` brukes for generelle kortsymboler, for eksempel styrke og pil.
+* `elements/` brukes for glyph-only element- og ressursikoner. Medallionens felt, svak elementfarge og outline tegnes av renderer.
+* `symbols/` brukes for glyph-only kortsymboler, for eksempel styrke og pil. Power-medallionens felt og outline tegnes av renderer.
 * SVG er foretrukket kildeformat for ikoner fordi det skalerer godt til både preview og print.
-* Ikoner kan erstattes senere med mer polerte SVG-er uten å endre kortdata.
+* Decks kan velge egne glyph-textures per element uten å endre kortdata.

@@ -14,9 +14,9 @@ Denne kortlisten er source of truth for terrengkortene i defaultutgaven **Elemen
 
 Terrengkort bygger kartet og gir ressurskapasitet.
 
-PNG-bildene under viser kortpreviewene. SVG-kildene ligger i [`images/svg/`](images/svg/), og ikonene ligger i [`images/svg/icons/`](images/svg/icons/).
+Kortgeneratoren bygger forsiden rundt et fullt bakgrunnsbilde. Den delte dokumentasjonen inneholder derfor ikke lenger en eksempel-front; ikonene ligger i [`images/svg/icons/`](images/svg/icons/), og baksiden ligger i [`images/svg/terrain_card_back.svg`](images/svg/terrain_card_back.svg).
 
-![Terrengkort frontmal](images/png/terrain_card_front.png) ![Terrengkort bakside](images/png/terrain_card_back.png)
+![Terrengkort bakside](images/png/terrain_card_back.png)
 
 ## Kortutseende
 
@@ -28,6 +28,7 @@ Terrengets eksplisitte kjerneelement vises stort i sentrum og er uavhengig av re
 * Gress: blad
 * Flamme: flamme
 * Vann: dråpe
+* Valgfri ressurs: stjerne
 
 ## Kortliste
 

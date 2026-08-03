@@ -28,12 +28,14 @@ public partial class CardEditorScreen : CardToolScreen
     private SpinBox? _monsterRequirementGrass;
     private SpinBox? _monsterRequirementFlame;
     private SpinBox? _monsterRequirementWater;
+    private SpinBox? _monsterRequirementAny;
     private VBoxContainer? _monsterPowerBonusesList;
     private readonly List<MonsterPowerBonusEditorRow> _monsterPowerBonusRows = [];
     private SpinBox? _terrainProducedNeutral;
     private SpinBox? _terrainProducedGrass;
     private SpinBox? _terrainProducedFlame;
     private SpinBox? _terrainProducedWater;
+    private SpinBox? _terrainProducedAny;
 
     public void SetCard(CardResource? card)
     {
@@ -177,8 +179,9 @@ public partial class CardEditorScreen : CardToolScreen
                     out _monsterRequirementNeutral,
                     out _monsterRequirementGrass,
                     out _monsterRequirementFlame,
-                    out _monsterRequirementWater);
-                BindSpinPreview(_monsterTier, _monsterBasePower, _monsterRequirementNeutral, _monsterRequirementGrass, _monsterRequirementFlame, _monsterRequirementWater);
+                    out _monsterRequirementWater,
+                    out _monsterRequirementAny);
+                BindSpinPreview(_monsterTier, _monsterBasePower, _monsterRequirementNeutral, _monsterRequirementGrass, _monsterRequirementFlame, _monsterRequirementWater, _monsterRequirementAny);
                 AddMonsterPowerBonusEditor(form, monster);
                 break;
             case TerrainCardResource terrain:
@@ -195,8 +198,9 @@ public partial class CardEditorScreen : CardToolScreen
                     out _terrainProducedNeutral,
                     out _terrainProducedGrass,
                     out _terrainProducedFlame,
-                    out _terrainProducedWater);
-                BindSpinPreview(_terrainProducedNeutral, _terrainProducedGrass, _terrainProducedFlame, _terrainProducedWater);
+                    out _terrainProducedWater,
+                    out _terrainProducedAny);
+                BindSpinPreview(_terrainProducedNeutral, _terrainProducedGrass, _terrainProducedFlame, _terrainProducedWater, _terrainProducedAny);
                 break;
         }
 
@@ -311,13 +315,14 @@ public partial class CardEditorScreen : CardToolScreen
         var grass = AddElementAmountCell(needsGrid, ElementType.Grass, CountAmount(bonus.Requirements, ElementType.Grass));
         var flame = AddElementAmountCell(needsGrid, ElementType.Flame, CountAmount(bonus.Requirements, ElementType.Flame));
         var water = AddElementAmountCell(needsGrid, ElementType.Water, CountAmount(bonus.Requirements, ElementType.Water));
+        var any = AddElementAmountCell(needsGrid, ElementType.Any, CountAmount(bonus.Requirements, ElementType.Any));
 
         var powerGain = AddPowerGainCell(row, Math.Max(1, bonus.PowerGain));
 
-        var editorRow = new MonsterPowerBonusEditorRow(panel, neutral, grass, flame, water, powerGain);
+        var editorRow = new MonsterPowerBonusEditorRow(panel, neutral, grass, flame, water, any, powerGain);
         _monsterPowerBonusRows.Add(editorRow);
 
-        BindSpinPreview(neutral, grass, flame, water, powerGain);
+        BindSpinPreview(neutral, grass, flame, water, any, powerGain);
         AddIconButton(row, DeleteIconPath, "Remove", () => RemoveMonsterPowerBonusRow(editorRow), new Vector2(36, 34));
 
         if (refreshPreview)
@@ -333,7 +338,8 @@ public partial class CardEditorScreen : CardToolScreen
         out SpinBox neutral,
         out SpinBox grass,
         out SpinBox flame,
-        out SpinBox water)
+        out SpinBox water,
+        out SpinBox any)
     {
         form.AddChild(new Label { Text = label });
         var grid = CreateElementAmountGrid();
@@ -343,6 +349,7 @@ public partial class CardEditorScreen : CardToolScreen
         grass = AddElementAmountCell(grid, ElementType.Grass, CountAmount(amounts, ElementType.Grass));
         flame = AddElementAmountCell(grid, ElementType.Flame, CountAmount(amounts, ElementType.Flame));
         water = AddElementAmountCell(grid, ElementType.Water, CountAmount(amounts, ElementType.Water));
+        any = AddElementAmountCell(grid, ElementType.Any, CountAmount(amounts, ElementType.Any));
     }
 
     private static GridContainer CreateElementAmountGrid()
@@ -542,7 +549,8 @@ public partial class CardEditorScreen : CardToolScreen
                     (ElementType.Neutral, _monsterRequirementNeutral),
                     (ElementType.Grass, _monsterRequirementGrass),
                     (ElementType.Flame, _monsterRequirementFlame),
-                    (ElementType.Water, _monsterRequirementWater));
+                    (ElementType.Water, _monsterRequirementWater),
+                    (ElementType.Any, _monsterRequirementAny));
                 monster.PowerBonuses = BuildPowerBonuses();
                 break;
             case TerrainCardResource terrain:
@@ -550,7 +558,8 @@ public partial class CardEditorScreen : CardToolScreen
                     (ElementType.Neutral, _terrainProducedNeutral),
                     (ElementType.Grass, _terrainProducedGrass),
                     (ElementType.Flame, _terrainProducedFlame),
-                    (ElementType.Water, _terrainProducedWater));
+                    (ElementType.Water, _terrainProducedWater),
+                    (ElementType.Any, _terrainProducedAny));
                 break;
         }
     }
@@ -576,7 +585,8 @@ public partial class CardEditorScreen : CardToolScreen
                     (ElementType.Neutral, row.NeutralRequirement),
                     (ElementType.Grass, row.GrassRequirement),
                     (ElementType.Flame, row.FlameRequirement),
-                    (ElementType.Water, row.WaterRequirement)),
+                    (ElementType.Water, row.WaterRequirement),
+                    (ElementType.Any, row.AnyRequirement)),
                 PowerGain = (int)row.PowerGain.Value
             })
             .Where(bonus => bonus.Requirements.Length > 0 && bonus.PowerGain > 0)
@@ -676,5 +686,6 @@ public partial class CardEditorScreen : CardToolScreen
         SpinBox GrassRequirement,
         SpinBox FlameRequirement,
         SpinBox WaterRequirement,
+        SpinBox AnyRequirement,
         SpinBox PowerGain);
 }

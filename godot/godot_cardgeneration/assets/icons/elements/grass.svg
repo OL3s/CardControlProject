@@ -1,10 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
-  <title id="title">Grass element icon</title>
-  <desc id="desc">A green leaf set in a dark, copper-rimmed medallion.</desc>
-  <circle cx="64" cy="64" r="61" fill="#17110d"/>
-  <circle cx="64" cy="64" r="55" fill="#9a6a3c"/>
-  <circle cx="64" cy="64" r="49" fill="#e5f0dc" stroke="#285c39" stroke-width="3"/>
-  <path d="M24 44 A45 45 0 0 1 53 21" fill="none" stroke="#d6aa62" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
-  <path d="M96 30 C72 30 45 39 34 59 C24 77 31 96 49 100 C71 105 96 80 96 30 Z" fill="#4f945b" stroke="#285c39" stroke-width="4" stroke-linejoin="round"/>
-  <path d="M45 91 C57 69 70 54 89 38 M57 69 C50 64 44 58 39 52" fill="none" stroke="#d8e9d1" stroke-width="5" stroke-linecap="round" opacity="0.9"/>
+  <title id="title">Grass element glyph</title>
+  <desc id="desc">A simple green leaf glyph with transparent surroundings.</desc>
+  <path d="M98 23 C72 25 45 38 33 59 C22 79 31 101 51 105 C74 109 99 83 98 23 Z" fill="#4f945b" stroke="#20452d" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M44 96 C57 70 72 51 92 32 M57 70 C50 65 43 58 37 51" fill="none" stroke="#c7e2bd" stroke-width="7" stroke-linecap="round"/>
 </svg>
