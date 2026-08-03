@@ -30,16 +30,18 @@ for directory in (PNG_DIR, SVG_DIR, DATA_DIR):
     directory.mkdir(parents=True, exist_ok=True)
 
 
-# Mirrored from physical/mesurement/generate_measurement_package.py. The DIY
-# sheet is a cardboard tuck/lock prototype, not the magnetic production box.
+# The DIY sheet is a cardboard tuck/lock prototype, not the magnetic production
+# box. The finished box target is 93 x 68 x 41 mm. The larger cut dimensions
+# below compensate for the 0.50 mm cardboard used by the prototype.
 SPEC = {
-    "base_outer": (97.0, 72.0, 43.0),
-    "closed_total": (97.0, 72.0, 45.0),
+    "base_outer": (93.0, 68.0, 41.0),
+    "cut_panel": (94.5, 68.5, 41.5),
+    "closed_total": (93.0, 68.0, 41.0),
     "tray_outer": (92.0, 67.0, 21.5),
     "base_inner": (93.0, 68.0, 41.0),
-    "board": 2.0,
-    "lid_panel": (97.0, 72.0, 2.0),
-    "front_flap": (97.0, 20.0, 2.0),
+    "board": 0.5,
+    "lid_panel": (94.5, 68.5, 0.5),
+    "front_flap": (94.5, 20.0, 0.5),
     "magnet_edge_offset": 18.0,
 }
 
@@ -50,20 +52,24 @@ MM_PER_INCH = 25.4
 
 CUT = "#101010"
 FOLD = "#101010"
+PARTIAL_CUT = "#101010"
 GRID = "#2f8fcf"
 DIM = "#333333"
 
 NET = {
-    "bottom": (SPEC["base_outer"][0], SPEC["base_outer"][1]),
-    "wall_h": SPEC["base_outer"][2],
+    "bottom": (SPEC["cut_panel"][0], SPEC["cut_panel"][1]),
+    "wall_h": SPEC["cut_panel"][2],
     "lid": (SPEC["lid_panel"][0], SPEC["lid_panel"][1]),
-    "insert_tab": (87.0, SPEC["front_flap"][1]),
-    "front_inner_flap": (87.0, 16.0),
+    "insert_tab": (SPEC["cut_panel"][0] - 10.0, SPEC["front_flap"][1]),
+    "front_inner_flap": (SPEC["cut_panel"][0] - 10.0, 16.0),
     "lid_side_flap": (20.0, 54.0),
+    # Side-wall flaps leave 1 mm clearance at each end for folding.
+    "wall_side_flap_depth": 39.5,
+    "a3_intermediate_wall": 41.5,
     "lock_tab_depth": 8.0,
     "lock_tab_h": 16.0,
-    "slot": (1.8, 22.0),
-    "slot_x_from_side": SPEC["magnet_edge_offset"],
+    "slot": (1.8, 8.0),
+    "slot_x_from_fold": 1.2,
 }
 
 
@@ -189,13 +195,15 @@ class Svg:
 '''
 
 
-def net_size() -> tuple[float, float]:
+def net_size(page_name: str) -> tuple[float, float]:
     bottom_w, bottom_d = NET["bottom"]
     wall_h = NET["wall_h"]
     front_flap_d = NET["front_inner_flap"][1]
     lid_d = NET["lid"][1]
     insert_d = NET["insert_tab"][1]
-    width = NET["lock_tab_depth"] + wall_h + bottom_w + wall_h + NET["lock_tab_depth"]
+    lock_margin = NET["lock_tab_depth"] if page_name == "a3" else 0.0
+    intermediate = NET["a3_intermediate_wall"] if page_name == "a3" else 0.0
+    width = lock_margin + wall_h + intermediate + bottom_w + intermediate + wall_h + lock_margin
     height = front_flap_d + wall_h + bottom_d + wall_h + lid_d + insert_d
     return width, height
 
@@ -206,6 +214,10 @@ def cut_line(svg: Svg, points: list[tuple[float, float]], width: float = 0.34) -
 
 def fold_line(svg: Svg, points: list[tuple[float, float]], width: float = 0.28) -> None:
     svg.line(points, stroke=FOLD, width=width, dash="3.2,2.4")
+
+
+def partial_cut_line(svg: Svg, points: list[tuple[float, float]], width: float = 0.34) -> None:
+    svg.line(points, stroke=PARTIAL_CUT, width=width, dash="1.0,1.0")
 
 
 def draw_grid(svg: Svg) -> None:
@@ -258,22 +270,40 @@ def tab_path(svg: Svg, x0: float, x1: float, y: float, depth: float, upward: boo
 
 def front_inner_flap_path(svg: Svg, x0: float, x1: float, y: float, depth: float) -> None:
     inset = 3.0
+    notch_radius = 4.0
+    bottom_y = y - depth
+    notch_x = (x0 + x1) / 2
     svg.path(
         [
             ("M", x0, y),
-            ("L", x0 + inset, y - depth),
-            ("L", x1 - inset, y - depth),
+            ("L", x0 + inset, bottom_y),
+            ("L", notch_x - notch_radius, bottom_y),
+            ("Q", notch_x, bottom_y + notch_radius, notch_x + notch_radius, bottom_y),
+            ("L", x1 - inset, bottom_y),
             ("L", x1, y),
         ],
         width=0.34,
     )
 
 
-def side_panel_path(svg: Svg, attach_x: float, outer_x: float, y0: float, y1: float, mirror: bool) -> None:
+def side_panel_path(
+    svg: Svg,
+    attach_x: float,
+    outer_x: float,
+    y0: float,
+    y1: float,
+    mirror: bool,
+    outward_locks: bool,
+) -> None:
     tab_h = NET["lock_tab_h"]
     tab_d = NET["lock_tab_depth"]
     centers = (y0 + 16.0, y1 - 16.0)
-    direction = -1.0 if mirror else 1.0
+    if outward_locks:
+        direction = -1.0 if mirror else 1.0
+    else:
+        # A4 uses tongues cut into the side-wall material rather than an
+        # extension beyond the sheet footprint.
+        direction = 1.0 if mirror else -1.0
 
     points: list[tuple[float, float]] = [(attach_x, y0), (outer_x, y0)]
     for center_y in centers:
@@ -293,8 +323,90 @@ def side_panel_path(svg: Svg, attach_x: float, outer_x: float, y0: float, y1: fl
     cut_line(svg, points)
 
 
-def rounded_slot(svg: Svg, cx: float, cy: float, width: float, height: float) -> None:
-    svg.rect(cx - width / 2, cy - height / 2, width, height, width=0.30, rx=width / 2)
+def plain_side_panel_path(
+    svg: Svg,
+    attach_x: float,
+    outer_x: float,
+    y0: float,
+    y1: float,
+) -> None:
+    cut_line(svg, [(attach_x, y0), (outer_x, y0), (outer_x, y1), (attach_x, y1)])
+
+
+def wall_side_flap_path(
+    svg: Svg,
+    attach_x: float,
+    y0: float,
+    y1: float,
+    direction: float,
+    depth: float,
+) -> None:
+    """Draw a front/back wall flap that folds into a side-wall compartment."""
+    inset = 4.0
+    outer_x = attach_x + direction * depth
+    cut_line(
+        svg,
+        [
+            (attach_x, y0),
+            (outer_x, y0 + inset),
+            (outer_x, y1 - inset),
+            (attach_x, y1),
+        ],
+    )
+    fold_line(svg, [(attach_x, y0), (attach_x, y1)])
+
+
+def intermediate_side_wall_path(
+    svg: Svg,
+    attach_x: float,
+    y0: float,
+    y1: float,
+    direction: float,
+) -> None:
+    """Draw the A3 wall panel between the bottom and the main side wall."""
+    outer_x = attach_x + direction * NET["a3_intermediate_wall"]
+    cut_line(svg, [(attach_x, y0), (outer_x, y0), (outer_x, y1), (attach_x, y1)])
+    fold_line(svg, [(attach_x, y0), (attach_x, y1)])
+    fold_line(svg, [(outer_x, y0), (outer_x, y1)])
+
+
+def rounded_slot(svg: Svg, cx: float, cy: float, width: float, height: float, partial: bool = False) -> None:
+    svg.rect(
+        cx - width / 2,
+        cy - height / 2,
+        width,
+        height,
+        stroke=PARTIAL_CUT if partial else CUT,
+        width=0.30,
+        dash="1.0,1.0" if partial else None,
+        rx=width / 2,
+    )
+
+
+def draw_a4_interlocks(
+    svg: Svg,
+    x0: float,
+    x1: float,
+    y0: float,
+    y1: float,
+    front_y: float,
+    back_y: float,
+    lid_y: float,
+    flap_depth: float,
+) -> None:
+    """Draw half-depth slits that interlock each side wall with its flaps."""
+    wall_h = NET["wall_h"]
+    side_centres = (x0 - wall_h / 2, x1 + wall_h / 2)
+    side_cut_depth = wall_h / 2
+    flap_cut_depth = flap_depth / 2
+
+    for side_x in side_centres:
+        partial_cut_line(svg, [(side_x, y0), (side_x, y0 + side_cut_depth)])
+        partial_cut_line(svg, [(side_x, y1), (side_x, y1 - side_cut_depth)])
+
+    for flap_y in ((front_y + y0) / 2, (back_y + lid_y) / 2):
+        partial_cut_line(svg, [(x0 - flap_depth, flap_y), (x0 - flap_depth + flap_cut_depth, flap_y)])
+        partial_cut_line(svg, [(x1 + flap_depth, flap_y), (x1 + flap_depth - flap_cut_depth, flap_y)])
 
 
 def panel_label(svg: Svg, x: float, y: float, w: float, h: float, title: str, size: str) -> None:
@@ -326,16 +438,19 @@ def dim_v(svg: Svg, y0: float, y1: float, x: float, text: str) -> None:
     svg.text(x + 2.4, (y0 + y1) / 2, text, size=1.9, anchor="middle", color=DIM, rotate=-90)
 
 
-def draw_template(svg: Svg) -> None:
+def draw_template(svg: Svg, page_name: str) -> None:
     bottom_w, bottom_d = NET["bottom"]
     wall_h = NET["wall_h"]
     lid_w, lid_d = NET["lid"]
     insert_w, insert_d = NET["insert_tab"]
     front_flap_w, front_flap_d = NET["front_inner_flap"]
     lock_depth = NET["lock_tab_depth"]
-    total_w, total_h = net_size()
+    total_w, total_h = net_size(page_name)
+    outward_locks = page_name == "a3"
+    lock_margin = NET["lock_tab_depth"] if outward_locks else 0.0
+    intermediate = NET["a3_intermediate_wall"] if outward_locks else 0.0
 
-    x0 = (svg.width - total_w) / 2 + lock_depth + wall_h
+    x0 = (svg.width - total_w) / 2 + lock_margin + wall_h + intermediate
     x1 = x0 + bottom_w
     y0 = (svg.height - total_h) / 2 + front_flap_d + wall_h
     y1 = y0 + bottom_d
@@ -345,16 +460,27 @@ def draw_template(svg: Svg) -> None:
     insert_y = lid_y + lid_d
     front_inner_y = front_y - front_flap_d
 
-    left_outer_x = x0 - wall_h
-    right_outer_x = x1 + wall_h
+    left_attach_x = x0 - intermediate
+    right_attach_x = x1 + intermediate
+    left_outer_x = left_attach_x - wall_h
+    right_outer_x = right_attach_x + wall_h
 
-    side_panel_path(svg, x0, left_outer_x, y0, y1, mirror=True)
-    side_panel_path(svg, x1, right_outer_x, y0, y1, mirror=False)
+    if outward_locks:
+        intermediate_side_wall_path(svg, x0, y0, y1, -1.0)
+        intermediate_side_wall_path(svg, x1, y0, y1, 1.0)
+        side_panel_path(svg, left_attach_x, left_outer_x, y0, y1, mirror=True, outward_locks=True)
+        side_panel_path(svg, right_attach_x, right_outer_x, y0, y1, mirror=False, outward_locks=True)
+    else:
+        plain_side_panel_path(svg, x0, x0 - wall_h, y0, y1)
+        plain_side_panel_path(svg, x1, x1 + wall_h, y0, y1)
 
-    cut_line(svg, [(x0, front_y), (x0, y0)])
-    cut_line(svg, [(x1, front_y), (x1, y0)])
-    cut_line(svg, [(x0, back_y), (x0, lid_y)])
-    cut_line(svg, [(x1, back_y), (x1, lid_y)])
+    # The front/back side flap is one wall span only. The A3 intermediate wall
+    # is a separate fold panel and must not make this flap twice as deep.
+    flap_depth = NET["wall_side_flap_depth"]
+    wall_side_flap_path(svg, x0, front_y, y0, -1.0, flap_depth)
+    wall_side_flap_path(svg, x1, front_y, y0, 1.0, flap_depth)
+    wall_side_flap_path(svg, x0, back_y, lid_y, -1.0, flap_depth)
+    wall_side_flap_path(svg, x1, back_y, lid_y, 1.0, flap_depth)
 
     front_flap_x0 = x0 + (bottom_w - front_flap_w) / 2
     front_flap_x1 = front_flap_x0 + front_flap_w
@@ -388,30 +514,37 @@ def draw_template(svg: Svg) -> None:
     fold_line(svg, [(x0, side_flap_y0), (x0, side_flap_y1)])
     fold_line(svg, [(x1, side_flap_y0), (x1, side_flap_y1)])
 
-    slot_w, slot_h = NET["slot"]
-    slot_offset = NET["slot_x_from_side"]
-    for panel_y in (front_y, back_y):
-        for slot_x in (x0 + slot_offset, x1 - slot_offset):
-            rounded_slot(svg, slot_x, panel_y + wall_h / 2, slot_w, slot_h)
+    if outward_locks:
+        slot_w, slot_h = NET["slot"]
+        slot_offset = NET["slot_x_from_fold"]
+        for slot_y in (y0 + 16.0, y1 - 16.0):
+            for slot_x in (x0 + slot_offset, x1 - slot_offset):
+                rounded_slot(svg, slot_x, slot_y, slot_w, slot_h, partial=True)
+    else:
+        draw_a4_interlocks(svg, x0, x1, y0, y1, front_y, back_y, lid_y, flap_depth)
 
-    panel_label(svg, x0, y0, bottom_w, bottom_d, "Bunn", "97 x 72 mm")
-    panel_label(svg, x0, front_y, bottom_w, wall_h, "Frontvegg", "97 x 43 mm")
-    panel_label(svg, x0, back_y, bottom_w, wall_h, "Bakvegg", "97 x 43 mm")
-    panel_label(svg, x0, lid_y, lid_w, lid_d, "Lokk", "97 x 72 mm")
-    panel_label(svg, left_outer_x, y0, wall_h, bottom_d, "Venstre\nsidevegg", "43 x 72 mm")
-    panel_label(svg, x1, y0, wall_h, bottom_d, "Hoyre\nsidevegg", "43 x 72 mm")
-    panel_label(svg, insert_x0, insert_y, insert_w, insert_d, "Innstikksflik", "87 x 20 mm")
-    panel_label(svg, front_flap_x0, front_inner_y, front_flap_w, front_flap_d, "Innvendig\nfrontflik", "87 x 16 mm")
+    panel_label(svg, x0, y0, bottom_w, bottom_d, "Bunn", "94.5 x 68.5 mm")
+    panel_label(svg, x0, front_y, bottom_w, wall_h, "Frontvegg", "94.5 x 41.5 mm")
+    panel_label(svg, x0, back_y, bottom_w, wall_h, "Bakvegg", "94.5 x 41.5 mm")
+    panel_label(svg, x0, lid_y, lid_w, lid_d, "Lokk", "94.5 x 68.5 mm")
+    panel_label(svg, left_outer_x, y0, wall_h, bottom_d, "Venstre\nsidevegg", "41.5 x 68.5 mm")
+    panel_label(svg, right_attach_x, y0, wall_h, bottom_d, "Hoyre\nsidevegg", "41.5 x 68.5 mm")
+    if outward_locks:
+        panel_label(svg, x0 - intermediate, y0, intermediate, bottom_d, "Mellomvegg", "41.5 x 68.5 mm")
+        panel_label(svg, x1, y0, intermediate, bottom_d, "Mellomvegg", "41.5 x 68.5 mm")
+    panel_label(svg, insert_x0, insert_y, insert_w, insert_d, "Innstikksflik", "84.5 x 20 mm")
+    panel_label(svg, front_flap_x0, front_inner_y, front_flap_w, front_flap_d, "Innvendig\nfrontflik", "84.5 x 16 mm")
 
-    dim_h(svg, x0, x1, y0 + 6.0, "97 mm")
-    dim_v(svg, y0, y1, x1 - 6.0, "72 mm")
-    dim_v(svg, front_y, y0, x0 + 6.0, "43 mm")
-    dim_v(svg, back_y, lid_y, x1 - 6.0, "43 mm")
-    dim_v(svg, lid_y, insert_y, x0 + 6.0, "72 mm")
+    dim_h(svg, x0, x1, y0 + 6.0, f"{bottom_w:.1f} mm")
+    dim_v(svg, y0, y1, x1 - 6.0, f"{bottom_d:.1f} mm")
+    dim_v(svg, front_y, y0, x0 + 6.0, f"{wall_h:.1f} mm")
+    dim_v(svg, back_y, lid_y, x1 - 6.0, f"{wall_h:.1f} mm")
+    dim_v(svg, lid_y, insert_y, x0 + 6.0, f"{lid_d:.1f} mm")
 
 
 def draw_legend(svg: Svg, page_name: str) -> None:
-    net_w, net_h = net_size()
+    net_w, net_h = net_size(page_name.lower())
+    lock_note = "outward locks + bottom slots" if page_name.lower() == "A3" else "plain side walls"
     svg.text(
         5,
         svg.height - 5,
@@ -423,16 +556,18 @@ def draw_legend(svg: Svg, page_name: str) -> None:
     svg.text(
         5,
         svg.height - 9,
-        f"Outer box target 97 x 72 x 43 mm; net footprint {net_w:.0f} x {net_h:.0f} mm",
+        f"Finished target 93 x 68 x 41 mm; {lock_note}; net {net_w:.1f} x {net_h:.1f} mm",
         size=1.85,
         anchor="start",
     )
 
     legend_x = svg.width - 57
-    cut_line(svg, [(legend_x, 9), (legend_x + 13, 9)], width=0.34)
-    svg.text(legend_x + 16, 9, "solid = cut", size=2.0, anchor="start")
-    fold_line(svg, [(legend_x, 5), (legend_x + 13, 5)], width=0.28)
-    svg.text(legend_x + 16, 5, "dashed = fold", size=2.0, anchor="start")
+    cut_line(svg, [(legend_x, 12), (legend_x + 13, 12)], width=0.34)
+    svg.text(legend_x + 16, 12, "solid = full cut", size=2.0, anchor="start")
+    fold_line(svg, [(legend_x, 8), (legend_x + 13, 8)], width=0.28)
+    svg.text(legend_x + 16, 8, "dashed = fold", size=2.0, anchor="start")
+    partial_cut_line(svg, [(legend_x, 4), (legend_x + 13, 4)], width=0.30)
+    svg.text(legend_x + 16, 4, "dotted = partial cut / slit", size=2.0, anchor="start")
 
     svg.line([(8, 8), (58, 8)], stroke=CUT, width=0.25)
     svg.line([(8, 6.5), (8, 9.5)], stroke=CUT, width=0.20)
@@ -447,37 +582,47 @@ def write_measurements() -> None:
     insert_w, insert_d = NET["insert_tab"]
     front_w, front_d = NET["front_inner_flap"]
     slot_w, slot_h = NET["slot"]
-    net_w, net_h = net_size()
+    a4_w, a4_h = net_size("a4")
+    a3_w, a3_h = net_size("a3")
     text = f"""ELEMENT WAR - DIY CARDBOARD PACKAGE TEMPLATE
 All dimensions are in millimetres. Print PNG/SVG at 100% scale.
 
-Source dimensions from physical/mesurement diagrams:
-Outer box target: {SPEC['base_outer'][0]:.1f} x {SPEC['base_outer'][1]:.1f} x {SPEC['base_outer'][2]:.1f}
-Closed production target with rigid lid: {SPEC['closed_total'][0]:.1f} x {SPEC['closed_total'][1]:.1f} x {SPEC['closed_total'][2]:.1f}
+DIY finished target:
+Outer box: {SPEC['base_outer'][0]:.1f} x {SPEC['base_outer'][1]:.1f} x {SPEC['base_outer'][2]:.1f}
+Cut panel allowance: {SPEC['cut_panel'][0]:.1f} x {SPEC['cut_panel'][1]:.1f} x {SPEC['cut_panel'][2]:.1f}
+Closed target: {SPEC['closed_total'][0]:.1f} x {SPEC['closed_total'][1]:.1f} x {SPEC['closed_total'][2]:.1f}
 Internal tray reference: {SPEC['tray_outer'][0]:.1f} x {SPEC['tray_outer'][1]:.1f} x {SPEC['tray_outer'][2]:.1f}
 
 DIY tuck/lock net panels:
-Bottom: {bottom_w:.1f} x {bottom_d:.1f}
-Front wall: {bottom_w:.1f} x {wall_h:.1f}
-Back wall: {bottom_w:.1f} x {wall_h:.1f}
-Left side wall: {wall_h:.1f} x {bottom_d:.1f}
-Right side wall: {wall_h:.1f} x {bottom_d:.1f}
+Bottom cut panel: {bottom_w:.1f} x {bottom_d:.1f}
+Front wall cut panel: {bottom_w:.1f} x {wall_h:.1f}
+Back wall cut panel: {bottom_w:.1f} x {wall_h:.1f}
+Left side wall cut panel: {wall_h:.1f} x {bottom_d:.1f}
+Right side wall cut panel: {wall_h:.1f} x {bottom_d:.1f}
 Lid: {lid_w:.1f} x {lid_d:.1f}
 Lid insert tab: {insert_w:.1f} x {insert_d:.1f}
 Inner front flap: {front_w:.1f} x {front_d:.1f}
 
-Locking details:
+Locking details (A3 only):
 Lock tab protrusion: {NET['lock_tab_depth']:.1f}
 Lock tab height: {NET['lock_tab_h']:.1f}
 Lock slot: {slot_w:.1f} x {slot_h:.1f}
-Slot centre from left/right panel edge: {NET['slot_x_from_side']:.1f}
+Lock slot centre from side-wall fold: {NET['slot_x_from_fold']:.1f}
+A4 front/back side flap depth: {NET['wall_side_flap_depth']:.1f} (1.0 mm + 1.0 mm bend clearance)
+A4 side-wall locks and bottom slots: none
+A4 interlock: 2 half-depth cuts in each side wall + 1 half-depth cut in each front/back side flap
+A4 side-wall cut depth: {NET['wall_h'] / 2:.2f}
+A4 side-flap cut depth: {NET['wall_side_flap_depth'] / 2:.2f}
+A3 intermediate side wall: {NET['a3_intermediate_wall']:.1f}
+A3 front/back side flap depth: {NET['wall_side_flap_depth']:.1f}
 
 Canvas and fit:
 A4 transparent sheet: {A4[0]:.1f} x {A4[1]:.1f}
 A3 transparent sheet: {A3[0]:.1f} x {A3[1]:.1f}
-Net footprint including lock tabs: {net_w:.1f} x {net_h:.1f}
-A4 true-scale remaining margin: {(A4[0] - net_w) / 2:.1f} mm left/right, {(A4[1] - net_h) / 2:.1f} mm top/bottom
-A3 true-scale remaining margin: {(A3[0] - net_w) / 2:.1f} mm left/right, {(A3[1] - net_h) / 2:.1f} mm top/bottom
+A4 compact net footprint: {a4_w:.1f} x {a4_h:.1f}
+A4 true-scale remaining margin: {(A4[0] - a4_w) / 2:.1f} mm left/right, {(A4[1] - a4_h) / 2:.1f} mm top/bottom
+A3 outward-lock net footprint: {a3_w:.1f} x {a3_h:.1f}
+A3 true-scale remaining margin: {(A3[0] - a3_w) / 2:.1f} mm left/right, {(A3[1] - a3_h) / 2:.1f} mm top/bottom
 
 Practical note:
 A4 technically fits but is tight for printer non-printable margins. A3 is safer
@@ -509,7 +654,7 @@ def export_png(svg_path: Path, png_path: Path) -> bool:
 def generate_page(page_name: str, size: tuple[float, float]) -> None:
     svg = Svg(*size)
     draw_grid(svg)
-    draw_template(svg)
+    draw_template(svg, page_name)
     draw_legend(svg, page_name.upper())
 
     svg_path = SVG_DIR / f"diy_package_template_{page_name}_transparent.svg"
