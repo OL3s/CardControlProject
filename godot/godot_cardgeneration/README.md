@@ -48,7 +48,7 @@ Korteditoren støtter felles kortfelt, image source path, preview, lagring og PN
 
 Deckeditoren støtter deck-ID, tilgjengelige kort på tvers av korttyper, deck entries med antall, `Save` og `Save New`. Venstre side viser lagrede kort som preview-fliser i en horisontal scrollrad med ikonknapper for å legge til én kopi eller velge flere kort. Høyre side viser deckinnhold som preview-fliser med ikonknapper for slett, dupliser og multiselect. Eksport gjøres bare fra `Export`-skjermen. En deck er et ferdig produkt med både monster- og terrengkort.
 
-`Export` er eneste eksportflate og har to eksporttyper: `Images` og `Print`. Images lager ett kortbilde eller eksporterer en deck som individuelle bilder, grid eller strip, og kan forhåndsvises uten å skrive filer. `Back Images` kan utelate baksider, legge til baksiden for hver korttype som faktisk brukes, eller legge til begge baksidetypene. Baksidene kommer først i rekkefølgen Monster og Terrain. Print lager nummererte A4- eller A3-ark med for- og baksider for fysisk utskrift og kutting. Normal print beholder samme kortplassering foran og bak. `Easy backs` grupperer forsidene etter korttype og fyller alle plassene på det tilhørende baksidearket; dette bruker mer papir og blekk, men krever ikke speiling eller nøyaktig slot-alignment. Preview genereres asynkront med fremdriftslinje og viser resultatet i en scrollbar visning. Verdiene starter fra lagrede defaults, men kan endres direkte i Export for den ene eksporten uten å lagres som nye defaults.
+`Export` er eneste eksportflate og eksporterer alltid en deck, med to eksporttyper: `Images` og `Print`. Images eksporterer en deck som individuelle bilder, grid eller strip, og kan forhåndsvises uten å skrive filer. Kort alene eksporteres ikke, siden ikoner, power-glyph og baksider er deck-eid. `Back Images` kan utelate baksider, legge til baksiden for hver korttype som faktisk brukes, eller legge til begge baksidetypene. Baksidene kommer først i rekkefølgen Monster og Terrain. Print lager nummererte A4- eller A3-ark med for- og baksider for fysisk utskrift og kutting. Normal print beholder samme kortplassering foran og bak. `Easy backs` grupperer forsidene etter korttype og fyller alle plassene på det tilhørende baksidearket; dette bruker mer papir og blekk, men krever ikke speiling eller nøyaktig slot-alignment. Preview genereres asynkront med fremdriftslinje og viser resultatet i en scrollbar visning. Verdiene starter fra lagrede defaults, men kan endres direkte i Export for den ene eksporten uten å lagres som nye defaults.
 
 Export-knappen åpner Godots file dialog i valgt/default exportmappe. Cancel avbryter eksporten, og Save eller mappevalg starter eksporten.
 
@@ -79,13 +79,13 @@ card
 
 `base_background` er et heldekkende fargelag nederst. Rammen har separate, dempede nøytraltoner for monster og terreng, men skal ikke konkurrere med elementfargene i kortbildet og ressursikonene. Målet er at spilleren skal kunne skille korttypene uten at for eksempel et gressmonster får en kraftig rød ramme.
 
-`card_image` ligger oppå basebakgrunnen. For monsterkort er dette monsterbildet, og for terrengkort er det terrengbildet. De endelige bildene finnes ikke ennå, så prosjektet bruker én felles grafittfarget placeholder for begge korttyper. Placeholderen skal ikke kunne tolkes som gress, flamme, vann eller nøytral.
+`card_image` ligger oppå basebakgrunnen. For monsterkort er dette monsterbildet, og for terrengkort er det terrengbildet. De endelige bildene finnes ikke ennå. Standardkortene peker til kanoniske PNG-plasser under `assets/artwork/monsters/` og `assets/artwork/terrain/`, slik at manglende masters er synlige og et korrekt navngitt bilde tas i bruk uten kodeendringer.
 
 Et tomt image source path viser den vanlige, ensfargede placeholderen og betyr at kortet ikke har fått bilde ennå. Et path som er satt, men ikke kan finnes eller lastes, viser i stedet en egen crossed-image-placeholder. Dermed er det synlig i både editor og eksport om bildet mangler med vilje eller pathen er ugyldig.
 
 `panels` ligger oppå kortbildet og samler spillinformasjon. Panelene skal gjøre ikoner og eventuell tekst lesbare uavhengig av hvor detaljert kortbildet er.
 
-`icons_and_text` inneholder ressursikoner, styrkeikoner, piler, korttekst og annen spillinformasjon. Elementresources peker til SVG-ikonene under `assets/icons/elements/`, og renderer faller tilbake til enkle symboler dersom en texture ikke kan lastes.
+`icons_and_text` inneholder ressursikoner, styrkeikoner, piler, korttekst og annen spillinformasjon. Element- og power-SVG-er er glyph-only under `assets/icons/`; renderer tegner medallionfelt og outline rundt glyphen. Ikoner er deck-scoped: standalone-kort viser solide farge-placeholders, mens deck previews og exports bruker deckens valgte element- og power-glyphs.
 
 Monsterets eksplisitte element vises øverst til høyre. Terrengets eksplisitte kjerneelement vises stort i sentrum, separat fra ressursmedaljongene i de faste hjørnene. Detaljert plassering og visuell stil følger [felles spesifikasjon for kortutseende](../../shared/docs/card-appearance.md).
 
@@ -194,7 +194,6 @@ Planlagte kommandoer:
 * `duplicate-deck`
 * `validate-cards`
 * `validate-deck`
-* `render-card`
 * `export-deck`
 * `export-sheet`
 * `export-diy`
@@ -218,7 +217,6 @@ Første implementerte CLI-funksjoner:
 * `duplicate-deck` kopierer en deck til en vanlig user deck resource.
 * `validate-cards` validerer lagrede kortresources.
 * `validate-deck` validerer en lagret eller innebygd deck.
-* `render-card` renderer ett kort til PNG.
 * `export-deck` renderer en kortstokk til PNG som enkeltbilder, samlet grid eller lang strip.
 * `export-sheet` renderer A4/A3-printark med egne front- og baksideark, valgbar DPI, valgfri bakside-speiling og valgfri 10 cm målelinje.
 * `export-diy` renderer både A4- og A3-printark for en kortstokk, med samme DPI, bakside-speiling og målelinjevalg.

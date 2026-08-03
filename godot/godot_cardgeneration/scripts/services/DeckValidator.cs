@@ -86,6 +86,11 @@ public sealed class DeckValidator
 
         foreach (var elementType in Enum.GetValues<ElementType>())
         {
+            if (elementType == ElementType.Any)
+            {
+                continue;
+            }
+
             var elementName = elementType.ToString().ToLowerInvariant();
             var elementMonsters = monsters.Where(monster => monster.Id.StartsWith($"default_monster_{elementName}_", StringComparison.Ordinal)).ToArray();
             var tier1Count = elementMonsters.Count(monster => monster.Id.StartsWith($"default_monster_{elementName}_1_", StringComparison.Ordinal));

@@ -40,9 +40,9 @@ Dokumentasjonen skrives på norsk. Kode, filnavn, mappenavn, kort-ID-er og tekni
 * `shared/docs/terrain-cards.md` definerer terrengkortene.
 * `shared/docs/monster-cards.md` definerer monsterkortene.
 * `shared/docs/logo-concept.md` definerer den delte logo- og ikonretningen for Conquora-utgaver.
-* `shared/docs/images/svg/` inneholder SVG-kilder for kort.
+* `shared/docs/images/svg/` inneholder SVG-kilder for kortbaksider.
 * `shared/docs/images/svg/icons/` inneholder SVG-ikoner brukt av kortkildene.
-* `shared/docs/images/png/` inneholder genererte PNG-previewbilder.
+* `shared/docs/images/png/` inneholder PNG-previewbilder av kortbaksidene.
 
 ## Direkte Dokumentlenker
 

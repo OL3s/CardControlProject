@@ -53,24 +53,19 @@ public partial class ExportCenterScreen : CardToolScreen
         _decks = CardToolService.LoadAllDecks();
         _cards = CardToolService.LoadAllCards();
         var config = CardToolService.LoadConfig();
-        var content = BuildScreen("Export", "Export a saved card or deck. Values start from Settings defaults, but can be changed here for this export only.");
+        var content = BuildScreen("Export", "Export a saved deck. Card rendering uses the deck's icons, power glyph and backs.");
 
-        if (_decks.Count == 0 && _cards.Count == 0)
+        if (_decks.Count == 0)
         {
             content.AddChild(new Label
             {
-                Text = "No saved cards or decks found. Create content before exporting.",
+                Text = "No saved decks found. Create a deck before exporting.",
                 AutowrapMode = TextServer.AutowrapMode.WordSmart
             });
             return;
         }
 
-        var targetOptions = BuildTargetOptions();
-        _targetType = AddOptionButton(content, "Export Target", targetOptions);
-        if (_decks.Count == 0 && _cards.Count > 0)
-        {
-            SelectOption(_targetType, "Card");
-        }
+        _targetType = AddOptionButton(content, "Export Target", ["Deck"]);
 
         _targetType.ItemSelected += index => RunGuiAction("Change export target", RefreshVisibleOptions, $"index={index}; target={GetSelectedText(_targetType)}");
         _deck = AddDeckOption(content, config.DefaultDeckId);
@@ -147,7 +142,7 @@ public partial class ExportCenterScreen : CardToolScreen
         content.AddChild(_progressLabel);
 
         RefreshVisibleOptions();
-        SetStatus($"Ready to export {_cards.Count} card(s) and {_decks.Count} deck(s).");
+        SetStatus($"Ready to export {_decks.Count} deck(s).");
     }
 
     private void RefreshDefaultsAndBuildUi()
@@ -265,21 +260,20 @@ public partial class ExportCenterScreen : CardToolScreen
 
     private void RefreshVisibleOptions()
     {
-        var isCardExport = GetSelectedText(_targetType) == "Card";
-        _cardLabel.Visible = isCardExport;
-        _card.Visible = isCardExport;
-        _deckLabel.Visible = !isCardExport;
-        _deck.Visible = !isCardExport;
+        _cardLabel.Visible = false;
+        _card.Visible = false;
+        _deckLabel.Visible = true;
+        _deck.Visible = true;
         _exportTypeLabel.Visible = true;
         _exportType.Visible = true;
 
         var isPrint = GetSelectedText(_exportType) == "Print";
         _imageBackOptions.Visible = !isPrint;
-        _deckImageOptions.Visible = !isCardExport && !isPrint;
+        _deckImageOptions.Visible = !isPrint;
         _printOptions.Visible = isPrint;
         _previewButton.Visible = true;
 
-        if (isCardExport || isPrint)
+        if (isPrint)
         {
             return;
         }
@@ -363,21 +357,6 @@ public partial class ExportCenterScreen : CardToolScreen
         return option;
     }
 
-    private string[] BuildTargetOptions()
-    {
-        if (_decks.Count > 0 && _cards.Count > 0)
-        {
-            return ["Deck", "Card"];
-        }
-
-        if (_cards.Count > 0)
-        {
-            return ["Card"];
-        }
-
-        return ["Deck"];
-    }
-
     private void ExportSelected()
     {
         ResetProgress();
@@ -433,34 +412,13 @@ public partial class ExportCenterScreen : CardToolScreen
     {
         var outputPath = _selectedOutputPath;
         Action<ExportProgress> progress = ReportExportProgress;
-        var isCardExport = GetSelectedText(_targetType) == "Card";
         CardDeckResource? selectedDeck = null;
-        if (isCardExport)
+        if (_deck.Selected < 0 || _deck.Selected >= _decks.Count)
         {
-            if (_card.Selected < 0 || _card.Selected >= _cards.Count)
-            {
-                SetStatus("Select a card before exporting.", true);
-                return null;
-            }
-
-            var selectedCard = _cards[_card.Selected];
-            if (GetSelectedText(_exportType) == "Images" && GetImageBackMode() == ImageBackMode.None)
-            {
-                return () => CardToolService.RenderCard(selectedCard, ResolveSingleOutputPath(outputPath), progress);
-            }
-
-            selectedDeck = CreateSingleCardDeck(selectedCard);
+            SetStatus("Select a deck before exporting.", true);
+            return null;
         }
-        else
-        {
-            if (_deck.Selected < 0 || _deck.Selected >= _decks.Count)
-            {
-                SetStatus("Select a deck before exporting.", true);
-                return null;
-            }
-
-            selectedDeck = _decks[_deck.Selected];
-        }
+        selectedDeck = _decks[_deck.Selected];
 
         var exportType = GetSelectedText(_exportType);
         if (exportType == "Print")
@@ -475,11 +433,11 @@ public partial class ExportCenterScreen : CardToolScreen
             return () => CardToolService.ExportSheet(selectedDeck, sheetOutputPath, paper, dpi, backMirror, includeMeasurementGuide, progress, easyPrintBacks);
         }
 
-        var layout = isCardExport ? "individual" : GetSelectedText(_layout);
+        var layout = GetSelectedText(_layout);
         var columns = (int)_columns.Value;
         var spacing = (int)_spacing.Value;
         var deckOutputPath = layout == "individual"
-            ? ResolveMultiOutputPath(outputPath, isCardExport ? $"{selectedDeck.Id}_images" : $"{selectedDeck.Id}_individual")
+            ? ResolveMultiOutputPath(outputPath, $"{selectedDeck.Id}_individual")
             : ResolveSingleOutputPath(outputPath);
         var backMode = GetImageBackMode();
         return () => CardToolService.ExportDeck(selectedDeck, deckOutputPath, "png", layout, columns, spacing, progress, backMode);
@@ -520,37 +478,7 @@ public partial class ExportCenterScreen : CardToolScreen
     private async Task ShowImagePreview()
     {
         IReadOnlyList<ImagePreviewItem>? previews;
-        if (GetSelectedText(_targetType) == "Card")
-        {
-            if (_card.Selected < 0 || _card.Selected >= _cards.Count)
-            {
-                SetStatus("Select a card before previewing image output.", true);
-                return;
-            }
 
-            var card = _cards[_card.Selected];
-            var backMode = GetImageBackMode();
-            if (backMode == ImageBackMode.None)
-            {
-                previews = await Task.Run(() => (IReadOnlyList<ImagePreviewItem>)[new ImagePreviewItem(card.Id, CardToolService.RenderCardPreview(card, ReportExportProgress))]);
-            }
-            else
-            {
-                var deck = CreateSingleCardDeck(card);
-                var result = await Task.Run(() =>
-                {
-                    var items = CardToolService.RenderDeckImagePreviews(deck, "individual", 1, 0, out var error, ReportExportProgress, backMode);
-                    return (Items: items, Error: error);
-                });
-                previews = result.Items;
-                if (previews is null)
-                {
-                    SetStatus(result.Error, true);
-                    return;
-                }
-            }
-        }
-        else
         {
             if (_deck.Selected < 0 || _deck.Selected >= _decks.Count)
             {
@@ -670,17 +598,6 @@ public partial class ExportCenterScreen : CardToolScreen
 
     private CardDeckResource? GetSelectedPreviewDeck()
     {
-        if (GetSelectedText(_targetType) == "Card")
-        {
-            if (_card.Selected < 0 || _card.Selected >= _cards.Count)
-            {
-                SetStatus("Select a card before previewing print output.", true);
-                return null;
-            }
-
-            return CreateSingleCardDeck(_cards[_card.Selected]);
-        }
-
         if (_deck.Selected < 0 || _deck.Selected >= _decks.Count)
         {
             SetStatus("Select a deck before previewing print output.", true);
@@ -688,17 +605,6 @@ public partial class ExportCenterScreen : CardToolScreen
         }
 
         return _decks[_deck.Selected];
-    }
-
-    private static CardDeckResource CreateSingleCardDeck(CardResource card)
-    {
-        var deck = new CardDeckResource
-        {
-            Id = card.Id,
-            Entries = [new CardDeckEntryResource { Card = card, Count = 1 }]
-        };
-        deck.SetBackImageTexture(card.CardType, card.BackImageTexture);
-        return deck;
     }
 
     private void UpdateBackMirrorAvailability()
@@ -847,21 +753,11 @@ public partial class ExportCenterScreen : CardToolScreen
             return ExportOutputMode.Folder;
         }
 
-        if (GetSelectedText(_targetType) == "Card")
-        {
-            return GetImageBackMode() == ImageBackMode.None ? ExportOutputMode.SaveFile : ExportOutputMode.Folder;
-        }
-
         return GetSelectedText(_layout) == "individual" ? ExportOutputMode.Folder : ExportOutputMode.SaveFile;
     }
 
     private string GetDefaultOutputFileName()
     {
-        if (GetSelectedText(_targetType) == "Card" && _card.Selected >= 0 && _card.Selected < _cards.Count)
-        {
-            return $"{SanitizeFileName(_cards[_card.Selected].Id)}.png";
-        }
-
         if (_deck.Selected >= 0 && _deck.Selected < _decks.Count)
         {
             return $"{SanitizeFileName(_decks[_deck.Selected].Id)}_{GetSelectedText(_layout)}.png";

@@ -18,9 +18,14 @@ public partial class DeckEditorScreen : CardToolScreen
     private IReadOnlyList<CardResource> _availableCards = Array.Empty<CardResource>();
     private string _originalResourcePath = string.Empty;
     private CardType _backImageTargetType = CardType.Monster;
+    private ElementType _elementIconTargetType = ElementType.Neutral;
     private LineEdit _id = null!;
     private HBoxContainer _backPreviewRow = null!;
+    private HBoxContainer _elementIconPreviewRow = null!;
+    private HBoxContainer _powerIconPreviewRow = null!;
     private FileDialog _backImageDialog = null!;
+    private FileDialog _elementIconDialog = null!;
+    private FileDialog _powerIconDialog = null!;
     private FileDialog _saveAsDialog = null!;
     private VBoxContainer _entriesPanel = null!;
     private VBoxContainer _availableCardsPanel = null!;
@@ -71,6 +76,10 @@ public partial class DeckEditorScreen : CardToolScreen
         _id = AddLineEdit(form, "Deck ID", _editingDeck.Id);
         AddSectionHeader(form, "Deck Back Images");
         AddDeckBackEditor(form);
+        AddSectionHeader(form, "Element Glyph Images");
+        AddElementIconEditor(form);
+        AddSectionHeader(form, "Power Glyph Image");
+        AddPowerIconEditor(form);
 
         AddSaveAsDialog();
 
@@ -103,6 +112,8 @@ public partial class DeckEditorScreen : CardToolScreen
         RenderAvailableCards();
         RenderEntries();
         RefreshBackPreview();
+        RefreshElementIconPreview();
+        RefreshPowerIconPreview();
         AddSectionHeader(content, "Save Options");
         AddEditorActions(content, isNewDeck);
         SetStatus($"Loaded {_availableCards.Count} available card(s). Deck has {GetEntryCardCount()} card(s).");
@@ -198,6 +209,82 @@ public partial class DeckEditorScreen : CardToolScreen
         };
         _backImageDialog.FileSelected += path => RunGuiAction("Selected deck back image file", () => OnBackImageSelected(path), $"path={path}");
         AddChild(_backImageDialog);
+    }
+
+    private void AddElementIconEditor(VBoxContainer form)
+    {
+        var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ShrinkBegin };
+        form.AddChild(panel);
+
+        var margin = new MarginContainer();
+        foreach (var side in new[] { "left", "right", "top", "bottom" })
+        {
+            margin.AddThemeConstantOverride($"margin_{side}", 8);
+        }
+
+        panel.AddChild(margin);
+        var layout = new VBoxContainer();
+        layout.AddThemeConstantOverride("separation", 8);
+        margin.AddChild(layout);
+
+        _elementIconPreviewRow = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        _elementIconPreviewRow.AddThemeConstantOverride("separation", 10);
+        layout.AddChild(_elementIconPreviewRow);
+
+        var actions = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        actions.AddThemeConstantOverride("separation", 8);
+        layout.AddChild(actions);
+        AddIconButton(actions, ClearIconPath, "Use default element glyphs", ClearElementIcons);
+
+        _elementIconDialog = new FileDialog
+        {
+            Access = FileDialog.AccessEnum.Filesystem,
+            FileMode = FileDialog.FileModeEnum.OpenFile,
+            Title = "Select Element Glyph",
+            Filters = [
+                "*.png, *.jpg, *.jpeg, *.webp, *.svg ; Supported Images",
+                "*.png ; PNG",
+                "*.jpg, *.jpeg ; JPEG",
+                "*.webp ; WebP",
+                "*.svg ; SVG"
+            ]
+        };
+        _elementIconDialog.FileSelected += path => RunGuiAction("Selected element glyph", () => OnElementIconSelected(path), $"path={path}");
+        AddChild(_elementIconDialog);
+    }
+
+    private void AddPowerIconEditor(VBoxContainer form)
+    {
+        var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ShrinkBegin };
+        form.AddChild(panel);
+        var margin = new MarginContainer();
+        foreach (var side in new[] { "left", "right", "top", "bottom" })
+        {
+            margin.AddThemeConstantOverride($"margin_{side}", 8);
+        }
+
+        panel.AddChild(margin);
+        var layout = new VBoxContainer();
+        layout.AddThemeConstantOverride("separation", 8);
+        margin.AddChild(layout);
+        _powerIconPreviewRow = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        layout.AddChild(_powerIconPreviewRow);
+
+        _powerIconDialog = new FileDialog
+        {
+            Access = FileDialog.AccessEnum.Filesystem,
+            FileMode = FileDialog.FileModeEnum.OpenFile,
+            Title = "Select Power Glyph",
+            Filters = [
+                "*.png, *.jpg, *.jpeg, *.webp, *.svg ; Supported Images",
+                "*.png ; PNG",
+                "*.jpg, *.jpeg ; JPEG",
+                "*.webp ; WebP",
+                "*.svg ; SVG"
+            ]
+        };
+        _powerIconDialog.FileSelected += path => RunGuiAction("Selected power glyph", () => OnPowerIconSelected(path), $"path={path}");
+        AddChild(_powerIconDialog);
     }
 
     private void RenderAvailableCards()
@@ -366,7 +453,9 @@ public partial class DeckEditorScreen : CardToolScreen
             card,
             minimumSize: new Vector2(130, 182),
             renderSize: new Vector2I(130, 182),
-            deferRender: true));
+            deferRender: true,
+            elementIconOverrides: _editingDeck.GetElementIconOverrides(),
+            powerIconOverride: _editingDeck.PowerIconTexture));
         stack.AddChild(new Label
         {
             Text = card.Id,
@@ -536,6 +625,8 @@ public partial class DeckEditorScreen : CardToolScreen
         RenderAvailableCards();
         RenderEntries();
         RefreshBackPreview();
+        RefreshElementIconPreview();
+        RefreshPowerIconPreview();
         SetStatus($"Refreshed deck editor. Deck has {GetEntryCardCount()} card(s).");
     }
 
@@ -629,6 +720,72 @@ public partial class DeckEditorScreen : CardToolScreen
         SetStatus("Using default backs.");
     }
 
+    private void OpenElementIconDialog(ElementType elementType)
+    {
+        _elementIconTargetType = elementType;
+        _elementIconDialog.PopupCenteredRatio(0.72f);
+    }
+
+    private void OnElementIconSelected(string filePath)
+    {
+        var image = Image.LoadFromFile(filePath);
+        if (image is null)
+        {
+            SetStatus($"Could not load {_elementIconTargetType} element glyph '{filePath}'.", true);
+            return;
+        }
+
+        _editingDeck.SetElementIconTexture(_elementIconTargetType, ImageTexture.CreateFromImage(image));
+        image.Dispose();
+        RefreshElementIconPreview();
+        SetStatus($"Loaded {_elementIconTargetType} element glyph '{filePath}'.");
+    }
+
+    private void ClearElementIcons()
+    {
+        foreach (var elementType in Enum.GetValues<ElementType>())
+        {
+            _editingDeck.SetElementIconTexture(elementType, null);
+        }
+
+        RefreshElementIconPreview();
+        SetStatus("Using default element glyphs.");
+    }
+
+    private void ClearElementIcon(ElementType elementType)
+    {
+        _editingDeck.SetElementIconTexture(elementType, null);
+        RefreshElementIconPreview();
+        SetStatus($"Using the default {elementType} element glyph.");
+    }
+
+    private void OpenPowerIconDialog()
+    {
+        _powerIconDialog.PopupCenteredRatio(0.72f);
+    }
+
+    private void OnPowerIconSelected(string filePath)
+    {
+        var image = Image.LoadFromFile(filePath);
+        if (image is null)
+        {
+            SetStatus($"Could not load power glyph '{filePath}'.", true);
+            return;
+        }
+
+        _editingDeck.SetPowerIconTexture(ImageTexture.CreateFromImage(image));
+        image.Dispose();
+        RefreshPowerIconPreview();
+        SetStatus($"Loaded power glyph '{filePath}'.");
+    }
+
+    private void ClearPowerIcon()
+    {
+        _editingDeck.SetPowerIconTexture(null);
+        RefreshPowerIconPreview();
+        SetStatus("Using the power placeholder.");
+    }
+
     private void RefreshBackPreview()
     {
         if (_backPreviewRow is null)
@@ -639,6 +796,79 @@ public partial class DeckEditorScreen : CardToolScreen
         ClearContainer(_backPreviewRow);
         AddBackPreview(_backPreviewRow, "Monster", CardType.Monster);
         AddBackPreview(_backPreviewRow, "Terrain", CardType.Terrain);
+    }
+
+    private void RefreshElementIconPreview()
+    {
+        if (_elementIconPreviewRow is null)
+        {
+            return;
+        }
+
+        ClearContainer(_elementIconPreviewRow);
+        foreach (var elementType in Enum.GetValues<ElementType>())
+        {
+            AddElementIconPreview(_elementIconPreviewRow, elementType);
+        }
+    }
+
+    private void RefreshPowerIconPreview()
+    {
+        if (_powerIconPreviewRow is null)
+        {
+            return;
+        }
+
+        ClearContainer(_powerIconPreviewRow);
+        var column = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        column.AddThemeConstantOverride("separation", 4);
+        _powerIconPreviewRow.AddChild(column);
+
+        var element = CardToolService.LoadAllElements().First(item => item.ElementType == ElementType.Neutral);
+        var card = new MonsterCardResource
+        {
+            Id = "power_icon_preview",
+            Element = element,
+            Requirements = [],
+            BasePower = 1,
+            PowerBonuses = []
+        };
+        column.AddChild(CardPreviewControl.Create(
+            card,
+            minimumSize: new Vector2(180, 252),
+            renderSize: new Vector2I(180, 252),
+            useCache: false,
+            elementIconOverrides: _editingDeck.GetElementIconOverrides(),
+            powerIconOverride: _editingDeck.PowerIconTexture));
+        column.AddChild(new Label { Text = "Power", HorizontalAlignment = HorizontalAlignment.Center });
+        var actions = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        column.AddChild(actions);
+        AddIconButton(actions, BrowseIconPath, "Choose power glyph", OpenPowerIconDialog, new Vector2(36, 34));
+        AddIconButton(actions, ClearIconPath, "Use power placeholder", ClearPowerIcon, new Vector2(36, 34));
+    }
+
+    private void AddElementIconPreview(HBoxContainer parent, ElementType elementType)
+    {
+        var column = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        column.AddThemeConstantOverride("separation", 4);
+        parent.AddChild(column);
+
+        var element = CardToolService.LoadAllElements().First(item => item.ElementType == elementType);
+        var card = new TerrainCardResource { Id = $"{elementType}_element_preview", Element = element };
+        column.AddChild(CardPreviewControl.Create(
+            card,
+            minimumSize: new Vector2(72, 101),
+            renderSize: new Vector2I(72, 101),
+            useCache: false,
+            elementIconOverrides: _editingDeck.GetElementIconOverrides(),
+            powerIconOverride: _editingDeck.PowerIconTexture));
+        column.AddChild(new Label
+        {
+            Text = elementType.ToString(),
+            HorizontalAlignment = HorizontalAlignment.Center
+        });
+        AddIconButton(column, BrowseIconPath, $"Choose {elementType} element glyph", () => OpenElementIconDialog(elementType), new Vector2(36, 34));
+        AddIconButton(column, ClearIconPath, $"Use default {elementType} element glyph", () => ClearElementIcon(elementType), new Vector2(36, 34));
     }
 
     private void AddBackPreview(HBoxContainer parent, string title, CardType cardType)
@@ -688,6 +918,11 @@ public partial class DeckEditorScreen : CardToolScreen
             Id = source.Id,
             MonsterBackImageTexture = source.MonsterBackImageTexture,
             TerrainBackImageTexture = source.TerrainBackImageTexture,
+            NeutralElementIconTexture = source.NeutralElementIconTexture,
+            GrassElementIconTexture = source.GrassElementIconTexture,
+            FlameElementIconTexture = source.FlameElementIconTexture,
+            WaterElementIconTexture = source.WaterElementIconTexture,
+            PowerIconTexture = source.PowerIconTexture,
             Entries = (source.Entries ?? Array.Empty<CardDeckEntryResource>())
                 .Select(entry => new CardDeckEntryResource
                 {

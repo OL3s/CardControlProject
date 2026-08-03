@@ -31,7 +31,7 @@ public partial class SavedCardsScreen : CardToolScreen
     {
         _cards = CardToolService.LoadAllCards();
 
-        var content = BuildScreen("Cards", "Browse card resources, preview them, edit them, or export a single card.");
+        var content = BuildScreen("Cards", "Browse card resources, preview them, and edit their rules, stats and background images. Export is deck-only.");
 
         var toolbar = new HBoxContainer
         {

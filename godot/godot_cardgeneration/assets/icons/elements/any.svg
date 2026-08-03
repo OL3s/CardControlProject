@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Any element glyph</title>
+  <desc id="desc">Three interwoven flame, grass and water forms representing any element.</desc>
+  <path d="M64 17 C78 34 86 48 82 61 C79 72 70 77 61 73 C51 69 48 59 52 49 C55 40 61 33 64 17 Z" fill="#c94e36" stroke="#342b39" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M25 91 C28 68 39 53 54 52 C64 51 71 59 68 69 C65 81 48 94 25 91 Z" fill="#4f945b" stroke="#342b39" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M103 91 C80 94 63 81 60 69 C57 59 64 51 74 52 C89 53 100 68 103 91 Z" fill="#4389ad" stroke="#342b39" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M64 42 C71 53 75 62 72 70 C69 77 61 79 55 74 C50 70 51 63 55 57 C58 52 61 48 64 42 Z" fill="#ef9a4b" stroke="#8b3829" stroke-width="3"/>
+  <path d="M35 83 C47 75 55 68 63 59 M93 83 C81 75 73 68 65 59" fill="none" stroke="#c7e2bd" stroke-width="4" stroke-linecap="round"/>
+</svg>

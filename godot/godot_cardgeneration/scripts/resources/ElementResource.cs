@@ -15,6 +15,11 @@ public partial class ElementResource : Resource
         return ElementType == ElementType.Neutral;
     }
 
+    public bool IsAny()
+    {
+        return ElementType == ElementType.Any;
+    }
+
     public bool IsStrongAgainst(ElementResource? other)
     {
         return GetMatchupAgainst(other) == ElementMatchup.Strong;
@@ -28,6 +33,11 @@ public partial class ElementResource : Resource
     public ElementMatchup GetMatchupAgainst(ElementResource? other)
     {
         if (other is null)
+        {
+            return ElementMatchup.Neutral;
+        }
+
+        if (ElementType == ElementType.Any || other.ElementType == ElementType.Any)
         {
             return ElementMatchup.Neutral;
         }

@@ -74,7 +74,6 @@ public sealed class CliRunner
             "duplicate-deck" => _cardToolService.DuplicateDeck(options.DeckId, options.NewId),
             "validate-cards" => _cardToolService.ValidateCards(),
             "validate-deck" => _cardToolService.ValidateDeck(options.DeckId),
-            "render-card" => _cardToolService.RenderCard(options.CardId, options.OutputPath),
             "export-deck" => _cardToolService.ExportDeck(options.DeckId, options.OutputPath, options.Format, options.Layout, options.Columns, options.Spacing, ParseImageBackMode(options.BackImages)),
             "export-sheet" => _cardToolService.ExportSheet(options.DeckId, options.OutputPath, options.Paper, options.Dpi, options.BackMirror, options.IncludeMeasurementGuide, options.EasyPrintBacks),
             "export-diy" => _cardToolService.ExportDiy(options.DeckId, options.OutputPath, options.Dpi, options.BackMirror, options.IncludeMeasurementGuide),
@@ -106,7 +105,6 @@ public sealed class CliRunner
           duplicate-deck --deck <deck_id> [--new-id <deck_id>]
           validate-cards
           validate-deck --deck <deck_id>
-          render-card --card <card_id> --output <path>
           export-deck --deck <deck_id> --format png --layout individual --output <path>
           export-sheet --deck <deck_id> --paper a4 --dpi 600 --back-mirror none --output <path>
           export-diy --deck <deck_id> --dpi 600 --output <path>
@@ -124,7 +122,6 @@ public sealed class CliRunner
           --duplicate-card <card_id>
           --delete-deck <deck_id>
           --duplicate-deck <deck_id>
-          --render-card <card_id>
           --export-deck <deck_id>
           --export-sheet <deck_id>
           --export-diy <deck_id>

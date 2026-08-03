@@ -32,22 +32,73 @@ public partial class DeckPreviewScreen : CardToolScreen
 
     private void AddBackPreviewRow(VBoxContainer content)
     {
-        content.AddChild(new Label
+        var rowScroll = new ScrollContainer
         {
-            Text = "Card Backs",
-            HorizontalAlignment = HorizontalAlignment.Center
-        });
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Auto,
+            VerticalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            CustomMinimumSize = new Vector2(0, 150)
+        };
+        content.AddChild(rowScroll);
 
         var backs = new HBoxContainer
         {
             Alignment = BoxContainer.AlignmentMode.Center,
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            CustomMinimumSize = new Vector2(420, 0)
         };
         backs.AddThemeConstantOverride("separation", 18);
-        content.AddChild(backs);
+        rowScroll.AddChild(backs);
 
         AddBackPreview(backs, "Monster", new MonsterCardResource { Id = "monster_back_preview" });
         AddBackPreview(backs, "Terrain", new TerrainCardResource { Id = "terrain_back_preview" });
+        AddDeckGlyphPreview(backs);
+    }
+
+    private void AddDeckGlyphPreview(HBoxContainer parent)
+    {
+        var separator = new VSeparator
+        {
+            CustomMinimumSize = new Vector2(12, 120)
+        };
+        parent.AddChild(separator);
+
+        var glyphs = new HBoxContainer
+        {
+            Alignment = BoxContainer.AlignmentMode.Center
+        };
+        glyphs.AddThemeConstantOverride("separation", 10);
+        parent.AddChild(glyphs);
+
+        AddDeckGlyph(glyphs, "Neutral", _deck?.NeutralElementIconTexture);
+        AddDeckGlyph(glyphs, "Grass", _deck?.GrassElementIconTexture);
+        AddDeckGlyph(glyphs, "Flame", _deck?.FlameElementIconTexture);
+        AddDeckGlyph(glyphs, "Water", _deck?.WaterElementIconTexture);
+        AddDeckGlyph(glyphs, "Any", _deck?.AnyElementIconTexture);
+        AddDeckGlyph(glyphs, "Power", _deck?.PowerIconTexture);
+    }
+
+    private static void AddDeckGlyph(HBoxContainer parent, string title, Texture2D? texture)
+    {
+        var column = new VBoxContainer
+        {
+            CustomMinimumSize = new Vector2(58, 0),
+            Alignment = BoxContainer.AlignmentMode.Center
+        };
+        column.AddThemeConstantOverride("separation", 5);
+        parent.AddChild(column);
+        column.AddChild(new TextureRect
+        {
+            Texture = texture,
+            CustomMinimumSize = new Vector2(52, 52),
+            ExpandMode = TextureRect.ExpandModeEnum.FitWidthProportional,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            TooltipText = $"Deck {title} glyph"
+        });
+        column.AddChild(new Label
+        {
+            Text = title,
+            HorizontalAlignment = HorizontalAlignment.Center
+        });
     }
 
     private void AddBackPreview(HBoxContainer parent, string title, CardResource card)
@@ -136,7 +187,7 @@ public partial class DeckPreviewScreen : CardToolScreen
         }
     }
 
-    private static PanelContainer CreateCardTile(CardResource card)
+    private PanelContainer CreateCardTile(CardResource card)
     {
         var panel = new PanelContainer
         {
@@ -161,7 +212,9 @@ public partial class DeckPreviewScreen : CardToolScreen
             card,
             minimumSize: new Vector2(126, 176),
             renderSize: new Vector2I(126, 176),
-            deferRender: true));
+            deferRender: true,
+            elementIconOverrides: _deck?.GetElementIconOverrides(),
+            powerIconOverride: _deck?.PowerIconTexture));
         stack.AddChild(new Label
         {
             Text = card.Id,

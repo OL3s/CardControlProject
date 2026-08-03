@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using CardGeneration.App;
 using CardGeneration.Rendering;
 using CardGeneration.Resources;
 using CardGeneration.Resources.Enums;
@@ -28,6 +29,8 @@ public partial class CardPreviewControl : TextureRect
     private bool _waitingForVisibility;
     private int _renderVersion;
     private Vector2I _renderSize = new(CardImageRenderer.PreviewWidth, CardImageRenderer.PreviewHeight);
+    private IReadOnlyDictionary<ElementType, Texture2D>? _elementIconOverrides;
+    private Texture2D? _powerIconOverride;
 
     public static CardPreviewControl Create(
         CardResource? card = null,
@@ -35,7 +38,9 @@ public partial class CardPreviewControl : TextureRect
         Vector2? minimumSize = null,
         Vector2I? renderSize = null,
         bool deferRender = false,
-        bool useCache = true)
+        bool useCache = true,
+        IReadOnlyDictionary<ElementType, Texture2D>? elementIconOverrides = null,
+        Texture2D? powerIconOverride = null)
     {
         _previewScene ??= ResourceLoader.Load<PackedScene>(PreviewScenePath);
         var preview = _previewScene?.Instantiate<CardPreviewControl>() ?? new CardPreviewControl();
@@ -48,6 +53,8 @@ public partial class CardPreviewControl : TextureRect
         preview._renderSize = renderSize ?? ToRenderSize(minimumSize);
         preview._deferRender = deferRender;
         preview._useCache = useCache;
+        preview._elementIconOverrides = elementIconOverrides;
+        preview._powerIconOverride = powerIconOverride;
         preview.SetCard(card, showBack);
         return preview;
     }
@@ -237,7 +244,7 @@ public partial class CardPreviewControl : TextureRect
 
         var image = _showBack
             ? CardImageRenderer.RenderBack(_card.CardType, _card.BackImageTexture, size)
-            : CardImageRenderer.Render(_card, size);
+            : CardImageRenderer.Render(_card, size, _elementIconOverrides, _powerIconOverride);
 
         return image;
     }
@@ -261,6 +268,8 @@ public partial class CardPreviewControl : TextureRect
             _card.CardType,
             _card.Element?.ElementType.ToString() ?? "missing-element",
             GetCardContentSignature(_card),
+            GetElementIconOverridesSignature(),
+            GetTextureSignature(_powerIconOverride),
             _showBack ? "back" : "front",
             _renderSize.X,
             _renderSize.Y);
@@ -270,10 +279,12 @@ public partial class CardPreviewControl : TextureRect
     {
         var common = string.Join(
             ':',
-            card.CardImageSourcePath,
-            card.CardImageTexture?.GetInstanceId() ?? 0,
-            card.BackImageTexture?.GetInstanceId() ?? 0,
-            card.Element?.IconTexture?.GetInstanceId() ?? 0);
+            GetSourceSignature(card.CardImageSourcePath),
+            GetTextureSignature(card.CardImageTexture),
+            GetTextureSignature(card.BackImageTexture),
+            GetTextureSignature(card.Element?.IconTexture),
+            GetSourceSignature(CardImageRenderer.PowerIconPath),
+            GetSourceSignature(CardImageRenderer.ArrowRightIconPath));
 
         return card switch
         {
@@ -290,6 +301,44 @@ public partial class CardPreviewControl : TextureRect
             TerrainCardResource terrain => $"{common}:{GetAmountsSignature(terrain.ProducedResources)}",
             _ => common
         };
+    }
+
+    private static string GetTextureSignature(Texture2D? texture)
+    {
+        return texture is null
+            ? "0"
+            : $"{texture.GetInstanceId()}@{GetSourceSignature(texture.ResourcePath)}";
+    }
+
+    private string GetElementIconOverridesSignature()
+    {
+        if (_elementIconOverrides is null)
+        {
+            return "standalone";
+        }
+
+        return string.Join(
+            ',',
+            Enum.GetValues<ElementType>()
+                .Select(elementType => $"{elementType}={GetTextureSignature(_elementIconOverrides.TryGetValue(elementType, out var texture) ? texture : null)}"));
+    }
+
+    private static string GetSourceSignature(string sourcePath)
+    {
+        if (string.IsNullOrWhiteSpace(sourcePath))
+        {
+            return string.Empty;
+        }
+
+        if (FileAccess.FileExists(sourcePath))
+        {
+            return $"{sourcePath}@{FileAccess.GetModifiedTime(sourcePath)}";
+        }
+
+        var globalPath = ProjectPaths.ToGlobalPath(sourcePath);
+        return System.IO.File.Exists(globalPath)
+            ? $"{sourcePath}@{System.IO.File.GetLastWriteTimeUtc(globalPath).Ticks}"
+            : $"{sourcePath}@missing";
     }
 
     private static string GetAmountsSignature(ResourceAmount[] amounts)

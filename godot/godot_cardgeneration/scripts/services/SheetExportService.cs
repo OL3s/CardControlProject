@@ -78,7 +78,7 @@ public sealed class SheetExportService
                 var card = pagePlan.FrontCards[slotIndex];
                 progress?.Invoke(new ExportProgress(currentProgress, totalProgress, $"Rendering front {frontCardsPlaced + 1}/{cards.Count}: {card.Id}"));
                 var position = GetCardPosition(slotIndex, columns, cardWidth, cardHeight, xGap, yGap);
-                var frontImage = CardImageRenderer.RenderResized(card, cardWidth, cardHeight);
+                var frontImage = CardImageRenderer.Render(card, new Vector2I(cardWidth, cardHeight), deck.GetElementIconOverrides(), deck.PowerIconTexture);
                 frontSheet.BlendRect(frontImage, new Rect2I(Vector2I.Zero, frontImage.GetSize()), position);
                 frontImage.Dispose();
                 currentProgress++;
@@ -200,7 +200,7 @@ public sealed class SheetExportService
                         var card = pagePlan.FrontCards[slotIndex];
                         progress?.Invoke(new ExportProgress(currentProgress, totalProgress, $"Rendering preview front {frontCardsRendered + 1}/{cards.Count}: {card.Id}"));
                         var position = GetCardPosition(slotIndex, columns, cardWidth, cardHeight, xGap, yGap);
-                        var frontImage = CardImageRenderer.RenderResized(card, cardWidth, cardHeight);
+                        var frontImage = CardImageRenderer.Render(card, new Vector2I(cardWidth, cardHeight), deck.GetElementIconOverrides(), deck.PowerIconTexture);
                         frontSheet.BlendRect(frontImage, new Rect2I(Vector2I.Zero, frontImage.GetSize()), position);
                         frontImage.Dispose();
                         currentProgress++;

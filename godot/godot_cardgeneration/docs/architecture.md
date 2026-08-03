@@ -40,6 +40,8 @@ Elementikonene peker til importerte textures fra SVG-er under `assets/icons/elem
 
 `MonsterCardResource` har eksplisitt element, Tier 1-3, krav, grunnstyrke, bonuslinjer og eventuell effekt. Element, tier og krav er uavhengige felt. Tier renderer som én til tre kobberdiamanter ved elementmedaljongen.
 
+Monsterkrav betales når kortet brukes. Bonuslinjer vurderes etterpå mot gjenværende ressurser, slik at kravets ressurser ikke telles en gang til i bonusgrensene.
+
 `TerrainCardResource` har eksplisitt kjerneelement og produserte ressurser som uavhengige felt. Kjerneelementet er autoritativt for framtidige regler som omtaler terreng av et bestemt element, men gir foreløpig ingen aktiv bonus eller matchup.
 
 `CardDeckResource` lagrer en ferdig produktdeck som ID og en liste med `CardDeckEntryResource`, slik at samme kort kan ha antall kopier uten å duplisere kortdata. Deck-beskrivelse og displaynavn er bevisst utelatt.
@@ -63,7 +65,6 @@ CardToolService
   CardValidator
   DeckValidator
   CardFactory
-  CardRenderService
   DeckExportService
   SheetExportService
   DiyExportService
@@ -94,8 +95,6 @@ Validators skal sjekke at kort og kortstokker er gyldige før preview, lagring o
 
 Render- og export-services skal eie all outputlogikk.
 
-Første `CardRenderService` renderer PNG direkte fra `CardResource`.
-
 `DeckExportService` støtter tre PNG-layouts for vanlig kortstokkeksport:
 
 * `individual`: ett PNG-bilde per kort i egen mappe.
@@ -125,6 +124,7 @@ assets/icons/
     grass.svg
     flame.svg
     water.svg
+    any.svg
   symbols/
     arrow_right.svg
     power.svg
@@ -138,9 +138,9 @@ assets/card_backs/
     terrain_card_back.svg
 ```
 
-Elementikonene brukes for ressurser, krav og elementvisning. `ElementResource`-filene peker til SVG-textures under `assets/icons/elements/`. Symbolikonene brukes for generelle kortmarkører som styrke og bonuspiler.
+Elementikonene brukes for ressurser, krav og elementvisning. `ElementResource`-filene peker til glyph-only SVG-textures under `assets/icons/elements/`. Renderer tegner medallionens svake elementfarge og outline. `Any` er en første-klasses wildcard-ressurs med eget ikon og nøytral matchup. Deck resources eier element-glyphene og power-glyphen for previews og exports; standalone-kort bruker solide farge-placeholders og skal ikke lekke en decks ikoner. Symbolikonene brukes for generelle kortmarkører som piler.
 
-Nye ikoner skal legges eller genereres her når de trengs av kortgeneratoren. Kortdata bør referere til ikonene via `Texture2D`-felter, ikke ved å hardkode SVG-paths i rendering-logikken.
+Alle fem elementresources og glyph-texturene deres er obligatoriske packaged resources. Manglende elementresources eller glyphs skal feile tydelig ved lasting; de skal ikke genereres stille i runtime. Kortdata bør referere til ikonene via `Texture2D`-felter, ikke ved å hardkode SVG-paths i rendering-logikken.
 
 Eksisterende SVG-er kan erstattes med mer polerte versjoner senere uten å endre resource-modellen.
 
@@ -164,9 +164,9 @@ Implementerte skjermer:
 * `SavedCardsScreen`: driver `Cards`-skjermen, laster lagrede kort via `CardToolService`, viser preview, edit, duplicate og delete.
 * `SavedDecksScreen`: driver `Decks`-skjermen, laster lagrede deckresources, viser korttelling, korttypesammensetning, full preview, edit, duplicate, delete og deckoppretting fra tom/preset.
 * `CardTypePickerScreen`: velger korttype før nytt kort åpnes i editor.
-* `CardEditorScreen`: lager eller redigerer kort med ID, image source path, front/back preview, fullscreen preview, save og PNG-export. Korttypen er låst etter typevalg.
+* `CardEditorScreen`: lager eller redigerer kort med ID, image source path, front/back preview, fullscreen preview og lagring. Korttypen er låst etter typevalg; kort alene eksporteres ikke.
 * `DeckEditorScreen`: lager eller redigerer kortstokk med deck-ID, tilgjengelige kort, entries med count, `Save` og `Save New`. Tilgjengelige kort vises som horisontalt scrollbare preview-fliser med kompakte ikonknapper for add og select. Deckinnhold vises som preview-fliser med count-badge og ikonknapper for delete, duplicate og select. Multiselect brukes for batch add/remove. Skjermen eksporterer ikke.
-* `ExportCenterScreen`: eneste eksportflate. Den tilbyr `Images` for enkeltkort, individuelle deckbilder, grid og strip, og `Print` for A4/A3-ark til fysisk utskrift og kutting. Begge typene har preview. Print kan bruke vanlig slot-alignment eller `Easy backs`, som grupperer forsider etter korttype og fyller hele det tilhørende baksidearket.
+* `ExportCenterScreen`: eneste eksportflate. Den eksporterer alltid en valgt deck, som individuelle deckbilder, grid, strip eller `Print` for A4/A3-ark. Kort alene eksporteres ikke, fordi ikoner, power-glyph og baksider eies av decken. Preview kan fortsatt vise kort og deck.
 
 Første editor dekker fellesfeltene i kortmodellen og type-spesifikke felt for monsterkrav og terrengproduksjon.
 

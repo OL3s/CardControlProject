@@ -194,15 +194,6 @@ public sealed class CliOptions
                     }
 
                     break;
-                case "--render-card":
-                    options.Command = "render-card";
-                    if (TryReadOptionalValue(args, ref index, out var renderCardId))
-                    {
-                        options.CardId ??= renderCardId;
-                        options.HasCardId = true;
-                    }
-
-                    break;
                 case "--export-deck":
                     options.Command = "export-deck";
                     if (TryReadOptionalValue(args, ref index, out var exportDeckId))
