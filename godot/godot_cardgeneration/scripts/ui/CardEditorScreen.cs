@@ -22,6 +22,7 @@ public partial class CardEditorScreen : CardToolScreen
     private CardPreviewControl _frontPreview = null!;
     private FileDialog _imageFileDialog = null!;
     private FileDialog _saveAsDialog = null!;
+    private FileDialog _exportDialog = null!;
     private SpinBox? _monsterTier;
     private SpinBox? _monsterBasePower;
     private SpinBox? _monsterRequirementNeutral;
@@ -85,6 +86,7 @@ public partial class CardEditorScreen : CardToolScreen
         }
 
         AddIconButton(buttons, SaveAddIconPath, "Save as new", OpenSaveAsDialog);
+        AddIconButton(buttons, ExportIconPath, "Export .tres resource", OpenExportDialog);
         AddIconButton(buttons, RefreshIconPath, "Refresh preview", RefreshPreview);
 
         var previewColumn = new VBoxContainer
@@ -134,6 +136,16 @@ public partial class CardEditorScreen : CardToolScreen
         _saveAsDialog.FileSelected += path => RunGuiAction("Selected card save-as file", () => OnSaveAsFileSelected(path), $"path={path}");
         AddChild(_saveAsDialog);
 
+        _exportDialog = new FileDialog
+        {
+            Access = FileDialog.AccessEnum.Filesystem,
+            FileMode = FileDialog.FileModeEnum.SaveFile,
+            Title = "Export Card Resource",
+            Filters = ["*.tres ; Godot Resource"]
+        };
+        _exportDialog.FileSelected += path => RunGuiAction("Selected card export file", () => OnExportFileSelected(path), $"path={path}");
+        AddChild(_exportDialog);
+
         RefreshPreview();
     }
 
@@ -170,8 +182,24 @@ public partial class CardEditorScreen : CardToolScreen
                     Text = "The monster element is selected independently from its resource requirements.",
                     AutowrapMode = TextServer.AutowrapMode.WordSmart
                 });
-                _monsterTier = AddSpinBox(form, "Tier", 1, 3, 1, monster.Tier);
-                _monsterBasePower = AddSpinBox(form, "Base Power", 0, 20, 1, monster.BasePower);
+                var tierGlyph = new TierGlyphControl { Tier = monster.Tier };
+                _monsterTier = AddIconSpinBox(form, "Tier", 1, 3, 1, monster.Tier, tierGlyph);
+                tierGlyph.Bind(_monsterTier);
+                _monsterBasePower = AddIconSpinBox(
+                    form,
+                    "Base Power",
+                    0,
+                    20,
+                    1,
+                    monster.BasePower,
+                    new TextureRect
+                    {
+                        Texture = ResourceLoader.Load<Texture2D>(PowerIconPath),
+                        CustomMinimumSize = new Vector2(30, 30),
+                        ExpandMode = TextureRect.ExpandModeEnum.FitWidthProportional,
+                        StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+                        TooltipText = "Base power"
+                    });
                 AddElementAmountGrid(
                     form,
                     "Requirements",
@@ -431,6 +459,36 @@ public partial class CardEditorScreen : CardToolScreen
         };
     }
 
+    private static SpinBox AddIconSpinBox(
+        VBoxContainer parent,
+        string labelText,
+        double minValue,
+        double maxValue,
+        double step,
+        double initialValue,
+        Control icon)
+    {
+        parent.AddChild(new Label { Text = labelText });
+        var row = new HBoxContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        row.AddThemeConstantOverride("separation", 8);
+        parent.AddChild(row);
+        row.AddChild(icon);
+
+        var spinBox = new SpinBox
+        {
+            MinValue = minValue,
+            MaxValue = maxValue,
+            Step = step,
+            Value = initialValue,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        row.AddChild(spinBox);
+        return spinBox;
+    }
+
     private void RemoveMonsterPowerBonusRow(MonsterPowerBonusEditorRow row)
     {
         _monsterPowerBonusRows.Remove(row);
@@ -482,6 +540,21 @@ public partial class CardEditorScreen : CardToolScreen
         var result = CardToolService.ExportCardResource(_editingCard, EnsureTresExtension(filePath));
         SetStatus(result.Message, !result.Success);
         RefreshPreview();
+    }
+
+    private void OpenExportDialog()
+    {
+        EnsureId();
+        _exportDialog.CurrentFile = $"{SanitizeFileName(_id.Text)}.tres";
+        _exportDialog.PopupCenteredRatio(0.72f);
+    }
+
+    private void OnExportFileSelected(string filePath)
+    {
+        EnsureId();
+        ApplyFieldsToCard();
+        var result = CardToolService.ExportCardResource(_editingCard, EnsureTresExtension(filePath));
+        SetStatus(result.Message, !result.Success);
     }
 
     private void EnsureId()
@@ -678,6 +751,50 @@ public partial class CardEditorScreen : CardToolScreen
             TerrainCardResource => CardType.Terrain,
             _ => CardType.Unknown
         };
+    }
+
+    private sealed partial class TierGlyphControl : Control
+    {
+        private int _tier = 1;
+
+        public int Tier
+        {
+            get => _tier;
+            set
+            {
+                _tier = Math.Clamp(value, 1, 3);
+                QueueRedraw();
+            }
+        }
+
+        public TierGlyphControl()
+        {
+            CustomMinimumSize = new Vector2(30, 30);
+            SizeFlagsVertical = SizeFlags.ShrinkCenter;
+            MouseFilter = MouseFilterEnum.Ignore;
+        }
+
+        public void Bind(SpinBox spinBox)
+        {
+            spinBox.ValueChanged += value => Tier = (int)value;
+        }
+
+        public override void _Draw()
+        {
+            for (var index = 0; index < Tier; index++)
+            {
+                var center = new Vector2(7 + index * 8, 15);
+                var points = new Vector2[]
+                {
+                    center + new Vector2(0, -8),
+                    center + new Vector2(6, 0),
+                    center + new Vector2(0, 8),
+                    center + new Vector2(-6, 0)
+                };
+                DrawColoredPolygon(points, new Color(0.847f, 0.537f, 0.392f));
+                DrawPolyline(points.Append(points[0]).ToArray(), new Color(0.09f, 0.067f, 0.051f), 1.5f);
+            }
+        }
     }
 
     private sealed record MonsterPowerBonusEditorRow(

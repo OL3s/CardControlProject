@@ -27,6 +27,7 @@ public partial class DeckEditorScreen : CardToolScreen
     private FileDialog _elementIconDialog = null!;
     private FileDialog _powerIconDialog = null!;
     private FileDialog _saveAsDialog = null!;
+    private FileDialog _exportDialog = null!;
     private VBoxContainer _entriesPanel = null!;
     private VBoxContainer _availableCardsPanel = null!;
 
@@ -74,12 +75,16 @@ public partial class DeckEditorScreen : CardToolScreen
         body.AddChild(form);
 
         _id = AddLineEdit(form, "Deck ID", _editingDeck.Id);
-        AddSectionHeader(form, "Deck Back Images");
-        AddDeckBackEditor(form);
-        AddSectionHeader(form, "Element Glyph Images");
-        AddElementIconEditor(form);
-        AddSectionHeader(form, "Power Glyph Image");
-        AddPowerIconEditor(form);
+        AddSectionHeader(form, "Deck Assets");
+        var assetEditors = new HBoxContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        assetEditors.AddThemeConstantOverride("separation", 12);
+        form.AddChild(assetEditors);
+        AddDeckBackEditor(assetEditors);
+        AddElementIconEditor(assetEditors);
+        AddPowerIconEditor(assetEditors);
 
         AddSaveAsDialog();
 
@@ -95,9 +100,10 @@ public partial class DeckEditorScreen : CardToolScreen
 
         _availableCardsPanel = new VBoxContainer
         {
-            CustomMinimumSize = new Vector2(420, 0),
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
             SizeFlagsVertical = SizeFlags.ExpandFill
         };
+        _availableCardsPanel.SizeFlagsStretchRatio = 1;
         _availableCardsPanel.AddThemeConstantOverride("separation", 8);
         lists.AddChild(_availableCardsPanel);
 
@@ -106,6 +112,7 @@ public partial class DeckEditorScreen : CardToolScreen
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             SizeFlagsVertical = SizeFlags.ExpandFill
         };
+        _entriesPanel.SizeFlagsStretchRatio = 1;
         _entriesPanel.AddThemeConstantOverride("separation", 8);
         lists.AddChild(_entriesPanel);
 
@@ -140,6 +147,16 @@ public partial class DeckEditorScreen : CardToolScreen
         };
         _saveAsDialog.FileSelected += path => RunGuiAction("Selected deck save-as file", () => OnSaveAsFileSelected(path), $"path={path}");
         AddChild(_saveAsDialog);
+
+        _exportDialog = new FileDialog
+        {
+            Access = FileDialog.AccessEnum.Filesystem,
+            FileMode = FileDialog.FileModeEnum.SaveFile,
+            Title = "Export Deck Resource",
+            Filters = ["*.tres ; Godot Resource"]
+        };
+        _exportDialog.FileSelected += path => RunGuiAction("Selected deck export file", () => OnExportFileSelected(path), $"path={path}");
+        AddChild(_exportDialog);
     }
 
     private void AddEditorActions(VBoxContainer content, bool isNewDeck)
@@ -157,16 +174,17 @@ public partial class DeckEditorScreen : CardToolScreen
         }
 
         AddIconButton(buttons, SaveAddIconPath, "Save as new", SaveDeckAsNew);
+        AddIconButton(buttons, ExportIconPath, "Export .tres resource", OpenExportDialog);
         AddIconButton(buttons, RefreshIconPath, "Refresh", RefreshEditor);
     }
 
-    private void AddDeckBackEditor(VBoxContainer form)
+    private void AddDeckBackEditor(Container parent)
     {
         var panel = new PanelContainer
         {
-            SizeFlagsHorizontal = SizeFlags.ShrinkBegin
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
-        form.AddChild(panel);
+        parent.AddChild(panel);
 
         var margin = new MarginContainer();
         margin.AddThemeConstantOverride("margin_left", 8);
@@ -186,14 +204,6 @@ public partial class DeckEditorScreen : CardToolScreen
         _backPreviewRow.AddThemeConstantOverride("separation", 10);
         layout.AddChild(_backPreviewRow);
 
-        var actions = new HBoxContainer
-        {
-            Alignment = BoxContainer.AlignmentMode.Center
-        };
-        actions.AddThemeConstantOverride("separation", 8);
-        layout.AddChild(actions);
-        AddIconButton(actions, ClearIconPath, "Use default backs", ClearBackImage);
-
         _backImageDialog = new FileDialog
         {
             Access = FileDialog.AccessEnum.Filesystem,
@@ -211,10 +221,10 @@ public partial class DeckEditorScreen : CardToolScreen
         AddChild(_backImageDialog);
     }
 
-    private void AddElementIconEditor(VBoxContainer form)
+    private void AddElementIconEditor(Container parent)
     {
-        var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ShrinkBegin };
-        form.AddChild(panel);
+        var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        parent.AddChild(panel);
 
         var margin = new MarginContainer();
         foreach (var side in new[] { "left", "right", "top", "bottom" })
@@ -253,10 +263,10 @@ public partial class DeckEditorScreen : CardToolScreen
         AddChild(_elementIconDialog);
     }
 
-    private void AddPowerIconEditor(VBoxContainer form)
+    private void AddPowerIconEditor(Container parent)
     {
-        var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ShrinkBegin };
-        form.AddChild(panel);
+        var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        parent.AddChild(panel);
         var margin = new MarginContainer();
         foreach (var side in new[] { "left", "right", "top", "bottom" })
         {
@@ -321,25 +331,29 @@ public partial class DeckEditorScreen : CardToolScreen
             return;
         }
 
-        var scroll = new HorizontalWheelScrollContainer
+        var scroll = new ScrollContainer
         {
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            CustomMinimumSize = new Vector2(400, 260),
+            SizeFlagsVertical = SizeFlags.ExpandFill,
+            CustomMinimumSize = new Vector2(0, 430),
             HorizontalScrollMode = ScrollContainer.ScrollMode.Auto,
-            VerticalScrollMode = ScrollContainer.ScrollMode.Disabled
+            VerticalScrollMode = ScrollContainer.ScrollMode.Auto
         };
-        _availableCardsPanel.AddChild(scroll);
+        var scrollPanel = CreateGridScrollPanel(scroll);
+        _availableCardsPanel.AddChild(scrollPanel);
 
-        var row = new HBoxContainer
+        var grid = new HFlowContainer
         {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsVertical = SizeFlags.ExpandFill
         };
-        row.AddThemeConstantOverride("separation", 10);
-        scroll.AddChild(row);
+        grid.AddThemeConstantOverride("h_separation", 12);
+        grid.AddThemeConstantOverride("v_separation", 12);
+        scroll.AddChild(grid);
 
         foreach (var card in _availableCards)
         {
-            row.AddChild(CreateCardTile(
+            grid.AddChild(CreateCardTile(
                 card,
                 count: 0,
                 isSelected: _selectedAvailableCardIds.Contains(card.Id),
@@ -358,12 +372,6 @@ public partial class DeckEditorScreen : CardToolScreen
             Text = $"Deck Contents ({GetEntryCardCount()} cards)",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
-        _entriesPanel.AddChild(new Label
-        {
-            Text = "Use < and > on a card to choose its order before saving.",
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
-
         if (_selectedDeckCardIds.Count > 0)
         {
             var actions = new HBoxContainer();
@@ -383,9 +391,9 @@ public partial class DeckEditorScreen : CardToolScreen
             SizeFlagsVertical = SizeFlags.ExpandFill,
             HorizontalScrollMode = ScrollContainer.ScrollMode.Auto,
             VerticalScrollMode = ScrollContainer.ScrollMode.Auto,
-            CustomMinimumSize = new Vector2(560, 430)
+            CustomMinimumSize = new Vector2(0, 430)
         };
-        _entriesPanel.AddChild(scroll);
+        _entriesPanel.AddChild(CreateGridScrollPanel(scroll));
 
         var flow = new HFlowContainer
         {
@@ -468,19 +476,35 @@ public partial class DeckEditorScreen : CardToolScreen
             HorizontalAlignment = HorizontalAlignment.Center
         });
 
+        var orderActions = actions.Where(action => action.Text is "<" or ">").ToArray();
+        var otherActions = actions.Where(action => action.Text is not "<" and not ">").ToArray();
+        AddTileActionRow(stack, otherActions);
+        if (orderActions.Length > 0)
+        {
+            AddTileActionRow(stack, orderActions);
+        }
+
+        return panel;
+    }
+
+    private void AddTileActionRow(VBoxContainer parent, IReadOnlyList<CardTileAction> actions)
+    {
+        if (actions.Count == 0)
+        {
+            return;
+        }
+
         var actionRow = new HBoxContainer
         {
             Alignment = BoxContainer.AlignmentMode.Center
         };
         actionRow.AddThemeConstantOverride("separation", 4);
-        stack.AddChild(actionRow);
+        parent.AddChild(actionRow);
 
         foreach (var action in actions)
         {
             actionRow.AddChild(CreateTileIconButton(action, new Vector2(36, 34)));
         }
-
-        return panel;
     }
 
     private Button CreateTileIconButton(CardTileAction action, Vector2 minimumSize)
@@ -654,6 +678,21 @@ public partial class DeckEditorScreen : CardToolScreen
         SetStatus(result.Message, !result.Success);
     }
 
+    private void OpenExportDialog()
+    {
+        EnsureId();
+        _exportDialog.CurrentFile = $"{SanitizeFileName(_id.Text)}.tres";
+        _exportDialog.PopupCenteredRatio(0.72f);
+    }
+
+    private void OnExportFileSelected(string filePath)
+    {
+        EnsureId();
+        ApplyFieldsToDeck();
+        var result = CardToolService.ExportDeckResource(_editingDeck, EnsureTresExtension(filePath));
+        SetStatus(result.Message, !result.Success);
+    }
+
     private string CreateCopyId(string sourceId)
     {
         var baseId = string.IsNullOrWhiteSpace(sourceId) ? "new_deck" : sourceId.Trim();
@@ -712,12 +751,11 @@ public partial class DeckEditorScreen : CardToolScreen
         SetStatus($"Loaded {_backImageTargetType} back image '{filePath}'.");
     }
 
-    private void ClearBackImage()
+    private void ClearBackImage(CardType cardType)
     {
-        _editingDeck.MonsterBackImageTexture = null;
-        _editingDeck.TerrainBackImageTexture = null;
+        _editingDeck.SetBackImageTexture(cardType, null);
         RefreshBackPreview();
-        SetStatus("Using default backs.");
+        SetStatus($"Using the default {cardType} back image.");
     }
 
     private void OpenElementIconDialog(ElementType elementType)
@@ -824,22 +862,7 @@ public partial class DeckEditorScreen : CardToolScreen
         column.AddThemeConstantOverride("separation", 4);
         _powerIconPreviewRow.AddChild(column);
 
-        var element = CardToolService.LoadAllElements().First(item => item.ElementType == ElementType.Neutral);
-        var card = new MonsterCardResource
-        {
-            Id = "power_icon_preview",
-            Element = element,
-            Requirements = [],
-            BasePower = 1,
-            PowerBonuses = []
-        };
-        column.AddChild(CardPreviewControl.Create(
-            card,
-            minimumSize: new Vector2(180, 252),
-            renderSize: new Vector2I(180, 252),
-            useCache: false,
-            elementIconOverrides: _editingDeck.GetElementIconOverrides(),
-            powerIconOverride: _editingDeck.PowerIconTexture));
+        column.AddChild(CreateGlyphTexture(_editingDeck.PowerIconTexture));
         column.AddChild(new Label { Text = "Power", HorizontalAlignment = HorizontalAlignment.Center });
         var actions = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         column.AddChild(actions);
@@ -854,14 +877,10 @@ public partial class DeckEditorScreen : CardToolScreen
         parent.AddChild(column);
 
         var element = CardToolService.LoadAllElements().First(item => item.ElementType == elementType);
-        var card = new TerrainCardResource { Id = $"{elementType}_element_preview", Element = element };
-        column.AddChild(CardPreviewControl.Create(
-            card,
-            minimumSize: new Vector2(72, 101),
-            renderSize: new Vector2I(72, 101),
-            useCache: false,
-            elementIconOverrides: _editingDeck.GetElementIconOverrides(),
-            powerIconOverride: _editingDeck.PowerIconTexture));
+        var iconOverrides = _editingDeck.GetElementIconOverrides();
+        column.AddChild(CreateGlyphTexture(iconOverrides.TryGetValue(elementType, out var overrideTexture)
+            ? overrideTexture
+            : element.IconTexture));
         column.AddChild(new Label
         {
             Text = elementType.ToString(),
@@ -869,6 +888,52 @@ public partial class DeckEditorScreen : CardToolScreen
         });
         AddIconButton(column, BrowseIconPath, $"Choose {elementType} element glyph", () => OpenElementIconDialog(elementType), new Vector2(36, 34));
         AddIconButton(column, ClearIconPath, $"Use default {elementType} element glyph", () => ClearElementIcon(elementType), new Vector2(36, 34));
+    }
+
+    private static TextureRect CreateGlyphTexture(Texture2D? texture)
+    {
+        return new TextureRect
+        {
+            Texture = texture,
+            CustomMinimumSize = new Vector2(52, 52),
+            ExpandMode = TextureRect.ExpandModeEnum.FitWidthProportional,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered
+        };
+    }
+
+    private static PanelContainer CreateGridScrollPanel(ScrollContainer scroll)
+    {
+        var panel = new PanelContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsVertical = SizeFlags.ExpandFill
+        };
+        panel.AddThemeStyleboxOverride("panel", BuildGridStyle());
+        var margin = new MarginContainer();
+        margin.AddThemeConstantOverride("margin_left", 8);
+        margin.AddThemeConstantOverride("margin_right", 8);
+        margin.AddThemeConstantOverride("margin_top", 8);
+        margin.AddThemeConstantOverride("margin_bottom", 8);
+        panel.AddChild(margin);
+        margin.AddChild(scroll);
+        return panel;
+    }
+
+    private static StyleBoxFlat BuildGridStyle()
+    {
+        return new StyleBoxFlat
+        {
+            BgColor = new Color(0.075f, 0.08f, 0.10f),
+            BorderColor = new Color(0.30f, 0.36f, 0.44f),
+            BorderWidthLeft = 1,
+            BorderWidthRight = 1,
+            BorderWidthTop = 1,
+            BorderWidthBottom = 1,
+            CornerRadiusTopLeft = 8,
+            CornerRadiusTopRight = 8,
+            CornerRadiusBottomLeft = 8,
+            CornerRadiusBottomRight = 8
+        };
     }
 
     private void AddBackPreview(HBoxContainer parent, string title, CardType cardType)
@@ -883,8 +948,8 @@ public partial class DeckEditorScreen : CardToolScreen
         column.AddChild(CardPreviewControl.Create(
             CreateBackPreviewCard(cardType),
             showBack: true,
-            minimumSize: new Vector2(72, 101),
-            renderSize: new Vector2I(72, 101),
+            minimumSize: new Vector2(90, 126),
+            renderSize: new Vector2I(90, 126),
             useCache: false));
         column.AddChild(new Label
         {
@@ -892,6 +957,7 @@ public partial class DeckEditorScreen : CardToolScreen
             HorizontalAlignment = HorizontalAlignment.Center
         });
         AddIconButton(column, BrowseIconPath, $"Choose {title} back image", () => OpenBackImageDialog(cardType), new Vector2(36, 34));
+        AddIconButton(column, ClearIconPath, $"Use default {title} back image", () => ClearBackImage(cardType), new Vector2(36, 34));
     }
 
     private CardResource CreateBackPreviewCard(CardType cardType)
