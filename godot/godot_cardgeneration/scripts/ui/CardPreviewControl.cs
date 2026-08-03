@@ -281,6 +281,7 @@ public partial class CardPreviewControl : TextureRect
             ':',
             GetSourceSignature(card.CardImageSourcePath),
             GetTextureSignature(card.CardImageTexture),
+            card.ImageScaleMode,
             GetTextureSignature(card.BackImageTexture),
             GetTextureSignature(card.Element?.IconTexture),
             GetSourceSignature(CardImageRenderer.PowerIconPath),

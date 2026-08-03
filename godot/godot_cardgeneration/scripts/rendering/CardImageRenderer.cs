@@ -93,7 +93,7 @@ public static class CardImageRenderer
         var cardImageRect = new Rect2I(76, 76, 598, 898);
         if (card.CardImageTexture is null)
         {
-            if (TryDrawImageSource(image, card.CardImageSourcePath, cardImageRect, 24))
+            if (TryDrawImageSource(image, card.CardImageSourcePath, cardImageRect, 24, card.ImageScaleMode))
             {
                 return;
             }
@@ -110,10 +110,22 @@ public static class CardImageRenderer
             return;
         }
 
-        DrawTexture(image, card.CardImageTexture, cardImageRect, 24);
+        var source = card.CardImageTexture.GetImage();
+        if (source is null || source.IsEmpty())
+        {
+            DrawImageNotFoundPlaceholder(image, cardImageRect);
+            return;
+        }
+
+        DrawCardArtwork(image, source, cardImageRect, 24, card.ImageScaleMode);
     }
 
-    private static bool TryDrawImageSource(Image target, string sourcePath, Rect2I targetRect, int cornerRadius = 0)
+    private static bool TryDrawImageSource(
+        Image target,
+        string sourcePath,
+        Rect2I targetRect,
+        int cornerRadius = 0,
+        CardImageScaleMode scaleMode = CardImageScaleMode.Stretch)
     {
         if (string.IsNullOrWhiteSpace(sourcePath))
         {
@@ -132,16 +144,52 @@ public static class CardImageRenderer
             return false;
         }
 
+        DrawCardArtwork(target, source, targetRect, cornerRadius, scaleMode);
+        return true;
+    }
+
+    private static void DrawCardArtwork(Image target, Image source, Rect2I targetRect, int cornerRadius, CardImageScaleMode scaleMode)
+    {
         targetRect = ScaleRect(target, targetRect);
         source.Convert(Image.Format.Rgba8);
-        source.Resize(targetRect.Size.X, targetRect.Size.Y, Image.Interpolation.Lanczos);
-        if (cornerRadius > 0)
+        if (!Enum.IsDefined(scaleMode))
         {
-            ApplyRoundedAlphaMask(source, ScaleRadius(target, cornerRadius));
+            scaleMode = CardImageScaleMode.Stretch;
         }
 
-        target.BlendRect(source, new Rect2I(Vector2I.Zero, source.GetSize()), targetRect.Position);
-        return true;
+        var sourceSize = source.GetSize();
+        var scaleX = (float)targetRect.Size.X / sourceSize.X;
+        var scaleY = (float)targetRect.Size.Y / sourceSize.Y;
+        var scale = scaleMode switch
+        {
+            CardImageScaleMode.Fit => Math.Min(scaleX, scaleY),
+            CardImageScaleMode.Cover => Math.Max(scaleX, scaleY),
+            _ => 0f
+        };
+        var resizedSize = scaleMode == CardImageScaleMode.Stretch
+            ? targetRect.Size
+            : new Vector2I(
+                Math.Max(1, Mathf.RoundToInt(sourceSize.X * scale)),
+                Math.Max(1, Mathf.RoundToInt(sourceSize.Y * scale)));
+        source.Resize(resizedSize.X, resizedSize.Y, Image.Interpolation.Lanczos);
+
+        var composed = Image.CreateEmpty(targetRect.Size.X, targetRect.Size.Y, false, Image.Format.Rgba8);
+        composed.Fill(new Color(0, 0, 0, 0));
+        var sourceRect = new Rect2I(Vector2I.Zero, resizedSize);
+        var destination = (targetRect.Size - resizedSize) / 2;
+        if (scaleMode == CardImageScaleMode.Cover)
+        {
+            sourceRect = new Rect2I((resizedSize - targetRect.Size) / 2, targetRect.Size);
+            destination = Vector2I.Zero;
+        }
+
+        composed.BlendRect(source, sourceRect, destination);
+        if (cornerRadius > 0)
+        {
+            ApplyRoundedAlphaMask(composed, ScaleRadius(target, cornerRadius));
+        }
+
+        target.BlendRect(composed, new Rect2I(Vector2I.Zero, composed.GetSize()), targetRect.Position);
     }
 
     private static void DrawCardBackImage(Image image, CardType cardType, Texture2D? backImageTexture)
@@ -187,7 +235,7 @@ public static class CardImageRenderer
         var bonusPanelBottom = 950;
         var bonusPanelHeight = Math.Clamp(116 + bonusCount * 50, 116, 700);
         var bonusPanel = new Rect2I(92, bonusPanelBottom - bonusPanelHeight, 566, bonusPanelHeight);
-        DrawOutlinedPanel(image, bonusPanel, 26, GetFrameColor(CardType.Monster), new Color(0.025f, 0.018f, 0.018f, 0.88f), 5);
+        DrawOutlinedPanel(image, bonusPanel, 26, GetFrameColor(CardType.Monster), new Color(0.022f, 0.023f, 0.027f, 0.88f), 5);
 
         var basePowerY = bonusPanel.Position.Y + 24;
         DrawPowerIconsCentered(image, card.BasePower, basePowerY, 64, 6, powerIconOverride);
@@ -456,7 +504,7 @@ public static class CardImageRenderer
     {
         return cardType switch
         {
-            CardType.Monster => new Color(0.494f, 0.204f, 0.22f),
+            CardType.Monster => new Color(0.35f, 0.365f, 0.39f),
             CardType.Terrain => new Color(0.651f, 0.471f, 0.259f),
             _ => new Color(0.22f, 0.22f, 0.25f)
         };
@@ -466,14 +514,14 @@ public static class CardImageRenderer
     {
         return cardType == CardType.Terrain
             ? new Color(0.031f, 0.024f, 0.016f)
-            : new Color(0.02f, 0.012f, 0.012f);
+            : new Color(0.015f, 0.017f, 0.02f);
     }
 
     private static Color GetFrameFieldColor(CardType cardType)
     {
         return cardType switch
         {
-            CardType.Monster => new Color(0.09f, 0.063f, 0.067f),
+            CardType.Monster => new Color(0.065f, 0.068f, 0.075f),
             CardType.Terrain => new Color(0.169f, 0.114f, 0.067f),
             _ => new Color(0.10f, 0.10f, 0.12f)
         };
@@ -483,7 +531,7 @@ public static class CardImageRenderer
     {
         return cardType switch
         {
-            CardType.Monster => new Color(0.239f, 0.125f, 0.133f),
+            CardType.Monster => new Color(0.18f, 0.19f, 0.21f),
             CardType.Terrain => new Color(0.427f, 0.294f, 0.169f),
             _ => new Color(0.28f, 0.28f, 0.31f)
         };
@@ -633,7 +681,7 @@ public static class CardImageRenderer
             var center = new Vector2I(550, startY + index * 28);
             FillDiamond(image, center, 11, 15, new Color(0.09f, 0.067f, 0.051f));
             FillDiamond(image, center, 8, 12, new Color(0.847f, 0.537f, 0.392f));
-            FillDiamond(image, center, 4, 7, new Color(0.455f, 0.188f, 0.204f));
+            FillDiamond(image, center, 4, 7, new Color(0.19f, 0.20f, 0.22f));
         }
     }
 

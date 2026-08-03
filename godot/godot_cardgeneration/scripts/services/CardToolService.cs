@@ -708,6 +708,7 @@ public sealed class CardToolService
         clone.Element = source.Element;
         clone.CardImageTexture = source.CardImageTexture;
         clone.CardImageSourcePath = source.CardImageSourcePath;
+        clone.ImageScaleMode = source.ImageScaleMode;
         clone.BackImageTexture = source.BackImageTexture;
 
         if (source is MonsterCardResource sourceMonster && clone is MonsterCardResource cloneMonster)

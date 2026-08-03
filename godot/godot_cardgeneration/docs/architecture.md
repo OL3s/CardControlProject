@@ -36,7 +36,7 @@ Godot Resource
 
 Elementikonene peker til importerte textures fra SVG-er under `assets/icons/elements/`. Rendereren bruker disse når de kan lastes, og tegner fallback-symboler når texture mangler.
 
-`CardResource` er felles base for alle kort. Den inneholder ID, korttype, teksturer for kortbilde og baksidebilde, samt `CardImageSourcePath` for bilde importert fra filsystemet. Rendereren bruker source path når `CardImageTexture` ikke er satt. Visningsnavn, notater, beskrivelser og interne designkategorier er bevisst utelatt fra kortdata. Element er derimot eksplisitt, autoritativ kortmetadata.
+`CardResource` er felles base for alle kort. Den inneholder ID, korttype, teksturer for kortbilde og baksidebilde, samt `CardImageSourcePath` for bilde importert fra filsystemet. Rendereren bruker source path når `CardImageTexture` ikke er satt. `ImageScaleMode` lagrer hvordan frontillustrasjonen plasseres: `Fit` viser hele bildet med bevart sideforhold, `Stretch` fyller bildefeltet uten å bevare sideforholdet, og `Cover` bevarer sideforholdet mens bildet sentreres, zoomes og beskjæres til hele feltet er fylt. Eksisterende kort bruker `Stretch` som standard for å bevare tidligere rendereroppførsel. Visningsnavn, notater, beskrivelser og interne designkategorier er bevisst utelatt fra kortdata. Element er derimot eksplisitt, autoritativ kortmetadata.
 
 `MonsterCardResource` har eksplisitt element, Tier 1-3, krav, grunnstyrke, bonuslinjer og eventuell effekt. Element, tier og krav er uavhengige felt. Tier renderer som én til tre kobberdiamanter ved elementmedaljongen.
 

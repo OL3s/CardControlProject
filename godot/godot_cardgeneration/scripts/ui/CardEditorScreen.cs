@@ -18,6 +18,7 @@ public partial class CardEditorScreen : CardToolScreen
     private IReadOnlyList<ElementResource> _elements = Array.Empty<ElementResource>();
     private LineEdit _id = null!;
     private LineEdit _imageSourcePath = null!;
+    private OptionButton _imageScaleMode = null!;
     private OptionButton _cardElement = null!;
     private CardPreviewControl _frontPreview = null!;
     private FileDialog _imageFileDialog = null!;
@@ -74,6 +75,7 @@ public partial class CardEditorScreen : CardToolScreen
         _cardElement = AddElementSelector(form, _editingCard.Element);
 
         _imageSourcePath = AddImageSourcePathRow(form);
+        _imageScaleMode = AddImageScaleModeSelector(form);
 
         AddTypeSpecificFields(form);
 
@@ -167,6 +169,32 @@ public partial class CardEditorScreen : CardToolScreen
         row.AddChild(lineEdit);
         AddIconButton(row, BrowseIconPath, "Import image", OpenImageDialog);
         return lineEdit;
+    }
+
+    private OptionButton AddImageScaleModeSelector(VBoxContainer form)
+    {
+        form.AddChild(new Label { Text = "Image Scaling" });
+        var selector = new OptionButton
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            TooltipText = "Fit shows the entire image, Stretch fills the area without preserving aspect ratio, and Cover zooms and crops to fill the area."
+        };
+        selector.AddItem("Fit inside (show entire image)", (int)CardImageScaleMode.Fit);
+        selector.AddItem("Stretch to fill", (int)CardImageScaleMode.Stretch);
+        selector.AddItem("Cover target (zoom and crop)", (int)CardImageScaleMode.Cover);
+
+        for (var index = 0; index < selector.ItemCount; index++)
+        {
+            if (selector.GetItemId(index) == (int)_editingCard.ImageScaleMode)
+            {
+                selector.Select(index);
+                break;
+            }
+        }
+
+        selector.ItemSelected += _ => RefreshPreview();
+        form.AddChild(selector);
+        return selector;
     }
 
     private void AddTypeSpecificFields(VBoxContainer form)
@@ -608,6 +636,7 @@ public partial class CardEditorScreen : CardToolScreen
         _editingCard.Id = _id.Text.Trim();
         _editingCard.Element = GetSelectedCardElement();
         _editingCard.CardImageSourcePath = _imageSourcePath.Text.Trim();
+        _editingCard.ImageScaleMode = GetSelectedImageScaleMode();
         ApplyTypeSpecificFields();
     }
 
@@ -684,6 +713,19 @@ public partial class CardEditorScreen : CardToolScreen
             : null;
     }
 
+    private CardImageScaleMode GetSelectedImageScaleMode()
+    {
+        if (_imageScaleMode.Selected < 0)
+        {
+            return CardImageScaleMode.Stretch;
+        }
+
+        var modeId = _imageScaleMode.GetItemId(_imageScaleMode.Selected);
+        return Enum.IsDefined(typeof(CardImageScaleMode), modeId)
+            ? (CardImageScaleMode)modeId
+            : CardImageScaleMode.Stretch;
+    }
+
     private static int CountAmount(ResourceAmount[] amounts, ElementType elementType)
     {
         return amounts
@@ -730,6 +772,7 @@ public partial class CardEditorScreen : CardToolScreen
         target.Element = source.Element;
         target.CardImageTexture = source.CardImageTexture;
         target.CardImageSourcePath = source.CardImageSourcePath;
+        target.ImageScaleMode = source.ImageScaleMode;
         target.BackImageTexture = source.BackImageTexture;
     }
 

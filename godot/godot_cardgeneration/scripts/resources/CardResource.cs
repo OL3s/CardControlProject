@@ -11,5 +11,6 @@ public partial class CardResource : Resource
     [Export] public ElementResource? Element { get; set; }
     [Export] public Texture2D? CardImageTexture { get; set; }
     [Export] public string CardImageSourcePath { get; set; } = string.Empty;
+    [Export] public CardImageScaleMode ImageScaleMode { get; set; } = CardImageScaleMode.Stretch;
     [Export] public Texture2D? BackImageTexture { get; set; }
 }
