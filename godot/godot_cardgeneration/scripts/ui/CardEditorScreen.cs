@@ -12,14 +12,17 @@ namespace CardGeneration.Ui;
 public partial class CardEditorScreen : CardToolScreen
 {
     private const string PowerIconPath = "res://assets/icons/symbols/power.svg";
+    private const int MissingElementItemId = 1000;
 
     private CardResource _editingCard = new MonsterCardResource();
     private IReadOnlyList<ElementResource> _elements = Array.Empty<ElementResource>();
     private LineEdit _id = null!;
     private LineEdit _imageSourcePath = null!;
+    private OptionButton _cardElement = null!;
     private CardPreviewControl _frontPreview = null!;
     private FileDialog _imageFileDialog = null!;
     private FileDialog _saveAsDialog = null!;
+    private SpinBox? _monsterTier;
     private SpinBox? _monsterBasePower;
     private SpinBox? _monsterRequirementNeutral;
     private SpinBox? _monsterRequirementGrass;
@@ -65,6 +68,7 @@ public partial class CardEditorScreen : CardToolScreen
 
         _id = AddLineEdit(form, "Card ID", _editingCard.Id);
         form.AddChild(new Label { Text = $"Card Type: {_editingCard.CardType}" });
+        _cardElement = AddElementSelector(form, _editingCard.Element);
 
         _imageSourcePath = AddImageSourcePathRow(form);
 
@@ -161,9 +165,10 @@ public partial class CardEditorScreen : CardToolScreen
                 form.AddChild(new Label { Text = "Monster Setup" });
                 form.AddChild(new Label
                 {
-                    Text = "Element type is derived from the non-neutral requirement cost.",
+                    Text = "The monster element is selected independently from its resource requirements.",
                     AutowrapMode = TextServer.AutowrapMode.WordSmart
                 });
+                _monsterTier = AddSpinBox(form, "Tier", 1, 3, 1, monster.Tier);
                 _monsterBasePower = AddSpinBox(form, "Base Power", 0, 20, 1, monster.BasePower);
                 AddElementAmountGrid(
                     form,
@@ -173,14 +178,14 @@ public partial class CardEditorScreen : CardToolScreen
                     out _monsterRequirementGrass,
                     out _monsterRequirementFlame,
                     out _monsterRequirementWater);
-                BindSpinPreview(_monsterBasePower, _monsterRequirementNeutral, _monsterRequirementGrass, _monsterRequirementFlame, _monsterRequirementWater);
+                BindSpinPreview(_monsterTier, _monsterBasePower, _monsterRequirementNeutral, _monsterRequirementGrass, _monsterRequirementFlame, _monsterRequirementWater);
                 AddMonsterPowerBonusEditor(form, monster);
                 break;
             case TerrainCardResource terrain:
                 form.AddChild(new Label { Text = "Terrain Setup" });
                 form.AddChild(new Label
                 {
-                    Text = "Terrain cards do not store an element focus; produced resources define what the terrain provides.",
+                    Text = "The terrain element is its core identity and is independent from produced resources.",
                     AutowrapMode = TextServer.AutowrapMode.WordSmart
                 });
                 AddElementAmountGrid(
@@ -196,6 +201,47 @@ public partial class CardEditorScreen : CardToolScreen
         }
 
         AddSeparator(form);
+    }
+
+    private OptionButton AddElementSelector(VBoxContainer form, ElementResource? selectedElement)
+    {
+        form.AddChild(new Label { Text = "Card Element" });
+        var selector = new OptionButton
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        selector.AddItem("Select element", MissingElementItemId);
+
+        foreach (var element in _elements.OrderBy(element => element.ElementType))
+        {
+            if (element.IconTexture is not null)
+            {
+                selector.AddIconItem(element.IconTexture, element.DisplayName, (int)element.ElementType);
+            }
+            else
+            {
+                selector.AddItem(element.DisplayName, (int)element.ElementType);
+            }
+        }
+
+        for (var index = 0; index < selector.ItemCount; index++)
+        {
+            if (selectedElement is not null && selector.GetItemId(index) == (int)selectedElement.ElementType)
+            {
+                selector.Select(index);
+                break;
+            }
+        }
+
+        selector.ItemSelected += _ =>
+        {
+            if (_frontPreview is not null)
+            {
+                RefreshPreview();
+            }
+        };
+        form.AddChild(selector);
+        return selector;
     }
 
     private void AddMonsterPowerBonusEditor(VBoxContainer form, MonsterCardResource monster)
@@ -480,6 +526,7 @@ public partial class CardEditorScreen : CardToolScreen
     private void ApplyFieldsToCard()
     {
         _editingCard.Id = _id.Text.Trim();
+        _editingCard.Element = GetSelectedCardElement();
         _editingCard.CardImageSourcePath = _imageSourcePath.Text.Trim();
         ApplyTypeSpecificFields();
     }
@@ -489,6 +536,7 @@ public partial class CardEditorScreen : CardToolScreen
         switch (_editingCard)
         {
             case MonsterCardResource monster:
+                monster.Tier = (int)(_monsterTier?.Value ?? monster.Tier);
                 monster.BasePower = (int)(_monsterBasePower?.Value ?? monster.BasePower);
                 monster.Requirements = BuildAmounts(
                     (ElementType.Neutral, _monsterRequirementNeutral),
@@ -540,6 +588,19 @@ public partial class CardEditorScreen : CardToolScreen
         return _elements.FirstOrDefault(element => element.ElementType == elementType);
     }
 
+    private ElementResource? GetSelectedCardElement()
+    {
+        if (_cardElement.Selected < 0)
+        {
+            return null;
+        }
+
+        var elementId = _cardElement.GetItemId(_cardElement.Selected);
+        return Enum.IsDefined(typeof(ElementType), elementId)
+            ? GetElement((ElementType)elementId)
+            : null;
+    }
+
     private static int CountAmount(ResourceAmount[] amounts, ElementType elementType)
     {
         return amounts
@@ -565,6 +626,7 @@ public partial class CardEditorScreen : CardToolScreen
 
         if (source is MonsterCardResource sourceMonster && clone is MonsterCardResource cloneMonster)
         {
+            cloneMonster.Tier = sourceMonster.Tier;
             cloneMonster.Requirements = sourceMonster.Requirements;
             cloneMonster.BasePower = sourceMonster.BasePower;
             cloneMonster.PowerBonuses = sourceMonster.PowerBonuses;
@@ -582,6 +644,7 @@ public partial class CardEditorScreen : CardToolScreen
     {
         target.Id = source.Id;
         target.CardType = source.CardType;
+        target.Element = source.Element;
         target.CardImageTexture = source.CardImageTexture;
         target.CardImageSourcePath = source.CardImageSourcePath;
         target.BackImageTexture = source.BackImageTexture;

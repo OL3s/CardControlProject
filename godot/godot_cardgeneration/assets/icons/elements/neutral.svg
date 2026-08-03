@@ -1,8 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
   <title id="title">Neutral element icon</title>
-  <desc id="desc">A simple stone-shaped neutral resource icon.</desc>
-  <circle cx="64" cy="64" r="56" fill="#f0eee4"/>
-  <path d="M34 45 L57 26 L89 33 L103 62 L91 94 L57 105 L28 83 Z" fill="#aaa596"/>
-  <path d="M57 26 L67 58 L103 62" fill="none" stroke="#d8d4c7" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.75"/>
-  <path d="M67 58 L57 105" fill="none" stroke="#817c70" stroke-width="6" stroke-linecap="round" opacity="0.5"/>
+  <desc id="desc">A gray stone set in a dark, copper-rimmed medallion.</desc>
+  <circle cx="64" cy="64" r="61" fill="#17110d"/>
+  <circle cx="64" cy="64" r="55" fill="#9a6a3c"/>
+  <circle cx="64" cy="64" r="49" fill="#e5e2d8" stroke="#4b4d49" stroke-width="3"/>
+  <path d="M24 44 A45 45 0 0 1 53 21" fill="none" stroke="#d6aa62" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  <path d="M34 48 L56 30 L87 36 L98 62 L88 91 L58 101 L31 81 Z" fill="#85847b" stroke="#4b4d49" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M56 30 L65 59 L98 62 M65 59 L58 101" fill="none" stroke="#c2c0b6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.75"/>
 </svg>

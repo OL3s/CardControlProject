@@ -6,16 +6,21 @@
 
 * [Aktivt regelutkast](gameidea-working.md)
 * [Terrengkort](terrain-cards.md)
+* [Felles kortutseende](card-appearance.md)
 
 ---
 
 Denne kortlisten er source of truth for monsterkortene i defaultutgaven **Elements: Conquora**.
 
-Monsterkort er kampverktøy. Korttypen leses av monsterrammen og baksiden. Elementet styrer kortets ikon, farge og hvilke ressursbonuser det vanligvis bruker. Intern tier brukes bare i kortlisten og ID-en, ikke på selve kortet. Standardstokken har 32 monstre: åtte per element, fordelt som 4 Tier 1, 3 Tier 2 og 1 Tier 3.
+Monsterkort er kampverktøy. Standardstokken har 32 monstre: åtte per element, fordelt som 4 Tier 1, 3 Tier 2 og 1 Tier 3.
 
 PNG-bildene under viser kortpreviewene. SVG-kildene ligger i [`images/svg/`](images/svg/), og ikonene ligger i [`images/svg/icons/`](images/svg/icons/).
 
 ![Monsterkort frontmal](images/png/monster_card_front.png) ![Monsterkort bakside](images/png/monster_card_back.png)
+
+## Kortutseende
+
+Monsterets eksplisitte element vises øverst til høyre og er uavhengig av ressurskravene. Tier vises som én til tre små kobberdiamanter ved elementmedaljongen. Farger, medaljongstil, bakside og printsoner følger [felles spesifikasjon for kortutseende](card-appearance.md). Portrettmotivene planlegges i [manifestet for kortillustrasjoner](card-artwork.md).
 
 ## Ikoner Og Styrke
 
@@ -25,7 +30,7 @@ Elementfordel gir fortsatt `+1 styrke` i tillegg til monsterets grunnstyrke og b
 
 ## Kortliste
 
-| kort_id | element | intern_tier | krav | styrkeikon | bonus_1 | bonus_2 | effekt | maks_styrke_før_elementfordel |
+| kort_id | element | tier | krav | styrkeikon | bonus_1 | bonus_2 | effekt | maks_styrke_før_elementfordel |
 |---|---|---:|---|---:|---|---|---|---:|
 | `monster_neutral_1_a` | nøytral | 1 | `stein` | 1 | Ingen | Ingen | Ingen | 1 |
 | `monster_neutral_1_b` | nøytral | 1 | `2 stein` | 1 | `3 stein -> 1 styrke` | Ingen | Ingen | 2 |

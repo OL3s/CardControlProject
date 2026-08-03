@@ -6,6 +6,7 @@ namespace CardGeneration.Resources;
 [GlobalClass]
 public partial class MonsterCardResource : CardResource
 {
+    [Export] public int Tier { get; set; }
     [Export] public ResourceAmount[] Requirements { get; set; } = [];
     [Export] public int BasePower { get; set; } = 1;
     [Export] public PowerBonusResource[] PowerBonuses { get; set; } = [];

@@ -36,15 +36,15 @@ Godot Resource
 
 Elementikonene peker til importerte textures fra SVG-er under `assets/icons/elements/`. Rendereren bruker disse når de kan lastes, og tegner fallback-symboler når texture mangler.
 
-`CardResource` er felles base for alle kort. Den inneholder ID, korttype, teksturer for kortbilde og baksidebilde, samt `CardImageSourcePath` for bilde importert fra filsystemet. Rendereren bruker source path når `CardImageTexture` ikke er satt. Visningsnavn, notater, beskrivelser, interne designkategorier og generelt kortelement er bevisst utelatt fra kortdata.
+`CardResource` er felles base for alle kort. Den inneholder ID, korttype, teksturer for kortbilde og baksidebilde, samt `CardImageSourcePath` for bilde importert fra filsystemet. Rendereren bruker source path når `CardImageTexture` ikke er satt. Visningsnavn, notater, beskrivelser og interne designkategorier er bevisst utelatt fra kortdata. Element er derimot eksplisitt, autoritativ kortmetadata.
 
-`MonsterCardResource` har krav, grunnstyrke, bonuslinjer og eventuell effekt. Monsterets element lagres ikke separat; `CardElementResolver` utleder element fra kravlisten.
+`MonsterCardResource` har eksplisitt element, Tier 1-3, krav, grunnstyrke, bonuslinjer og eventuell effekt. Element, tier og krav er uavhengige felt. Tier renderer som én til tre kobberdiamanter ved elementmedaljongen.
 
-`TerrainCardResource` har produserte ressurser. Terreng har ikke elementfokus som metadata.
+`TerrainCardResource` har eksplisitt kjerneelement og produserte ressurser som uavhengige felt. Kjerneelementet er autoritativt for framtidige regler som omtaler terreng av et bestemt element, men gir foreløpig ingen aktiv bonus eller matchup.
 
 `CardDeckResource` lagrer en ferdig produktdeck som ID og en liste med `CardDeckEntryResource`, slik at samme kort kan ha antall kopier uten å duplisere kortdata. Deck-beskrivelse og displaynavn er bevisst utelatt.
 
-`CardElementResolver.GetSingleNonNeutralElementType(ResourceAmount[])` er delt API for å utlede monster-element fra kost-/ressursliste. Nøytrale krav gir nøytralt monster; ett ikke-nøytralt krav gir dette elementet. Terreng bruker ikke resolveren som elementfokus.
+Element skal leses direkte fra kortets metadata og skal ikke utledes fra kost-, krav- eller ressurslister. Den visuelle kontrakten for element- og ressursplassering ligger i [felles spesifikasjon for kortutseende](../../../shared/docs/card-appearance.md).
 
 En deck kan inneholde både terreng og monstre i samme 52-korts produkt. Printark renderer derfor bakside per korttype for hvert kort. `MonsterBackImageTexture` og `TerrainBackImageTexture` kan brukes som deck-spesifikke overrides per korttype.
 
@@ -205,7 +205,7 @@ card_type_back_image
 optional_print_guides
 ```
 
-Basebakgrunnen bruker separate, dempede nøytraltoner for monster og terreng. Kort uten image source path bruker samme grafittfargede placeholder for begge korttyper, slik at placeholderen ikke signaliserer et element. Et ikke-tomt path som ikke kan finnes eller lastes bruker en separat crossed-image-placeholder. Monsterets element utledes fra kost og påvirker ikonbruk. Terrengkort har ikke eget elementfokus.
+Basebakgrunnen bruker separate, dempede nøytraltoner for monster og terreng. Kort uten image source path bruker samme grafittfargede placeholder for begge korttyper, slik at placeholderen ikke signaliserer et element. Et ikke-tomt path som ikke kan finnes eller lastes bruker en separat crossed-image-placeholder. Monster og terreng bruker hvert sitt eksplisitte element uavhengig av henholdsvis krav og produksjon. Elementplassering, medaljonger og terrenghjørner følger [felles spesifikasjon for kortutseende](../../../shared/docs/card-appearance.md).
 
 Faktiske monster- og terrengbilder finnes ikke ennå. `assets/placeholders/` brukes som midlertidige bilder fram til de endelige bildene finnes.
 

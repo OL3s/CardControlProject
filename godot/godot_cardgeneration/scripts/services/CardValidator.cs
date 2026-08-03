@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using CardGeneration.App;
@@ -28,8 +29,18 @@ public sealed class CardValidator
                 return ToolResult.Fail($"Card '{card.Id}' has a card type that does not match its resource type.");
             }
 
+            if (card.Element is null || !Enum.IsDefined(card.Element.ElementType))
+            {
+                return ToolResult.Fail($"Card '{card.Id}' must have an explicit valid element.");
+            }
+
             if (card is MonsterCardResource monster)
             {
+                if (monster.Tier is < 1 or > 3)
+                {
+                    return ToolResult.Fail($"Monster card '{monster.Id}' must use tier 1, 2 or 3.");
+                }
+
                 if (monster.Requirements.Length == 0)
                 {
                     return ToolResult.Fail($"Monster card '{monster.Id}' must have at least one requirement.");
@@ -39,6 +50,13 @@ public sealed class CardValidator
                 {
                     return ToolResult.Fail($"Monster card '{monster.Id}' has an invalid requirement.");
                 }
+            }
+
+            if (card is TerrainCardResource terrain
+                && (terrain.ProducedResources.Length == 0
+                    || terrain.ProducedResources.Any(resource => resource.Element is null || resource.Amount < 1)))
+            {
+                return ToolResult.Fail($"Terrain card '{terrain.Id}' must produce at least one valid resource.");
             }
 
         }

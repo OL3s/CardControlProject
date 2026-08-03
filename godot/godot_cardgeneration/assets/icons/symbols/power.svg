@@ -1,7 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
   <title id="title">Power icon</title>
-  <desc id="desc">A compact fist-like power icon for monster strength.</desc>
-  <circle cx="64" cy="64" r="56" fill="#fff5ce"/>
-  <path d="M38 62 H47 V42 C47 36 55 36 55 42 V62 H62 V37 C62 31 70 31 70 37 V62 H77 V43 C77 37 85 37 85 43 V66 C90 67 95 73 95 80 C95 95 83 105 64 105 C46 105 34 95 34 80 V68 C34 65 35 63 38 62 Z" fill="#241b18"/>
-  <path d="M42 76 H86" fill="none" stroke="#fff5ce" stroke-width="6" stroke-linecap="round" opacity="0.82"/>
+  <desc id="desc">A dark fist set in a warm, copper-rimmed medallion.</desc>
+  <circle cx="64" cy="64" r="61" fill="#17110d"/>
+  <circle cx="64" cy="64" r="55" fill="#9a6a3c"/>
+  <circle cx="64" cy="64" r="49" fill="#f3e8cc" stroke="#4f3022" stroke-width="3"/>
+  <path d="M24 44 A45 45 0 0 1 53 21" fill="none" stroke="#d6aa62" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  <path d="M38 62 H47 V42 C47 36 55 36 55 42 V62 H62 V37 C62 31 70 31 70 37 V62 H77 V43 C77 37 85 37 85 43 V66 C90 67 95 73 95 80 C95 95 83 105 64 105 C46 105 34 95 34 80 V68 C34 65 35 63 38 62 Z" fill="#251915" stroke="#4f3022" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M42 76 H86" fill="none" stroke="#d5ad73" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
 </svg>

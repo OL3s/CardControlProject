@@ -44,7 +44,7 @@ Packaged default resources under `res://` er read-only i appen. Genererte defaul
 
 Hovedmenyen skal ikke vise et tilfeldig kortpreview og skal ikke ha egne `New Card`/`New Deck` valg. Kortpreview hører hjemme i `Cards`, `Decks`, editor- og eksportskjermene. Preview viser både front og bakside der det er relevant, og dobbelklikk på preview åpner større visning.
 
-Korteditoren støtter felles kortfelt, image source path, preview, lagring og PNG-eksport. Korttypen er valgt før editoren åpnes. Monsterkort lagrer ikke element direkte; elementet utledes fra ikke-nøytralt ressurskrav. Terrengkort har ikke elementfokus og viser bare hvilke ressurser de produserer.
+Korteditoren støtter felles kortfelt, image source path, preview, lagring og PNG-eksport. Korttypen er valgt før editoren åpnes. Den avtalte kortmodellen har eksplisitt element for både monster og terreng. Elementet er uavhengig av monsterets ressurskrav og terrengets produserte ressurser. Monster har i tillegg eksplisitt Tier 1-3, vist som kobberdiamanter ved elementmedaljongen. [Felles spesifikasjon for kortutseende](../../shared/docs/card-appearance.md) er visuell source of truth.
 
 Deckeditoren støtter deck-ID, tilgjengelige kort på tvers av korttyper, deck entries med antall, `Save` og `Save New`. Venstre side viser lagrede kort som preview-fliser i en horisontal scrollrad med ikonknapper for å legge til én kopi eller velge flere kort. Høyre side viser deckinnhold som preview-fliser med ikonknapper for slett, dupliser og multiselect. Eksport gjøres bare fra `Export`-skjermen. En deck er et ferdig produkt med både monster- og terrengkort.
 
@@ -87,7 +87,7 @@ Et tomt image source path viser den vanlige, ensfargede placeholderen og betyr a
 
 `icons_and_text` inneholder ressursikoner, styrkeikoner, piler, korttekst og annen spillinformasjon. Elementresources peker til SVG-ikonene under `assets/icons/elements/`, og renderer faller tilbake til enkle symboler dersom en texture ikke kan lastes.
 
-Monsterets elementvisning følger kravlisten: dersom kravlisten har ett ikke-nøytralt element, brukes dette som monsterets element. Hvis kravlisten bare har nøytral, blir monsteret nøytralt. Terrengkort har ingen egen elementvisning utover ressursikonene de produserer.
+Monsterets eksplisitte element vises øverst til høyre. Terrengets eksplisitte kjerneelement vises stort i sentrum, separat fra ressursmedaljongene i de faste hjørnene. Detaljert plassering og visuell stil følger [felles spesifikasjon for kortutseende](../../shared/docs/card-appearance.md).
 
 `print_guides` er kun for fysisk produksjon, for eksempel kuttemerker, bleed eller hjelpelinjer. Slike lag skal ikke være del av vanlig preview med mindre brukeren eksplisitt velger det.
 

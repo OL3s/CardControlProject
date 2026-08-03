@@ -9,6 +9,8 @@ namespace CardGeneration.Rendering;
 
 public static class CardImageRenderer
 {
+    private const string PowerIconPath = "res://assets/icons/symbols/power.svg";
+    private const string ArrowRightIconPath = "res://assets/icons/symbols/arrow_right.svg";
     public const int PreviewWidth = 750;
     public const int PreviewHeight = 1050;
     public static Color PlaceholderColor => new(0.165f, 0.157f, 0.18f);
@@ -68,17 +70,19 @@ public static class CardImageRenderer
 
     private static void DrawCardBase(Image image, CardType cardType)
     {
-        FillRoundedRect(image, new Rect2I(20, 20, 710, 1010), 48, new Color(0.02f, 0.02f, 0.025f));
-        FillRoundedRect(image, new Rect2I(38, 38, 674, 974), 40, GetFrameColor(cardType));
-        FillRoundedRect(image, new Rect2I(58, 58, 634, 934), 30, new Color(0.035f, 0.03f, 0.035f));
+        FillRoundedRect(image, new Rect2I(20, 20, 710, 1010), 48, GetOuterInkColor(cardType));
+        FillRoundedRect(image, new Rect2I(48, 48, 654, 954), 38, GetFrameColor(cardType));
+        FillRoundedRect(image, new Rect2I(62, 62, 626, 926), 30, GetFrameFieldColor(cardType));
+        FillRoundedRect(image, new Rect2I(72, 72, 606, 906), 27, GetInsetLineColor(cardType));
+        FillRoundedRect(image, new Rect2I(76, 76, 598, 898), 26, GetFrameFieldColor(cardType));
     }
 
     private static void DrawCardImage(Image image, CardResource card)
     {
-        var cardImageRect = new Rect2I(62, 62, 626, 926);
+        var cardImageRect = new Rect2I(80, 80, 590, 890);
         if (card.CardImageTexture is null)
         {
-            if (TryDrawImageSource(image, card.CardImageSourcePath, cardImageRect))
+            if (TryDrawImageSource(image, card.CardImageSourcePath, cardImageRect, 24))
             {
                 return;
             }
@@ -95,10 +99,10 @@ public static class CardImageRenderer
             return;
         }
 
-        DrawTexture(image, card.CardImageTexture, cardImageRect);
+        DrawTexture(image, card.CardImageTexture, cardImageRect, 24);
     }
 
-    private static bool TryDrawImageSource(Image target, string sourcePath, Rect2I targetRect)
+    private static bool TryDrawImageSource(Image target, string sourcePath, Rect2I targetRect, int cornerRadius = 0)
     {
         if (string.IsNullOrWhiteSpace(sourcePath))
         {
@@ -120,6 +124,11 @@ public static class CardImageRenderer
         targetRect = ScaleRect(target, targetRect);
         source.Convert(Image.Format.Rgba8);
         source.Resize(targetRect.Size.X, targetRect.Size.Y, Image.Interpolation.Lanczos);
+        if (cornerRadius > 0)
+        {
+            ApplyRoundedAlphaMask(source, ScaleRadius(target, cornerRadius));
+        }
+
         target.BlendRect(source, new Rect2I(Vector2I.Zero, source.GetSize()), targetRect.Position);
         return true;
     }
@@ -159,141 +168,182 @@ public static class CardImageRenderer
 
     private static void DrawMonsterPanels(Image image, MonsterCardResource card)
     {
-        DrawResourceAmounts(image, card.Requirements, new Vector2I(96, 86), 68, 10);
+        var requirementsPanel = new Rect2I(86, 78, 448, 100);
+        DrawOutlinedPanel(image, requirementsPanel, 30, GetFrameColor(CardType.Monster), new Color(0.035f, 0.022f, 0.025f, 0.88f), 4);
+        DrawResourceAmountsOverlapping(image, card.Requirements, new Vector2I(104, 94), 68, 408, 54);
+        DrawMonsterTierDiamonds(image, card.Tier);
+        DrawElementIcon(image, card.Element, new Rect2I(570, 82, 92, 92));
 
         var bonusCount = card.PowerBonuses?.Length ?? 0;
         var bonusPanelBottom = 950;
-        var bonusPanelHeight = Math.Clamp(116 + bonusCount * 50, 116, 300);
+        var bonusPanelHeight = Math.Clamp(116 + bonusCount * 50, 116, 700);
         var bonusPanel = new Rect2I(92, bonusPanelBottom - bonusPanelHeight, 566, bonusPanelHeight);
-        FillRoundedRect(image, bonusPanel, 26, new Color(0.025f, 0.018f, 0.018f, 0.82f));
+        DrawOutlinedPanel(image, bonusPanel, 26, GetFrameColor(CardType.Monster), new Color(0.025f, 0.018f, 0.018f, 0.88f), 5);
 
-        var basePowerY = bonusPanelBottom - 24 - 64 - bonusCount * 50;
+        var basePowerY = bonusPanel.Position.Y + 24;
         DrawPowerIconsCentered(image, card.BasePower, basePowerY, 64, 6);
 
         var lineY = basePowerY + 78;
+        var lineSpacing = bonusCount == 0
+            ? 50
+            : Math.Clamp((bonusPanelHeight - 110) / bonusCount, 18, 50);
         foreach (var bonus in card.PowerBonuses ?? Array.Empty<PowerBonusResource>())
         {
-            var nextX = DrawResourceAmounts(image, bonus.Requirements, new Vector2I(150, lineY - 3), 48, 6);
-            DrawArrowRight(image, new Rect2I(nextX + 18, lineY - 6, 70, 54));
-            DrawPowerIcons(image, bonus.PowerGain, new Vector2I(nextX + 112, lineY), 42, 6);
-            lineY += 50;
+            DrawResourceAmountsOverlapping(image, bonus.Requirements, new Vector2I(130, lineY - 3), 48, 230, 34);
+            DrawArrowRight(image, new Rect2I(385, lineY - 6, 62, 54));
+            DrawPowerIconsOverlapping(image, bonus.PowerGain, new Vector2I(470, lineY), 42, 140, 28);
+            lineY += lineSpacing;
         }
     }
 
     private static void DrawTerrainPanels(Image image, TerrainCardResource card)
     {
-        DrawTerrainResourceCorner(image, card.ProducedResources, ElementType.Neutral, new Vector2I(92, 88), drawRightToLeft: false);
-        DrawTerrainResourceCorner(image, card.ProducedResources, ElementType.Grass, new Vector2I(92, 862), drawRightToLeft: false);
-        DrawTerrainResourceCorner(image, card.ProducedResources, ElementType.Flame, new Vector2I(658, 88), drawRightToLeft: true);
-        DrawTerrainResourceCorner(image, card.ProducedResources, ElementType.Water, new Vector2I(658, 862), drawRightToLeft: true);
+        FillHexagon(image, new Vector2I(375, 525), 152, 176, new Color(0.25f, 0.14f, 0.065f, 0.92f));
+        FillHexagon(image, new Vector2I(375, 525), 140, 162, new Color(0.83f, 0.63f, 0.34f, 0.92f));
+        FillHexagon(image, new Vector2I(375, 525), 130, 150, new Color(0.055f, 0.038f, 0.022f, 0.94f));
+        DrawElementIcon(image, card.Element, new Rect2I(263, 413, 224, 224));
+
+        DrawTerrainResourceCorner(image, card.ProducedResources, ElementType.Neutral, new Vector2I(92, 88), expandRight: true);
+        DrawTerrainResourceCorner(image, card.ProducedResources, ElementType.Grass, new Vector2I(580, 88), expandRight: false);
+        DrawTerrainResourceCorner(image, card.ProducedResources, ElementType.Flame, new Vector2I(92, 862), expandRight: true);
+        DrawTerrainResourceCorner(image, card.ProducedResources, ElementType.Water, new Vector2I(580, 862), expandRight: false);
     }
 
-    private static void DrawTerrainResourceCorner(Image image, ResourceAmount[] amounts, ElementType elementType, Vector2I anchor, bool drawRightToLeft)
+    private static void DrawTerrainResourceCorner(Image image, ResourceAmount[] amounts, ElementType elementType, Vector2I anchor, bool expandRight)
     {
-        var amount = amounts.FirstOrDefault(resourceAmount => resourceAmount.Element?.ElementType == elementType && resourceAmount.Amount > 0);
-        if (amount is null)
+        var matchingAmounts = amounts
+            .Where(resourceAmount => resourceAmount.Element?.ElementType == elementType && resourceAmount.Amount > 0)
+            .ToArray();
+        var count = matchingAmounts.Sum(resourceAmount => resourceAmount.Amount);
+        if (count < 1)
         {
             return;
         }
 
         const int iconSize = 78;
-        const int gap = 10;
-        var count = Math.Max(1, amount.Amount);
+        const int maxSpan = 250;
+        const int preferredStep = 53;
+        DrawElementIconsOverlapping(image, matchingAmounts[0].Element, count, anchor, iconSize, maxSpan, preferredStep, expandRight);
+    }
 
-        if (drawRightToLeft)
+    private static int DrawResourceAmountsOverlapping(Image image, ResourceAmount[] amounts, Vector2I start, int size, int maxSpan, int preferredStep)
+    {
+        var elements = amounts
+            .Where(amount => amount.Amount > 0)
+            .SelectMany(amount => Enumerable.Repeat(amount.Element, amount.Amount))
+            .ToArray();
+        if (elements.Length == 0)
         {
-            DrawElementIconsRightToLeft(image, amount.Element, count, new Vector2I(anchor.X - iconSize, anchor.Y), iconSize, gap);
+            return start.X;
+        }
+
+        var step = GetOverlapStep(elements.Length, size, maxSpan, preferredStep);
+        for (var index = 0; index < elements.Length; index++)
+        {
+            DrawElementIcon(image, elements[index], new Rect2I(start.X + index * step, start.Y, size, size));
+        }
+
+        return start.X + size + (elements.Length - 1) * step;
+    }
+
+    private static void DrawElementIconsOverlapping(
+        Image image,
+        ElementResource? element,
+        int count,
+        Vector2I anchor,
+        int size,
+        int maxSpan,
+        int preferredStep,
+        bool expandRight)
+    {
+        var step = GetOverlapStep(count, size, maxSpan, preferredStep);
+
+        // Draw from the inside out so the icon anchored to the card corner stays fully visible.
+        for (var index = count - 1; index >= 0; index--)
+        {
+            var offset = index * step * (expandRight ? 1 : -1);
+            DrawElementIcon(image, element, new Rect2I(anchor.X + offset, anchor.Y, size, size));
+        }
+    }
+
+    private static void DrawElementIcon(Image image, ElementResource? element, Rect2I rect)
+    {
+        if (element?.IconTexture is not null && TryDrawTexture(image, element.IconTexture, rect))
+        {
             return;
         }
 
-        DrawElementIcons(image, amount.Element, count, anchor, iconSize, gap);
+        DrawElementFallback(image, element?.ElementType ?? ElementType.Neutral, rect);
     }
 
-    private static int DrawResourceAmounts(Image image, ResourceAmount[] amounts, Vector2I start, int size, int gap)
+    private static void DrawPowerIconsOverlapping(Image image, int count, Vector2I start, int size, int maxSpan, int preferredStep)
     {
-        var x = start.X;
-        foreach (var amount in amounts)
-        {
-            DrawElementIcons(image, amount.Element, amount.Amount, new Vector2I(x, start.Y), size, gap);
-            x += Math.Max(0, amount.Amount) * (size + gap) + gap;
-        }
-
-        return x;
-    }
-
-    private static void DrawElementIcons(Image image, ElementResource? element, int count, Vector2I start, int size, int gap)
-    {
+        var step = GetOverlapStep(count, size, maxSpan, preferredStep);
         for (var index = 0; index < count; index++)
         {
-            var rect = new Rect2I(start.X + index * (size + gap), start.Y, size, size);
-            if (element?.IconTexture is not null)
-            {
-                DrawTexture(image, element.IconTexture, rect);
-            }
-            else
-            {
-                DrawElementFallback(image, element?.ElementType ?? ElementType.Neutral, rect);
-            }
-        }
-    }
-
-    private static void DrawElementIconsRightToLeft(Image image, ElementResource? element, int count, Vector2I start, int size, int gap)
-    {
-        for (var index = 0; index < count; index++)
-        {
-            var rect = new Rect2I(start.X - index * (size + gap), start.Y, size, size);
-            if (element?.IconTexture is not null)
-            {
-                DrawTexture(image, element.IconTexture, rect);
-            }
-            else
-            {
-                DrawElementFallback(image, element?.ElementType ?? ElementType.Neutral, rect);
-            }
-        }
-    }
-
-    private static void DrawPowerIcons(Image image, int count, Vector2I start, int size, int gap)
-    {
-        for (var index = 0; index < count; index++)
-        {
-            DrawPowerFallback(image, new Rect2I(start.X + index * (size + gap), start.Y, size, size));
+            DrawPowerIcon(image, new Rect2I(start.X + index * step, start.Y, size, size));
         }
     }
 
     private static void DrawPowerIconsCentered(Image image, int count, int y, int size, int gap)
     {
         var iconCount = Math.Max(0, count);
-        var width = iconCount * size + Math.Max(0, iconCount - 1) * gap;
-        DrawPowerIcons(image, iconCount, new Vector2I((PreviewWidth - width) / 2, y), size, gap);
+        var step = GetOverlapStep(iconCount, size, 320, size + gap);
+        var width = iconCount == 0 ? 0 : size + (iconCount - 1) * step;
+        DrawPowerIconsOverlapping(image, iconCount, new Vector2I((PreviewWidth - width) / 2, y), size, 320, size + gap);
     }
 
-    private static void DrawRepeatedTexture(Image image, Texture2D? texture, int count, Vector2I start, int size, int gap)
+    private static void DrawPowerIcon(Image image, Rect2I rect)
     {
-        for (var index = 0; index < count; index++)
+        if (!TryDrawResourceTexture(image, PowerIconPath, rect))
         {
-            DrawTexture(image, texture, new Rect2I(start.X + index * (size + gap), start.Y, size, size));
+            DrawPowerFallback(image, rect);
         }
     }
 
-    private static void DrawTexture(Image target, Texture2D? texture, Rect2I targetRect)
+    private static int GetOverlapStep(int count, int size, int maxSpan, int preferredStep)
+    {
+        return count <= 1
+            ? 0
+            : Math.Max(1, Math.Min(preferredStep, (maxSpan - size) / (count - 1)));
+    }
+
+    private static void DrawTexture(Image target, Texture2D? texture, Rect2I targetRect, int cornerRadius = 0)
+    {
+        if (!TryDrawTexture(target, texture, targetRect, cornerRadius))
+        {
+            FillRoundedRect(target, targetRect, Math.Min(targetRect.Size.X, targetRect.Size.Y) / 2, new Color(0.85f, 0.82f, 0.72f));
+        }
+    }
+
+    private static bool TryDrawTexture(Image target, Texture2D? texture, Rect2I targetRect, int cornerRadius = 0)
     {
         if (texture is null)
         {
-            FillRoundedRect(target, targetRect, Math.Min(targetRect.Size.X, targetRect.Size.Y) / 2, new Color(0.85f, 0.82f, 0.72f));
-            return;
+            return false;
         }
 
         var source = texture.GetImage();
         if (source is null)
         {
-            return;
+            return false;
         }
 
         targetRect = ScaleRect(target, targetRect);
         source.Convert(Image.Format.Rgba8);
         source.Resize(targetRect.Size.X, targetRect.Size.Y, Image.Interpolation.Lanczos);
+        if (cornerRadius > 0)
+        {
+            ApplyRoundedAlphaMask(source, ScaleRadius(target, cornerRadius));
+        }
+
         target.BlendRect(source, new Rect2I(Vector2I.Zero, source.GetSize()), targetRect.Position);
+        return true;
+    }
+
+    private static bool TryDrawResourceTexture(Image target, string resourcePath, Rect2I targetRect)
+    {
+        return TryDrawTexture(target, ResourceLoader.Load<Texture2D>(resourcePath), targetRect);
     }
 
     private static void DrawPlaceholderCardImage(Image image, Rect2I rect)
@@ -330,16 +380,27 @@ public static class CardImageRenderer
 
     private static void DrawElementFallback(Image image, ElementType elementType, Rect2I rect)
     {
-        FillRoundedRect(image, rect, Math.Min(rect.Size.X, rect.Size.Y) / 2, new Color(0.96f, 0.93f, 0.84f));
+        var radius = Math.Min(rect.Size.X, rect.Size.Y) / 2;
+        FillRoundedRect(image, rect, radius, new Color(0.09f, 0.067f, 0.051f));
 
-        var inset = Math.Max(4, rect.Size.X / 8);
-        var inner = new Rect2I(rect.Position.X + inset, rect.Position.Y + inset, rect.Size.X - inset * 2, rect.Size.Y - inset * 2);
-        FillRoundedRect(image, inner, Math.Min(inner.Size.X, inner.Size.Y) / 2, GetElementColor(elementType));
+        var rimInset = Math.Max(2, rect.Size.X / 18);
+        var rim = InsetRect(rect, rimInset);
+        FillRoundedRect(image, rim, Math.Min(rim.Size.X, rim.Size.Y) / 2, new Color(0.60f, 0.42f, 0.24f));
+
+        var fieldInset = Math.Max(3, rect.Size.X / 10);
+        var field = InsetRect(rect, fieldInset);
+        FillRoundedRect(image, field, Math.Min(field.Size.X, field.Size.Y) / 2, GetElementPaleColor(elementType));
+
+        var glyphInset = Math.Max(6, rect.Size.X / 3);
+        var glyph = InsetRect(rect, glyphInset);
+        FillRoundedRect(image, glyph, Math.Min(glyph.Size.X, glyph.Size.Y) / 2, GetElementColor(elementType));
     }
 
     private static void DrawPowerFallback(Image image, Rect2I rect)
     {
-        FillRoundedRect(image, rect, Math.Min(rect.Size.X, rect.Size.Y) / 2, new Color(0.98f, 0.94f, 0.75f));
+        FillRoundedRect(image, rect, Math.Min(rect.Size.X, rect.Size.Y) / 2, new Color(0.09f, 0.067f, 0.051f));
+        FillRoundedRect(image, InsetRect(rect, Math.Max(2, rect.Size.X / 18)), Math.Min(rect.Size.X, rect.Size.Y) / 2, new Color(0.60f, 0.42f, 0.24f));
+        FillRoundedRect(image, InsetRect(rect, Math.Max(3, rect.Size.X / 10)), Math.Min(rect.Size.X, rect.Size.Y) / 2, new Color(0.95f, 0.91f, 0.80f));
         var inset = Math.Max(5, rect.Size.X / 7);
         FillRoundedRect(
             image,
@@ -355,6 +416,11 @@ public static class CardImageRenderer
 
     private static void DrawArrowRight(Image image, Rect2I rect)
     {
+        if (TryDrawResourceTexture(image, ArrowRightIconPath, rect))
+        {
+            return;
+        }
+
         var centerY = rect.Position.Y + rect.Size.Y / 2;
         var stemHeight = Math.Max(6, rect.Size.Y / 5);
         FillRoundedRect(
@@ -379,9 +445,36 @@ public static class CardImageRenderer
     {
         return cardType switch
         {
-            CardType.Monster => new Color(0.30f, 0.24f, 0.26f),
-            CardType.Terrain => new Color(0.42f, 0.34f, 0.24f),
+            CardType.Monster => new Color(0.494f, 0.204f, 0.22f),
+            CardType.Terrain => new Color(0.651f, 0.471f, 0.259f),
             _ => new Color(0.22f, 0.22f, 0.25f)
+        };
+    }
+
+    private static Color GetOuterInkColor(CardType cardType)
+    {
+        return cardType == CardType.Terrain
+            ? new Color(0.031f, 0.024f, 0.016f)
+            : new Color(0.02f, 0.012f, 0.012f);
+    }
+
+    private static Color GetFrameFieldColor(CardType cardType)
+    {
+        return cardType switch
+        {
+            CardType.Monster => new Color(0.09f, 0.063f, 0.067f),
+            CardType.Terrain => new Color(0.169f, 0.114f, 0.067f),
+            _ => new Color(0.10f, 0.10f, 0.12f)
+        };
+    }
+
+    private static Color GetInsetLineColor(CardType cardType)
+    {
+        return cardType switch
+        {
+            CardType.Monster => new Color(0.239f, 0.125f, 0.133f),
+            CardType.Terrain => new Color(0.427f, 0.294f, 0.169f),
+            _ => new Color(0.28f, 0.28f, 0.31f)
         };
     }
 
@@ -409,11 +502,153 @@ public static class CardImageRenderer
     {
         return elementType switch
         {
-            ElementType.Grass => new Color(0.35f, 0.66f, 0.31f),
-            ElementType.Flame => new Color(0.94f, 0.42f, 0.18f),
-            ElementType.Water => new Color(0.24f, 0.58f, 0.84f),
-            _ => new Color(0.63f, 0.61f, 0.55f)
+            ElementType.Grass => new Color(0.157f, 0.361f, 0.224f),
+            ElementType.Flame => new Color(0.561f, 0.208f, 0.169f),
+            ElementType.Water => new Color(0.157f, 0.361f, 0.471f),
+            _ => new Color(0.294f, 0.302f, 0.286f)
         };
+    }
+
+    private static Color GetElementPaleColor(ElementType elementType)
+    {
+        return elementType switch
+        {
+            ElementType.Grass => new Color(0.898f, 0.941f, 0.863f),
+            ElementType.Flame => new Color(0.957f, 0.875f, 0.847f),
+            ElementType.Water => new Color(0.871f, 0.929f, 0.953f),
+            _ => new Color(0.898f, 0.886f, 0.847f)
+        };
+    }
+
+    private static void DrawOutlinedPanel(Image image, Rect2I rect, int radius, Color outline, Color fill, int thickness)
+    {
+        FillRoundedRect(image, rect, radius, outline);
+        FillRoundedRect(image, InsetRect(rect, thickness), Math.Max(1, radius - thickness), fill);
+    }
+
+    private static Rect2I InsetRect(Rect2I rect, int inset)
+    {
+        return new Rect2I(
+            rect.Position.X + inset,
+            rect.Position.Y + inset,
+            Math.Max(1, rect.Size.X - inset * 2),
+            Math.Max(1, rect.Size.Y - inset * 2));
+    }
+
+    private static void ApplyRoundedAlphaMask(Image image, int radius)
+    {
+        radius = Math.Min(radius, Math.Min(image.GetWidth(), image.GetHeight()) / 2);
+        if (radius < 1)
+        {
+            return;
+        }
+
+        var maxX = image.GetWidth() - 1;
+        var maxY = image.GetHeight() - 1;
+        var radiusSquared = radius * radius;
+        for (var y = 0; y < image.GetHeight(); y++)
+        {
+            for (var x = 0; x < image.GetWidth(); x++)
+            {
+                var cornerX = x < radius ? radius : x > maxX - radius ? maxX - radius : x;
+                var cornerY = y < radius ? radius : y > maxY - radius ? maxY - radius : y;
+                var dx = x - cornerX;
+                var dy = y - cornerY;
+                if (dx * dx + dy * dy <= radiusSquared)
+                {
+                    continue;
+                }
+
+                var color = image.GetPixel(x, y);
+                image.SetPixel(x, y, new Color(color.R, color.G, color.B, 0));
+            }
+        }
+    }
+
+    private static void FillHexagon(Image image, Vector2I center, int radiusX, int radiusY, Color color)
+    {
+        var points = new[]
+        {
+            new Vector2I(center.X, center.Y - radiusY),
+            new Vector2I(center.X + radiusX, center.Y - radiusY / 2),
+            new Vector2I(center.X + radiusX, center.Y + radiusY / 2),
+            new Vector2I(center.X, center.Y + radiusY),
+            new Vector2I(center.X - radiusX, center.Y + radiusY / 2),
+            new Vector2I(center.X - radiusX, center.Y - radiusY / 2)
+        };
+        FillPolygon(image, points, color);
+    }
+
+    private static void DrawMonsterTierDiamonds(Image image, int tier)
+    {
+        if (tier is < 1 or > 3)
+        {
+            return;
+        }
+
+        var startY = 128 - (tier - 1) * 14;
+        for (var index = 0; index < tier; index++)
+        {
+            var center = new Vector2I(550, startY + index * 28);
+            FillDiamond(image, center, 11, 15, new Color(0.09f, 0.067f, 0.051f));
+            FillDiamond(image, center, 8, 12, new Color(0.847f, 0.537f, 0.392f));
+            FillDiamond(image, center, 4, 7, new Color(0.455f, 0.188f, 0.204f));
+        }
+    }
+
+    private static void FillDiamond(Image image, Vector2I center, int radiusX, int radiusY, Color color)
+    {
+        FillPolygon(
+            image,
+            [
+                new Vector2I(center.X, center.Y - radiusY),
+                new Vector2I(center.X + radiusX, center.Y),
+                new Vector2I(center.X, center.Y + radiusY),
+                new Vector2I(center.X - radiusX, center.Y)
+            ],
+            color);
+    }
+
+    private static void FillPolygon(Image image, Vector2I[] points, Color color)
+    {
+        var scaledPoints = points.Select(point => ScalePoint(image, point)).ToArray();
+        var minX = Math.Max(0, scaledPoints.Min(point => point.X));
+        var maxX = Math.Min(image.GetWidth() - 1, scaledPoints.Max(point => point.X));
+        var minY = Math.Max(0, scaledPoints.Min(point => point.Y));
+        var maxY = Math.Min(image.GetHeight() - 1, scaledPoints.Max(point => point.Y));
+
+        for (var y = minY; y <= maxY; y++)
+        {
+            for (var x = minX; x <= maxX; x++)
+            {
+                if (IsPointInPolygon(new Vector2(x + 0.5f, y + 0.5f), scaledPoints))
+                {
+                    BlendPixel(image, x, y, color);
+                }
+            }
+        }
+    }
+
+    private static bool IsPointInPolygon(Vector2 point, Vector2I[] polygon)
+    {
+        var inside = false;
+        for (var index = 0; index < polygon.Length; index++)
+        {
+            var previous = polygon[(index + polygon.Length - 1) % polygon.Length];
+            var current = polygon[index];
+            if ((current.Y > point.Y) == (previous.Y > point.Y))
+            {
+                continue;
+            }
+
+            var edgeX = (previous.X - current.X) * (point.Y - current.Y) / (previous.Y - current.Y) + current.X;
+            if (point.X < edgeX)
+            {
+                inside = !inside;
+            }
+        }
+
+        return inside;
     }
 
     private static void FillRoundedRect(Image image, Rect2I rect, int radius, Color color)
@@ -466,6 +701,18 @@ public static class CardImageRenderer
             Mathf.RoundToInt(rect.Position.Y * scaleY),
             Math.Max(1, Mathf.RoundToInt(rect.Size.X * scaleX)),
             Math.Max(1, Mathf.RoundToInt(rect.Size.Y * scaleY)));
+    }
+
+    private static Vector2I ScalePoint(Image image, Vector2I point)
+    {
+        if (image.GetWidth() == PreviewWidth && image.GetHeight() == PreviewHeight)
+        {
+            return point;
+        }
+
+        return new Vector2I(
+            Mathf.RoundToInt(point.X * image.GetWidth() / (float)PreviewWidth),
+            Mathf.RoundToInt(point.Y * image.GetHeight() / (float)PreviewHeight));
     }
 
     private static int ScaleRadius(Image image, int radius)

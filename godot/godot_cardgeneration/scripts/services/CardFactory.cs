@@ -15,10 +15,13 @@ public static class CardFactory
         {
             CardType.Terrain => new TerrainCardResource
             {
+                Element = element,
                 ProducedResources = [Amount(element, 1)]
             },
             CardType.Monster => new MonsterCardResource
             {
+                Element = element,
+                Tier = 1,
                 Requirements = [Amount(element, 1)],
                 BasePower = 1
             },

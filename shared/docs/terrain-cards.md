@@ -6,16 +6,21 @@
 
 * [Aktivt regelutkast](gameidea-working.md)
 * [Monsterkort](monster-cards.md)
+* [Felles kortutseende](card-appearance.md)
 
 ---
 
 Denne kortlisten er source of truth for terrengkortene i defaultutgaven **Elements: Conquora**.
 
-Terrengkort bygger kartet og gir ressurskapasitet. Korttypen leses av terrengrammen og baksiden. Elementfokus styrer fargestemning og hvilke ressursikoner som dominerer kortflaten. Intern tier brukes bare i kortlisten og ID-en, ikke på selve kortet.
+Terrengkort bygger kartet og gir ressurskapasitet.
 
 PNG-bildene under viser kortpreviewene. SVG-kildene ligger i [`images/svg/`](images/svg/), og ikonene ligger i [`images/svg/icons/`](images/svg/icons/).
 
 ![Terrengkort frontmal](images/png/terrain_card_front.png) ![Terrengkort bakside](images/png/terrain_card_back.png)
+
+## Kortutseende
+
+Terrengets eksplisitte kjerneelement vises stort i sentrum og er uavhengig av ressursene terrenget produserer. Ressursmedaljongene har faste hjørner, og gjentatte ikoner overlapper innover. Intern tier vises ikke. Full plassering, medaljongstil, bakside og printsoner følger [felles spesifikasjon for kortutseende](card-appearance.md). Bakgrunnsmotivene planlegges i [manifestet for kortillustrasjoner](card-artwork.md).
 
 ## Ikoner
 

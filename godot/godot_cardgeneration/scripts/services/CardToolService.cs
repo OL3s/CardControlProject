@@ -11,7 +11,7 @@ namespace CardGeneration.Services;
 
 public sealed class CardToolService
 {
-    private const string DefaultContentVersion = "terrain_monster_v1";
+    private const string DefaultContentVersion = "monster_tier_diamonds_v3";
     private const string DefaultContentVersionPath = "user://resources/default_content_version.txt";
 
     private readonly CardRepository _cardRepository;
@@ -713,12 +713,14 @@ public sealed class CardToolService
         var clone = CreateCardForType(source.CardType);
         clone.Id = source.Id;
         clone.CardType = source.CardType;
+        clone.Element = source.Element;
         clone.CardImageTexture = source.CardImageTexture;
         clone.CardImageSourcePath = source.CardImageSourcePath;
         clone.BackImageTexture = source.BackImageTexture;
 
         if (source is MonsterCardResource sourceMonster && clone is MonsterCardResource cloneMonster)
         {
+            cloneMonster.Tier = sourceMonster.Tier;
             cloneMonster.Requirements = sourceMonster.Requirements;
             cloneMonster.BasePower = sourceMonster.BasePower;
             cloneMonster.PowerBonuses = sourceMonster.PowerBonuses;

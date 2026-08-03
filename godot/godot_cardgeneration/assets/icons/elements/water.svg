@@ -1,7 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
   <title id="title">Water element icon</title>
-  <desc id="desc">A simple water drop resource icon.</desc>
-  <circle cx="64" cy="64" r="56" fill="#e2f4ff"/>
-  <path d="M64 17 C84 43 98 63 98 82 C98 103 83 116 64 116 C45 116 30 103 30 82 C30 63 44 43 64 17 Z" fill="#3d94d8"/>
-  <path d="M48 80 C49 91 57 98 68 98" fill="none" stroke="#e2f4ff" stroke-width="9" stroke-linecap="round" opacity="0.82"/>
+  <desc id="desc">A blue water drop set in a dark, copper-rimmed medallion.</desc>
+  <circle cx="64" cy="64" r="61" fill="#17110d"/>
+  <circle cx="64" cy="64" r="55" fill="#9a6a3c"/>
+  <circle cx="64" cy="64" r="49" fill="#deedf3" stroke="#285c78" stroke-width="3"/>
+  <path d="M24 44 A45 45 0 0 1 53 21" fill="none" stroke="#d6aa62" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  <path d="M64 25 C80 46 91 62 91 77 C91 95 79 105 64 105 C49 105 37 95 37 77 C37 62 48 46 64 25 Z" fill="#4389ad" stroke="#285c78" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M49 76 C50 86 57 92 67 92" fill="none" stroke="#d8eaf1" stroke-width="6" stroke-linecap="round" opacity="0.9"/>
 </svg>

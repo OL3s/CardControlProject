@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using CardGeneration.Rendering;
 using CardGeneration.Resources;
 using CardGeneration.Resources.Enums;
@@ -252,7 +254,50 @@ public partial class CardPreviewControl : TextureRect
             return "empty";
         }
 
-        return string.Join('|', _card.Id, _card.CardType, _showBack ? "back" : "front", _renderSize.X, _renderSize.Y);
+        return string.Join(
+            '|',
+            _card.Id,
+            _card.GetInstanceId(),
+            _card.CardType,
+            _card.Element?.ElementType.ToString() ?? "missing-element",
+            GetCardContentSignature(_card),
+            _showBack ? "back" : "front",
+            _renderSize.X,
+            _renderSize.Y);
+    }
+
+    private static string GetCardContentSignature(CardResource card)
+    {
+        var common = string.Join(
+            ':',
+            card.CardImageSourcePath,
+            card.CardImageTexture?.GetInstanceId() ?? 0,
+            card.BackImageTexture?.GetInstanceId() ?? 0,
+            card.Element?.IconTexture?.GetInstanceId() ?? 0);
+
+        return card switch
+        {
+            MonsterCardResource monster => string.Join(
+                ':',
+                common,
+                monster.Tier,
+                monster.BasePower,
+                GetAmountsSignature(monster.Requirements),
+                string.Join(';', (monster.PowerBonuses ?? Array.Empty<PowerBonusResource>())
+                    .Select(bonus => $"{GetAmountsSignature(bonus.Requirements)}>{bonus.PowerGain}")),
+                monster.Effect?.EffectId ?? string.Empty,
+                monster.Effect?.RulesText ?? string.Empty),
+            TerrainCardResource terrain => $"{common}:{GetAmountsSignature(terrain.ProducedResources)}",
+            _ => common
+        };
+    }
+
+    private static string GetAmountsSignature(ResourceAmount[] amounts)
+    {
+        return string.Join(
+            ',',
+            (amounts ?? Array.Empty<ResourceAmount>())
+                .Select(amount => $"{amount.Element?.ElementType.ToString() ?? "missing"}={amount.Amount}"));
     }
 
     private static Vector2I ToRenderSize(Vector2? minimumSize)

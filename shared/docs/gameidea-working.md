@@ -94,6 +94,8 @@ Elementene følger et stein-saks-papir-system:
 
 Elementene har ikke faste roller. Flamme er derfor ikke automatisk offensivt, og vann er ikke automatisk defensivt. Elementene handler om hvilke andre elementer de er sterke eller svake mot.
 
+Et monsters element er eksplisitt kortdata og utledes ikke fra ressurskravene. Ressurskrav og element kan derfor endres uavhengig av hverandre.
+
 ## Elementfordel
 
 Elementfordel gir:
@@ -126,6 +128,8 @@ Et terreng uten eier kalles **eierløst**.
 
 Terrengverdier vises i faste hjørner for nøytral, gress, flamme og vann.
 
+Hvert terreng har i tillegg ett eksplisitt kjerneelement som er uavhengig av ressursene terrenget produserer. Kjerneelementet er autoritativt for regler som omtaler kontroll over et terreng av et bestemt element. Det gir foreløpig ingen bonus, elementfordel eller matchup.
+
 Eksempel:
 
 * `2 nøytral`
@@ -157,11 +161,11 @@ Monsterkort er spillets viktigste kampverktøy.
 
 Hvert monsterkort har:
 
-* Ett element
+* Ett eksplisitt element, uavhengig av ressurskravene
 * Ressurskrav som ikoner
 * Baseverdi med styrkeikon
 * Eventuelle kumulative ressursbonuser
-* Et tier
+* En tier som vises med én til tre kobberdiamanter ved elementikonet
 * Eventuelt en enkel spesialeffekt
 
 For å bruke et monster må spilleren oppfylle kravikonene øverst på kortet.
