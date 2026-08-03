@@ -654,10 +654,12 @@ public partial class ExportCenterScreen : CardToolScreen
         pageList.AddThemeConstantOverride("separation", 20);
         scroll.AddChild(pageList);
 
+        var nextPageToDispose = 0;
         try
         {
-            foreach (var page in pages)
+            for (var pageIndex = 0; pageIndex < pages.Count; pageIndex++)
             {
+                var page = pages[pageIndex];
                 var pageGroup = new VBoxContainer
                 {
                     SizeFlagsHorizontal = SizeFlags.ExpandFill
@@ -685,13 +687,16 @@ public partial class ExportCenterScreen : CardToolScreen
                 {
                     pageList.AddChild(new HSeparator());
                 }
+
+                page.Dispose();
+                nextPageToDispose = pageIndex + 1;
             }
         }
         finally
         {
-            foreach (var page in pages)
+            for (var pageIndex = nextPageToDispose; pageIndex < pages.Count; pageIndex++)
             {
-                page.Dispose();
+                pages[pageIndex].Dispose();
             }
         }
 

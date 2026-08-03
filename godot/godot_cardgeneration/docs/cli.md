@@ -215,7 +215,11 @@ monster_cards_a4_600dpi_back_002.png
 
 Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, ved valgt DPI. En deck kan inneholde flere korttyper, så baksiden renderes per korttype for hvert kort. Front- og baksideark bruker samme slot-beregning; speiling skjer på hele baksidearket etter at alle baksider er plassert. `--measurement-guide` reserverer en liten bunnstripe og tegner en 10 cm linje med centimeter-ticks nederst på arkene.
 
+Store printark bruker automatisk memory-safe PNG-streaming i stedet for å allokere hele arket som én RGBA-buffer. Dette gjelder normalt A3 ved `600`/`1200 DPI` og A4 ved `1200 DPI`. Arkene skrives fortsatt sekvensielt og atomisk til de samme PNG-filnavnene; funksjonen endrer ikke layout, speiling eller målelinjen.
+
 `--easy-backs` grupperer forsidene etter korttype og fyller alle slots på hvert tilhørende baksideark. Modusen bruker mer papir og blekk, men gjør slot-alignment og `--back-mirror` unødvendig; speiling ignoreres når easy backs er aktivert.
+
+Eksportkommandoer viser fremdrift i interaktiv terminal. Fremdriften skrives til stderr, slik at stdout fortsatt kan brukes til maskinlesbare resultater. Bruk `--progress auto` (default) for automatisk terminaldeteksjon, `--progress always` for å tvinge fremdrift eller `--progress never` for stille kjøring i CI/script.
 
 Deck image-export støtter `--backs none`, `--backs used` og `--backs all`. Valgte baksider legges foran kortforsidene i rekkefølgen Monster og Terrain.
 

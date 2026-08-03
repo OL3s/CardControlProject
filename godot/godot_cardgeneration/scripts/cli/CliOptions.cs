@@ -22,6 +22,7 @@ public sealed class CliOptions
     public string Layout { get; private set; } = "individual";
     public int Columns { get; private set; }
     public int Spacing { get; private set; } = 24;
+    public CliProgressMode ProgressMode { get; private set; } = CliProgressMode.Auto;
     public bool ShowHelp { get; private set; }
 
     public bool HasCardId { get; private set; }
@@ -109,6 +110,9 @@ public sealed class CliOptions
                 case "--spacing":
                     options.Spacing = int.Parse(ReadValue(args, ref index, "--spacing"));
                     options.HasSpacing = true;
+                    break;
+                case "--progress":
+                    options.ProgressMode = ParseProgressMode(ReadValue(args, ref index, "--progress"));
                     break;
                 case "--show-config":
                     options.Command = "show-config";
@@ -356,5 +360,16 @@ public sealed class CliOptions
         index++;
         value = args[index];
         return true;
+    }
+
+    private static CliProgressMode ParseProgressMode(string value)
+    {
+        return value.ToLowerInvariant() switch
+        {
+            "auto" => CliProgressMode.Auto,
+            "always" => CliProgressMode.Always,
+            "never" => CliProgressMode.Never,
+            _ => throw new ArgumentException($"Progress mode '{value}' is not supported. Use auto, always, or never.")
+        };
     }
 }

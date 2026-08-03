@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +12,9 @@ namespace CardGeneration.App;
 
 public static class AppLogger
 {
+    private const int MaxLogFiles = 20;
+    private const long MaxTotalLogBytes = 50L * 1024 * 1024;
+    private static readonly TimeSpan MaxLogAge = TimeSpan.FromDays(30);
     private static readonly object FileLock = new();
     private static readonly string SessionId = $"{DateTime.Now.ToString("yyyyMMdd_HHmmss_fff", CultureInfo.InvariantCulture)}_{System.Environment.ProcessId}";
     private static readonly string UserLogPath = $"user://logs/card_generation_{SessionId}.log";
@@ -27,6 +31,8 @@ public static class AppLogger
         {
             return;
         }
+
+        CleanupLogFiles(ProjectSettings.GlobalizePath("user://logs"), CurrentGlobalLogPath, DateTime.UtcNow);
 
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
         {
@@ -144,6 +150,85 @@ public static class AppLogger
         catch (Exception fileException)
         {
             GD.PushError($"Could not write application log '{CurrentGlobalLogPath}': {fileException.Message}");
+        }
+    }
+
+    internal static void CleanupLogFiles(string directoryPath, string currentLogPath, DateTime utcNow)
+    {
+        try
+        {
+            if (!Directory.Exists(directoryPath))
+            {
+                return;
+            }
+
+            var currentPath = Path.GetFullPath(currentLogPath);
+            var files = Directory.GetFiles(directoryPath, "card_generation_*.log")
+                .Select(path => new FileInfo(path))
+                .Where(file => !string.Equals(file.FullName, currentPath, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(file => file.LastWriteTimeUtc)
+                .ToList();
+            var currentFileExists = File.Exists(currentPath);
+            var totalBytes = files.Sum(file => file.Length) + (currentFileExists ? new FileInfo(currentPath).Length : 0);
+
+            foreach (var file in files.ToList())
+            {
+                if (utcNow - file.LastWriteTimeUtc <= MaxLogAge)
+                {
+                    break;
+                }
+
+                if (TryDeleteLogFile(file, out var deletedBytes))
+                {
+                    files.Remove(file);
+                    totalBytes -= deletedBytes;
+                }
+            }
+
+            // Reserve one slot for the current session log, which may not exist yet.
+            var allowedRotatedFiles = Math.Max(0, MaxLogFiles - 1);
+            while (files.Count > allowedRotatedFiles || totalBytes > MaxTotalLogBytes)
+            {
+                if (files.Count == 0)
+                {
+                    break;
+                }
+
+                var file = files[0];
+                if (!TryDeleteLogFile(file, out var deletedBytes))
+                {
+                    files.RemoveAt(0);
+                    continue;
+                }
+
+                files.RemoveAt(0);
+                totalBytes -= deletedBytes;
+            }
+        }
+        catch (Exception exception)
+        {
+            GD.PushWarning($"Could not rotate application logs in '{directoryPath}': {exception.Message}");
+        }
+    }
+
+    private static bool TryDeleteLogFile(FileInfo file, out long deletedBytes)
+    {
+        deletedBytes = 0;
+        try
+        {
+            if (!file.Exists)
+            {
+                return true;
+            }
+
+            deletedBytes = file.Length;
+            file.Delete();
+            return true;
+        }
+        catch (Exception exception)
+        {
+            GD.PushWarning($"Could not delete application log '{file.FullName}': {exception.Message}");
+            return false;
         }
     }
 }

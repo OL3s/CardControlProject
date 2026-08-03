@@ -10,6 +10,7 @@ namespace CardGeneration.Rendering;
 
 public static class CardImageRenderer
 {
+    private static readonly object TextureReadLock = new();
     internal const string PowerIconPath = "res://assets/icons/symbols/power.svg";
     internal const string ArrowRightIconPath = "res://assets/icons/symbols/arrow_right.svg";
     public const int PreviewWidth = 750;
@@ -110,14 +111,26 @@ public static class CardImageRenderer
             return;
         }
 
-        var source = card.CardImageTexture.GetImage();
+        Image? source;
+        lock (TextureReadLock)
+        {
+            source = card.CardImageTexture.GetImage();
+        }
         if (source is null || source.IsEmpty())
         {
+            source?.Dispose();
             DrawImageNotFoundPlaceholder(image, cardImageRect);
             return;
         }
 
-        DrawCardArtwork(image, source, cardImageRect, 24, card.ImageScaleMode);
+        try
+        {
+            DrawCardArtwork(image, source, cardImageRect, 24, card.ImageScaleMode);
+        }
+        finally
+        {
+            source.Dispose();
+        }
     }
 
     private static bool TryDrawImageSource(
@@ -144,8 +157,15 @@ public static class CardImageRenderer
             return false;
         }
 
-        DrawCardArtwork(target, source, targetRect, cornerRadius, scaleMode);
-        return true;
+        try
+        {
+            DrawCardArtwork(target, source, targetRect, cornerRadius, scaleMode);
+            return true;
+        }
+        finally
+        {
+            source.Dispose();
+        }
     }
 
     private static void DrawCardArtwork(Image target, Image source, Rect2I targetRect, int cornerRadius, CardImageScaleMode scaleMode)
@@ -173,7 +193,7 @@ public static class CardImageRenderer
                 Math.Max(1, Mathf.RoundToInt(sourceSize.Y * scale)));
         source.Resize(resizedSize.X, resizedSize.Y, Image.Interpolation.Lanczos);
 
-        var composed = Image.CreateEmpty(targetRect.Size.X, targetRect.Size.Y, false, Image.Format.Rgba8);
+        using var composed = Image.CreateEmpty(targetRect.Size.X, targetRect.Size.Y, false, Image.Format.Rgba8);
         composed.Fill(new Color(0, 0, 0, 0));
         var sourceRect = new Rect2I(Vector2I.Zero, resizedSize);
         var destination = (targetRect.Size - resizedSize) / 2;
@@ -418,27 +438,44 @@ public static class CardImageRenderer
             return false;
         }
 
-        var source = texture.GetImage();
+        Image? source;
+        lock (TextureReadLock)
+        {
+            source = texture.GetImage();
+        }
         if (source is null)
         {
             return false;
         }
 
-        targetRect = ScaleRect(target, targetRect);
-        source.Convert(Image.Format.Rgba8);
-        source.Resize(targetRect.Size.X, targetRect.Size.Y, Image.Interpolation.Lanczos);
-        if (cornerRadius > 0)
+        try
         {
-            ApplyRoundedAlphaMask(source, ScaleRadius(target, cornerRadius));
-        }
+            targetRect = ScaleRect(target, targetRect);
+            source.Convert(Image.Format.Rgba8);
+            source.Resize(targetRect.Size.X, targetRect.Size.Y, Image.Interpolation.Lanczos);
+            if (cornerRadius > 0)
+            {
+                ApplyRoundedAlphaMask(source, ScaleRadius(target, cornerRadius));
+            }
 
-        target.BlendRect(source, new Rect2I(Vector2I.Zero, source.GetSize()), targetRect.Position);
-        return true;
+            target.BlendRect(source, new Rect2I(Vector2I.Zero, source.GetSize()), targetRect.Position);
+            return true;
+        }
+        finally
+        {
+            source.Dispose();
+        }
     }
 
     private static bool TryDrawResourceTexture(Image target, string resourcePath, Rect2I targetRect)
     {
-        return TryDrawTexture(target, ResourceLoader.Load<Texture2D>(resourcePath), targetRect);
+        Texture2D? texture;
+        lock (TextureReadLock)
+        {
+            texture = ResourceLoader.Load<Texture2D>(resourcePath);
+        }
+
+        return TryDrawTexture(target, texture, targetRect);
     }
 
     private static void DrawPlaceholderCardImage(Image image, Rect2I rect)

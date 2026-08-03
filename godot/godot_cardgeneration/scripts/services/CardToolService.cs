@@ -540,7 +540,7 @@ public sealed class CardToolService
         return image;
     }
 
-    public ToolResult ExportDeck(string? deckId, string outputPath, string format, string layout, int columns, int spacing, ImageBackMode backMode = ImageBackMode.None)
+    public ToolResult ExportDeck(string? deckId, string outputPath, string format, string layout, int columns, int spacing, Action<ExportProgress>? progress = null, ImageBackMode backMode = ImageBackMode.None)
     {
         if (string.IsNullOrWhiteSpace(deckId))
         {
@@ -550,7 +550,7 @@ public sealed class CardToolService
         var deck = LoadDeckById(deckId);
         return deck is null
             ? ToolResult.Fail($"Deck '{deckId}' was not found.")
-            : _deckExportService.ExportDeck(deck, outputPath, format, layout, columns, spacing, backMode: backMode);
+            : _deckExportService.ExportDeck(deck, outputPath, format, layout, columns, spacing, progress, backMode);
     }
 
     public ToolResult ExportDeck(CardDeckResource deck, string outputPath, string format, string layout, int columns, int spacing, Action<ExportProgress>? progress = null, ImageBackMode backMode = ImageBackMode.None)
@@ -563,7 +563,7 @@ public sealed class CardToolService
         return _deckExportService.RenderPreviews(deck, layout, columns, spacing, out errorMessage, progress, backMode);
     }
 
-    public ToolResult ExportSheet(string? deckId, string outputPath, string paper, int dpi, string backMirror = "none", bool includeMeasurementGuide = false, bool easyPrintBacks = false)
+    public ToolResult ExportSheet(string? deckId, string outputPath, string paper, int dpi, string backMirror = "none", bool includeMeasurementGuide = false, Action<ExportProgress>? progress = null, bool easyPrintBacks = false)
     {
         if (string.IsNullOrWhiteSpace(deckId))
         {
@@ -573,7 +573,7 @@ public sealed class CardToolService
         var deck = LoadDeckById(deckId);
         return deck is null
             ? ToolResult.Fail($"Deck '{deckId}' was not found.")
-            : _sheetExportService.ExportSheet(deck, outputPath, paper, dpi, backMirror, includeMeasurementGuide, easyPrintBacks: easyPrintBacks);
+            : _sheetExportService.ExportSheet(deck, outputPath, paper, dpi, backMirror, includeMeasurementGuide, progress, easyPrintBacks);
     }
 
     public ToolResult ExportSheet(CardDeckResource deck, string outputPath, string paper, int dpi, string backMirror = "none", bool includeMeasurementGuide = false, Action<ExportProgress>? progress = null, bool easyPrintBacks = false)
@@ -586,7 +586,7 @@ public sealed class CardToolService
         return _sheetExportService.RenderSheetPreviews(deck, paper, dpi, backMirror, includeMeasurementGuide, easyPrintBacks, out errorMessage, progress);
     }
 
-    public ToolResult ExportDiy(string? deckId, string outputPath, int dpi, string backMirror = "none", bool includeMeasurementGuide = false)
+    public ToolResult ExportDiy(string? deckId, string outputPath, int dpi, string backMirror = "none", bool includeMeasurementGuide = false, Action<ExportProgress>? progress = null)
     {
         if (string.IsNullOrWhiteSpace(deckId))
         {
@@ -596,7 +596,7 @@ public sealed class CardToolService
         var deck = LoadDeckById(deckId);
         return deck is null
             ? ToolResult.Fail($"Deck '{deckId}' was not found.")
-            : _diyExportService.ExportDiy(deck, outputPath, dpi, backMirror, includeMeasurementGuide);
+            : _diyExportService.ExportDiy(deck, outputPath, dpi, backMirror, includeMeasurementGuide, progress);
     }
 
     public ToolResult ExportDiy(CardDeckResource deck, string outputPath, int dpi, string backMirror = "none", bool includeMeasurementGuide = false, Action<ExportProgress>? progress = null)
@@ -604,7 +604,7 @@ public sealed class CardToolService
         return _diyExportService.ExportDiy(deck, outputPath, dpi, backMirror, includeMeasurementGuide, progress);
     }
 
-    public ToolResult ExportShowcase(string? deckId, string outputPath, string format)
+    public ToolResult ExportShowcase(string? deckId, string outputPath, string format, Action<ExportProgress>? progress = null)
     {
         if (string.IsNullOrWhiteSpace(deckId))
         {
@@ -614,7 +614,7 @@ public sealed class CardToolService
         var deck = LoadDeckById(deckId);
         return deck is null
             ? ToolResult.Fail($"Deck '{deckId}' was not found.")
-            : _deckExportService.ExportShowcase(deck, outputPath, format);
+            : _deckExportService.ExportShowcase(deck, outputPath, format, progress);
     }
 
     public ToolResult ExportShowcase(CardDeckResource deck, string outputPath, string format, Action<ExportProgress>? progress = null)

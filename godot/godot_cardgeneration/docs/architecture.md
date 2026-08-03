@@ -14,6 +14,8 @@ Kortverktøyet er et Godot C#-prosjekt som skal fungere både som GUI-app og CLI
 * Generert output skal ligge i `output/` og ikke committes.
 * Spill- og kortikoner skal ligge som SVG under `assets/icons/` når verktøyet trenger dem.
 
+Applikasjonslogger lagres som én fil per prosess under `user://logs/`. Ved oppstart roteres logger eldre enn `30` dager, og bare de `20` nyeste loggene beholdes. Dersom samlet størrelse fortsatt overstiger `50 MiB`, slettes de eldste loggene til grensen er nådd. Den aktive sesjonsloggen slettes aldri under rotasjonen, og rotasjonsfeil skal ikke hindre applikasjonen i å starte.
+
 ## Resource-Modell
 
 Kortdata bygges rundt denne arvestrukturen:
@@ -111,7 +113,11 @@ DPI velges fra faste normalverdier: `150`, `300`, `600` og `1200`. `600 DPI` er 
 
 Arkdelingen regnes slik: service-laget regner ut hvor mange `63 x 88 mm`-kort som får plass på valgt arkstørrelse ved valgt DPI, setter `cardsPerSheet = columns * rows`, og bruker `sheetCount = ceil(cardCount / cardsPerSheet)`. Dersom kortstokken ikke får plass på ett ark, genereres flere ark som `front_001`, `back_001`, `front_002`, `back_002` osv.
 
+Når ett ukomprimert ark ville krevd mer enn `256 MiB` eller en fjerdedel av runtime sitt tilgjengelige minnebudsjett, bytter `SheetExportService` automatisk fra et helt `Image`-ark til memory-safe PNG-streaming. Streameren renderer én kortrekke om gangen, skriver filtrerte RGBA-scanlines direkte til chunkede `IDAT`-blokker og ferdigstiller via en midlertidig fil og atomisk rename. Front og bakside kjøres sekvensielt; high-DPI printark paralleliseres ikke fordi Godots image/resource-operasjoner og store kortbuffere ellers kan gi både stalls og unødvendige minnetopper. A3 ved `600` og `1200 DPI`, samt A4 ved `1200 DPI`, bruker normalt denne banen.
+
 `CardImageRenderer` bruker `750x1050` som kanonisk koordinatsystem, men kan rendere direkte til en mindre target-størrelse for GUI-preview. Lavnivåtegningen skalerer rektangler og radier mot faktisk bilde, slik at små preview-fliser ikke trenger full eksportoppløsning først.
+
+Deck-preview og deck-editor åpnes først etter at `SavedDecksScreen` har rendret nødvendige, unike preview-varianter direkte i den lille target-størrelsen. Arbeidet deles i batcher på opptil ti kort og kjøres med automatisk begrenset parallellitet; texture-readback serialiseres, mens uavhengig CPU-rendering kan fortsette parallelt. Ferdige `Image`-resultater lastes opp til `ImageTexture` på hovedtråden og legges i en prosesslokal cache med maksimalt 256 kompakte textures. Fulloppløste artwork-bilder beholdes derfor ikke i preview-cachen. Navigasjon skjer først når alle nødvendige thumbnails er klare, og loading-fremdrift vises på `Decks`-skjermen.
 
 ## Ikoner
 
@@ -162,7 +168,7 @@ Opprettelse av nye kort og kortstokker skal ligge inne i `Cards` og `Decks` som 
 Implementerte skjermer:
 
 * `SavedCardsScreen`: driver `Cards`-skjermen, laster lagrede kort via `CardToolService`, viser preview, edit, duplicate og delete.
-* `SavedDecksScreen`: driver `Decks`-skjermen, laster lagrede deckresources, viser korttelling, korttypesammensetning, full preview, edit, duplicate, delete og deckoppretting fra tom/preset.
+* `SavedDecksScreen`: driver `Decks`-skjermen, laster lagrede deckresources, viser korttelling, korttypesammensetning, full preview, edit, duplicate, delete og deckoppretting fra tom/preset. Før preview eller editor åpnes, viser skjermen fremdrift mens kompakte thumbnails rendres og caches i bakgrunnsbatcher.
 * `CardTypePickerScreen`: velger korttype før nytt kort åpnes i editor.
 * `CardEditorScreen`: lager eller redigerer kort med ID, image source path, front/back preview, fullscreen preview og lagring. Korttypen er låst etter typevalg; kort alene eksporteres ikke.
 * `DeckEditorScreen`: lager eller redigerer kortstokk med deck-ID, tilgjengelige kort, entries med count, `Save` og `Save New`. Tilgjengelige kort vises som horisontalt scrollbare preview-fliser med kompakte ikonknapper for add og select. Deckinnhold vises som preview-fliser med count-badge og ikonknapper for delete, duplicate og select. Multiselect brukes for batch add/remove. Skjermen eksporterer ikke.

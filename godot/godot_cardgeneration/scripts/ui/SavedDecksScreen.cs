@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using CardGeneration.App;
 using CardGeneration.Resources;
 using CardGeneration.Resources.Enums;
@@ -11,10 +14,16 @@ namespace CardGeneration.Ui;
 
 public partial class SavedDecksScreen : CardToolScreen
 {
+    private const int PreviewBatchSize = 10;
+
     private IReadOnlyList<CardDeckResource> _decks = Array.Empty<CardDeckResource>();
     private PopupMenu _createDeckMenu = null!;
     private Label _details = null!;
     private FileDialog _importDialog = null!;
+    private ProgressBar _preloadProgress = null!;
+    private Label _preloadLabel = null!;
+    private CancellationTokenSource? _preloadCancellation;
+    private int _preloadVersion;
     public event Action<CardDeckResource?>? EditDeckRequested;
     public event Action<CardDeckResource?>? NewDeckRequested;
     public event Action<CardDeckResource>? PreviewDeckRequested;
@@ -22,6 +31,13 @@ public partial class SavedDecksScreen : CardToolScreen
     public override void _Ready()
     {
         BuildUi();
+    }
+
+    public override void _ExitTree()
+    {
+        _preloadCancellation?.Cancel();
+        _preloadCancellation?.Dispose();
+        _preloadCancellation = null;
     }
 
     private void BuildUi()
@@ -37,6 +53,23 @@ public partial class SavedDecksScreen : CardToolScreen
         AddIconButton(toolbar, CheckIconPath, "Validate decks", ValidateDecks);
         AddIconButton(toolbar, RefreshIconPath, "Refresh", RefreshDefaultsAndBuildUi);
         AddResourceDialogs();
+
+        _preloadProgress = new ProgressBar
+        {
+            Visible = false,
+            MinValue = 0,
+            MaxValue = 1,
+            Value = 0,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        content.AddChild(_preloadProgress);
+        _preloadLabel = new Label
+        {
+            Visible = false,
+            Text = string.Empty,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        };
+        content.AddChild(_preloadLabel);
 
         _createDeckMenu = new PopupMenu();
         _createDeckMenu.AddItem("New Empty Deck", 0);
@@ -138,11 +171,8 @@ public partial class SavedDecksScreen : CardToolScreen
         };
         buttons.AddThemeConstantOverride("separation", 8);
         row.AddChild(buttons);
-        AddIconButton(buttons, PreviewIconPath, "Preview full deck", () =>
-        {
-            PreviewDeckRequested?.Invoke(deck);
-        });
-        AddIconButton(buttons, EditIconPath, "Edit", () => EditDeckRequested?.Invoke(deck));
+        AddIconButton(buttons, PreviewIconPath, "Preview full deck", () => StartDeckPreload(deck, openEditor: false, isNewDeck: false));
+        AddIconButton(buttons, EditIconPath, "Edit", () => StartDeckPreload(deck, openEditor: true, isNewDeck: false));
         AddIconButton(buttons, CopyIconPath, "Duplicate", () => DuplicateDeck(deck));
         AddIconButton(buttons, DeleteIconPath, "Delete", () => DeleteDeck(deck));
     }
@@ -207,8 +237,233 @@ public partial class SavedDecksScreen : CardToolScreen
         var deck = id == 1
             ? CardToolService.CreateDefault52CardDeck()
             : CardToolService.CreateEmptyDeck();
-        NewDeckRequested?.Invoke(deck);
+        StartDeckPreload(deck, openEditor: true, isNewDeck: true);
     }
+
+    private async void StartDeckPreload(CardDeckResource deck, bool openEditor, bool isNewDeck)
+    {
+        _preloadCancellation?.Cancel();
+        _preloadCancellation?.Dispose();
+        _preloadCancellation = new CancellationTokenSource();
+        var cancellationToken = _preloadCancellation.Token;
+        var preloadVersion = ++_preloadVersion;
+        SetPreloadBusy(true);
+
+        try
+        {
+            var requests = (openEditor ? BuildEditorRequests(deck) : BuildPreviewRequests(deck))
+                .GroupBy(CardPreviewControl.GetCacheKey)
+                .Select(group => group.First())
+                .Where(request => !CardPreviewControl.IsCached(request))
+                .ToArray();
+            if (requests.Length == 0)
+            {
+                ApplyPreloadProgress(1, 1, "Preview thumbnails are already cached.");
+                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            }
+            else
+            {
+                var totalWork = requests.Length * 2;
+                ApplyPreloadProgress(0, totalWork, $"Preparing {requests.Length} compact preview thumbnail(s)...");
+                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+
+                var rendered = await Task.Run(
+                    () => RenderPreviewBatches(requests, totalWork, preloadVersion, cancellationToken),
+                    cancellationToken);
+                try
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var cached = 0;
+                    foreach (var result in rendered)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        CardPreviewControl.CacheRenderedImage(result.Request, result.Image);
+                        cached++;
+                        ApplyPreloadProgress(requests.Length + cached, totalWork, $"Cached thumbnail {cached}/{requests.Length}.");
+                    }
+                }
+                finally
+                {
+                    foreach (var result in rendered)
+                    {
+                        result.Image.Dispose();
+                    }
+                }
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            if (preloadVersion != _preloadVersion || !IsInsideTree())
+            {
+                return;
+            }
+
+            SetStatus($"Loaded compact previews for '{deck.Id}'.");
+            if (openEditor)
+            {
+                if (isNewDeck)
+                {
+                    NewDeckRequested?.Invoke(deck);
+                }
+                else
+                {
+                    EditDeckRequested?.Invoke(deck);
+                }
+            }
+            else
+            {
+                PreviewDeckRequested?.Invoke(deck);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            if (IsInsideTree())
+            {
+                SetStatus("Deck preview loading was cancelled.");
+            }
+        }
+        catch (Exception exception)
+        {
+            AppLogger.GuiError("Could not preload deck preview thumbnails.", exception);
+            if (IsInsideTree())
+            {
+                SetStatus($"Could not load deck previews: {exception.Message}", true);
+            }
+        }
+        finally
+        {
+            if (preloadVersion == _preloadVersion && IsInsideTree())
+            {
+                SetPreloadBusy(false);
+            }
+        }
+    }
+
+    private IReadOnlyList<CardPreviewRenderRequest> BuildPreviewRequests(CardDeckResource deck)
+    {
+        var requests = new List<CardPreviewRenderRequest>();
+        var elementOverrides = deck.GetElementIconOverrides();
+        foreach (var entry in deck.Entries ?? Array.Empty<CardDeckEntryResource>())
+        {
+            if (entry.Card is not null && entry.Count > 0)
+            {
+                requests.Add(CardPreviewControl.CreateRenderRequest(entry.Card, false, DeckPreviewScreen.CardPreviewRenderSize, elementOverrides, deck.PowerIconTexture));
+            }
+        }
+
+        var monsterBack = new MonsterCardResource { Id = "monster_back_preview", BackImageTexture = deck.MonsterBackImageTexture };
+        var terrainBack = new TerrainCardResource { Id = "terrain_back_preview", BackImageTexture = deck.TerrainBackImageTexture };
+        requests.Add(CardPreviewControl.CreateRenderRequest(monsterBack, true, DeckPreviewScreen.BackPreviewRenderSize));
+        requests.Add(CardPreviewControl.CreateRenderRequest(terrainBack, true, DeckPreviewScreen.BackPreviewRenderSize));
+        return requests;
+    }
+
+    private IReadOnlyList<CardPreviewRenderRequest> BuildEditorRequests(CardDeckResource deck)
+    {
+        var cards = CardToolService.LoadAllCards()
+            .Concat((deck.Entries ?? Array.Empty<CardDeckEntryResource>())
+                .Where(entry => entry.Card is not null)
+                .Select(entry => entry.Card!));
+        var elementOverrides = deck.GetElementIconOverrides();
+        return cards
+            .Select(card => CardPreviewControl.CreateRenderRequest(card, false, DeckEditorScreen.CardThumbnailRenderSize, elementOverrides, deck.PowerIconTexture))
+            .ToArray();
+    }
+
+    private RenderedPreview[] RenderPreviewBatches(
+        IReadOnlyList<CardPreviewRenderRequest> requests,
+        int totalWork,
+        int preloadVersion,
+        CancellationToken cancellationToken)
+    {
+        var batches = requests.Chunk(PreviewBatchSize).ToArray();
+        var rendered = new ConcurrentBag<RenderedPreview>();
+        var completed = 0;
+        var workerCount = Math.Min(batches.Length, Math.Clamp(System.Environment.ProcessorCount - 1, 1, 4));
+        try
+        {
+            Parallel.ForEach(
+                batches,
+                new ParallelOptions
+                {
+                    CancellationToken = cancellationToken,
+                    MaxDegreeOfParallelism = workerCount
+                },
+                batch =>
+                {
+                    foreach (var request in batch)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        var image = CardPreviewControl.RenderImage(request);
+                        rendered.Add(new RenderedPreview(request, image));
+                        var current = Interlocked.Increment(ref completed);
+                        CallDeferred(
+                            nameof(ApplyPreloadProgressForVersion),
+                            preloadVersion,
+                            current,
+                            totalWork,
+                            $"Rendered compact thumbnail {current}/{requests.Count} using {workerCount} worker(s).");
+                    }
+                });
+            return rendered.ToArray();
+        }
+        catch
+        {
+            foreach (var result in rendered)
+            {
+                result.Image.Dispose();
+            }
+
+            throw;
+        }
+    }
+
+    private void ApplyPreloadProgressForVersion(int preloadVersion, int current, int total, string message)
+    {
+        if (preloadVersion == _preloadVersion)
+        {
+            ApplyPreloadProgress(current, total, message);
+        }
+    }
+
+    private void ApplyPreloadProgress(int current, int total, string message)
+    {
+        if (!IsInsideTree())
+        {
+            return;
+        }
+
+        _preloadProgress.MaxValue = Math.Max(1, total);
+        _preloadProgress.Value = Math.Clamp(current, 0, Math.Max(1, total));
+        _preloadLabel.Text = message;
+    }
+
+    private void SetPreloadBusy(bool busy)
+    {
+        _preloadProgress.Visible = busy;
+        _preloadLabel.Visible = busy;
+        if (!busy)
+        {
+            _preloadProgress.Value = 0;
+            _preloadLabel.Text = string.Empty;
+        }
+
+        SetButtonsDisabled(this, busy);
+    }
+
+    private static void SetButtonsDisabled(Node parent, bool disabled)
+    {
+        foreach (var child in parent.GetChildren())
+        {
+            if (child is BaseButton button)
+            {
+                button.Disabled = disabled;
+            }
+
+            SetButtonsDisabled(child, disabled);
+        }
+    }
+
+    private sealed record RenderedPreview(CardPreviewRenderRequest Request, Image Image);
 
     private static int GetCardCount(CardDeckResource deck)
     {

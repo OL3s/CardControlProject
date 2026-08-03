@@ -34,7 +34,8 @@ public sealed class CliRunner
                 options.ApplyConfigDefaults(_cardToolService.LoadConfig());
             }
 
-            var result = Execute(options);
+            using var progress = CliProgressReporter.Create(options.ProgressMode);
+            var result = Execute(options, progress.Report);
             if (result.Success)
             {
                 AppLogger.CliInfo($"DONE command={options.Command}; exit_code={result.ExitCode}; elapsed_ms={stopwatch.ElapsedMilliseconds}; result={result.Message}");
@@ -56,7 +57,7 @@ public sealed class CliRunner
         }
     }
 
-    private ToolResult Execute(CliOptions options)
+    private ToolResult Execute(CliOptions options, Action<ExportProgress> progress)
     {
         return options.Command switch
         {
@@ -74,10 +75,10 @@ public sealed class CliRunner
             "duplicate-deck" => _cardToolService.DuplicateDeck(options.DeckId, options.NewId),
             "validate-cards" => _cardToolService.ValidateCards(),
             "validate-deck" => _cardToolService.ValidateDeck(options.DeckId),
-            "export-deck" => _cardToolService.ExportDeck(options.DeckId, options.OutputPath, options.Format, options.Layout, options.Columns, options.Spacing, ParseImageBackMode(options.BackImages)),
-            "export-sheet" => _cardToolService.ExportSheet(options.DeckId, options.OutputPath, options.Paper, options.Dpi, options.BackMirror, options.IncludeMeasurementGuide, options.EasyPrintBacks),
-            "export-diy" => _cardToolService.ExportDiy(options.DeckId, options.OutputPath, options.Dpi, options.BackMirror, options.IncludeMeasurementGuide),
-            "export-showcase" => _cardToolService.ExportShowcase(options.DeckId, options.OutputPath, options.Format),
+            "export-deck" => _cardToolService.ExportDeck(options.DeckId, options.OutputPath, options.Format, options.Layout, options.Columns, options.Spacing, progress, ParseImageBackMode(options.BackImages)),
+            "export-sheet" => _cardToolService.ExportSheet(options.DeckId, options.OutputPath, options.Paper, options.Dpi, options.BackMirror, options.IncludeMeasurementGuide, progress, options.EasyPrintBacks),
+            "export-diy" => _cardToolService.ExportDiy(options.DeckId, options.OutputPath, options.Dpi, options.BackMirror, options.IncludeMeasurementGuide, progress),
+            "export-showcase" => _cardToolService.ExportShowcase(options.DeckId, options.OutputPath, options.Format, progress),
             _ => ToolResult.Fail($"Unknown command '{options.Command}'. Use --help to list commands.")
         };
     }
@@ -152,6 +153,7 @@ public sealed class CliRunner
         Print sheet options:
           --measurement-guide  Add a 10 cm guide line with 1 cm ticks for print scaling checks.
           --easy-backs         Group fronts by card type and fill every paired back sheet.
+          --progress <mode>    Progress output: auto, always, or never (default: auto).
 
         Config:
           show-config prints the saved defaults.

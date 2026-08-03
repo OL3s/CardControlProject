@@ -9,14 +9,23 @@ using Godot;
 
 namespace CardGeneration.Ui;
 
+public sealed record CardPreviewRenderRequest(
+    CardResource Card,
+    bool ShowBack,
+    Vector2I RenderSize,
+    IReadOnlyDictionary<ElementType, Texture2D>? ElementIconOverrides = null,
+    Texture2D? PowerIconOverride = null);
+
 [GlobalClass]
 public partial class CardPreviewControl : TextureRect
 {
     private const string PreviewScenePath = "res://scenes/card_preview/card_preview.tscn";
     private const int MaxQueuedRendersPerFrame = 1;
+    private const int MaxCachedTextures = 256;
 
     private static readonly Queue<CardPreviewControl> RenderQueue = new();
     private static readonly Dictionary<string, Texture2D> TextureCache = new();
+    private static readonly Queue<string> TextureCacheOrder = new();
     private static PackedScene? _previewScene;
     private static ulong _lastRenderFrame;
     private static int _renderCountThisFrame;
@@ -57,6 +66,59 @@ public partial class CardPreviewControl : TextureRect
         preview._powerIconOverride = powerIconOverride;
         preview.SetCard(card, showBack);
         return preview;
+    }
+
+    public static CardPreviewRenderRequest CreateRenderRequest(
+        CardResource card,
+        bool showBack,
+        Vector2I renderSize,
+        IReadOnlyDictionary<ElementType, Texture2D>? elementIconOverrides = null,
+        Texture2D? powerIconOverride = null)
+    {
+        return new CardPreviewRenderRequest(card, showBack, renderSize, elementIconOverrides, powerIconOverride);
+    }
+
+    public static string GetCacheKey(CardPreviewRenderRequest request)
+    {
+        return string.Join(
+            '|',
+            request.Card.Id,
+            request.Card.CardType,
+            request.Card.Element?.ElementType.ToString() ?? "missing-element",
+            GetCardContentSignature(request.Card),
+            GetElementIconOverridesSignature(request.ElementIconOverrides),
+            GetTextureSignature(request.PowerIconOverride),
+            request.ShowBack ? "back" : "front",
+            request.RenderSize.X,
+            request.RenderSize.Y);
+    }
+
+    public static bool IsCached(CardPreviewRenderRequest request)
+    {
+        return TextureCache.ContainsKey(GetCacheKey(request));
+    }
+
+    public static Image RenderImage(CardPreviewRenderRequest request)
+    {
+        return request.ShowBack
+            ? CardImageRenderer.RenderBack(request.Card.CardType, request.Card.BackImageTexture, request.RenderSize)
+            : CardImageRenderer.Render(request.Card, request.RenderSize, request.ElementIconOverrides, request.PowerIconOverride);
+    }
+
+    public static void CacheRenderedImage(CardPreviewRenderRequest request, Image image)
+    {
+        var key = GetCacheKey(request);
+        if (TextureCache.ContainsKey(key))
+        {
+            return;
+        }
+
+        TextureCache[key] = ImageTexture.CreateFromImage(image);
+        TextureCacheOrder.Enqueue(key);
+        while (TextureCache.Count > MaxCachedTextures && TextureCacheOrder.Count > 0)
+        {
+            TextureCache.Remove(TextureCacheOrder.Dequeue());
+        }
     }
 
     public override void _Ready()
@@ -225,13 +287,16 @@ public partial class CardPreviewControl : TextureRect
             return;
         }
 
-        var image = RenderImage(_renderSize);
-        var texture = ImageTexture.CreateFromImage(image);
-        Texture = texture;
-
+        using var image = RenderImage(_renderSize);
         if (_useCache)
         {
-            TextureCache[GetCacheKey()] = texture;
+            var request = GetRenderRequest();
+            CacheRenderedImage(request, image);
+            Texture = TextureCache[GetCacheKey(request)];
+        }
+        else
+        {
+            Texture = ImageTexture.CreateFromImage(image);
         }
     }
 
@@ -251,28 +316,19 @@ public partial class CardPreviewControl : TextureRect
 
     private bool TryGetCachedTexture(out Texture2D texture)
     {
-        return TextureCache.TryGetValue(GetCacheKey(), out texture!);
-    }
-
-    private string GetCacheKey()
-    {
-        if (_card is null)
+        texture = null!;
+        if (_card is null || !TextureCache.TryGetValue(GetCacheKey(GetRenderRequest()), out var cachedTexture))
         {
-            return "empty";
+            return false;
         }
 
-        return string.Join(
-            '|',
-            _card.Id,
-            _card.GetInstanceId(),
-            _card.CardType,
-            _card.Element?.ElementType.ToString() ?? "missing-element",
-            GetCardContentSignature(_card),
-            GetElementIconOverridesSignature(),
-            GetTextureSignature(_powerIconOverride),
-            _showBack ? "back" : "front",
-            _renderSize.X,
-            _renderSize.Y);
+        texture = cachedTexture;
+        return true;
+    }
+
+    private CardPreviewRenderRequest GetRenderRequest()
+    {
+        return new CardPreviewRenderRequest(_card!, _showBack, _renderSize, _elementIconOverrides, _powerIconOverride);
     }
 
     private static string GetCardContentSignature(CardResource card)
@@ -311,9 +367,9 @@ public partial class CardPreviewControl : TextureRect
             : $"{texture.GetInstanceId()}@{GetSourceSignature(texture.ResourcePath)}";
     }
 
-    private string GetElementIconOverridesSignature()
+    private static string GetElementIconOverridesSignature(IReadOnlyDictionary<ElementType, Texture2D>? elementIconOverrides)
     {
-        if (_elementIconOverrides is null)
+        if (elementIconOverrides is null)
         {
             return "standalone";
         }
@@ -321,7 +377,7 @@ public partial class CardPreviewControl : TextureRect
         return string.Join(
             ',',
             Enum.GetValues<ElementType>()
-                .Select(elementType => $"{elementType}={GetTextureSignature(_elementIconOverrides.TryGetValue(elementType, out var texture) ? texture : null)}"));
+                .Select(elementType => $"{elementType}={GetTextureSignature(elementIconOverrides.TryGetValue(elementType, out var texture) ? texture : null)}"));
     }
 
     private static string GetSourceSignature(string sourcePath)
@@ -362,7 +418,7 @@ public partial class CardPreviewControl : TextureRect
 
     private static ImageTexture CreatePlaceholderTexture(Vector2I size)
     {
-        var image = Image.CreateEmpty(Mathf.Max(1, size.X), Mathf.Max(1, size.Y), false, Image.Format.Rgba8);
+        using var image = Image.CreateEmpty(Mathf.Max(1, size.X), Mathf.Max(1, size.Y), false, Image.Format.Rgba8);
         image.Fill(CardImageRenderer.PlaceholderColor);
         return ImageTexture.CreateFromImage(image);
     }
@@ -387,9 +443,10 @@ public partial class CardPreviewControl : TextureRect
         margin.AddThemeConstantOverride("margin_bottom", 16);
         popup.AddChild(margin);
 
+        using var image = RenderImage(new Vector2I(CardImageRenderer.PreviewWidth, CardImageRenderer.PreviewHeight));
         var preview = new TextureRect
         {
-            Texture = ImageTexture.CreateFromImage(RenderImage(new Vector2I(CardImageRenderer.PreviewWidth, CardImageRenderer.PreviewHeight))),
+            Texture = ImageTexture.CreateFromImage(image),
             CustomMinimumSize = new Vector2(520, 728),
             ExpandMode = ExpandModeEnum.FitWidthProportional,
             StretchMode = StretchModeEnum.KeepAspectCentered

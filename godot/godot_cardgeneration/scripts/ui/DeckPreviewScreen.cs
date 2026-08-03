@@ -8,6 +8,9 @@ namespace CardGeneration.Ui;
 
 public partial class DeckPreviewScreen : CardToolScreen
 {
+    public static readonly Vector2I CardPreviewRenderSize = new(126, 176);
+    public static readonly Vector2I BackPreviewRenderSize = new(90, 126);
+
     private CardDeckResource? _deck;
 
     public void SetDeck(CardDeckResource? deck)
@@ -114,8 +117,8 @@ public partial class DeckPreviewScreen : CardToolScreen
         column.AddChild(CardPreviewControl.Create(
             card,
             showBack: true,
-            minimumSize: new Vector2(90, 126),
-            renderSize: new Vector2I(90, 126)));
+            minimumSize: BackPreviewRenderSize,
+            renderSize: BackPreviewRenderSize));
     }
 
     private void AddDeckGrid(VBoxContainer content)
@@ -205,8 +208,8 @@ public partial class DeckPreviewScreen : CardToolScreen
 
         stack.AddChild(CardPreviewControl.Create(
             card,
-            minimumSize: new Vector2(126, 176),
-            renderSize: new Vector2I(126, 176),
+            minimumSize: CardPreviewRenderSize,
+            renderSize: CardPreviewRenderSize,
             deferRender: true,
             elementIconOverrides: _deck?.GetElementIconOverrides(),
             powerIconOverride: _deck?.PowerIconTexture));

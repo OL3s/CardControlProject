@@ -11,6 +11,8 @@ namespace CardGeneration.Ui;
 
 public partial class DeckEditorScreen : CardToolScreen
 {
+    public static readonly Vector2I CardThumbnailRenderSize = new(130, 182);
+
     private CardDeckResource _editingDeck = new();
     private readonly List<CardDeckEntryResource> _entries = [];
     private readonly HashSet<string> _selectedAvailableCardIds = [];
@@ -459,8 +461,8 @@ public partial class DeckEditorScreen : CardToolScreen
 
         stack.AddChild(CardPreviewControl.Create(
             card,
-            minimumSize: new Vector2(130, 182),
-            renderSize: new Vector2I(130, 182),
+            minimumSize: CardThumbnailRenderSize,
+            renderSize: CardThumbnailRenderSize,
             deferRender: true,
             elementIconOverrides: _editingDeck.GetElementIconOverrides(),
             powerIconOverride: _editingDeck.PowerIconTexture));
@@ -988,6 +990,7 @@ public partial class DeckEditorScreen : CardToolScreen
             GrassElementIconTexture = source.GrassElementIconTexture,
             FlameElementIconTexture = source.FlameElementIconTexture,
             WaterElementIconTexture = source.WaterElementIconTexture,
+            AnyElementIconTexture = source.AnyElementIconTexture,
             PowerIconTexture = source.PowerIconTexture,
             Entries = (source.Entries ?? Array.Empty<CardDeckEntryResource>())
                 .Select(entry => new CardDeckEntryResource
