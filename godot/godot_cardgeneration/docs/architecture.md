@@ -38,7 +38,7 @@ Godot Resource
 
 Elementikonene peker til importerte textures fra SVG-er under `assets/icons/elements/`. Rendereren bruker disse når de kan lastes, og tegner fallback-symboler når texture mangler.
 
-`CardResource` er felles base for alle kort. Den inneholder ID, korttype, teksturer for kortbilde og baksidebilde, samt `CardImageSourcePath` for bilde importert fra filsystemet. Rendereren bruker source path når `CardImageTexture` ikke er satt. `ImageScaleMode` lagrer hvordan frontillustrasjonen plasseres: `Fit` viser hele bildet med bevart sideforhold, `Stretch` fyller bildefeltet uten å bevare sideforholdet, og `Cover` bevarer sideforholdet mens bildet sentreres, zoomes og beskjæres til hele feltet er fylt. Eksisterende kort bruker `Stretch` som standard for å bevare tidligere rendereroppførsel. Visningsnavn, notater, beskrivelser og interne designkategorier er bevisst utelatt fra kortdata. Element er derimot eksplisitt, autoritativ kortmetadata.
+`CardResource` er felles base for alle kort. Den inneholder ID, korttype og frontillustrasjon som texture eller `CardImageSourcePath`. Rendereren bruker source path når `CardImageTexture` ikke er satt. `ImageScaleMode` lagrer hvordan frontillustrasjonen plasseres: `Fit` viser hele bildet med bevart sideforhold, `Stretch` fyller bildefeltet uten å bevare sideforholdet, og `Cover` bevarer sideforholdet mens bildet sentreres, zoomes og beskjæres til hele feltet er fylt. Eksisterende kort bruker `Stretch` som standard for å bevare tidligere rendereroppførsel. De tilsvarende back-feltene brukes internt når en deck-eid bakside sendes gjennom den delte previewkontrollen. Visningsnavn, notater, beskrivelser og interne designkategorier er bevisst utelatt fra kortdata. Element er derimot eksplisitt, autoritativ kortmetadata.
 
 `MonsterCardResource` har eksplisitt element, Tier 1-3, krav, grunnstyrke, bonuslinjer og eventuell effekt. Element, tier og krav er uavhengige felt. Tier renderer som én til tre kobberdiamanter ved elementmedaljongen.
 
@@ -50,7 +50,7 @@ Monsterkrav betales når kortet brukes. Bonuslinjer vurderes etterpå mot gjenv�
 
 Element skal leses direkte fra kortets metadata og skal ikke utledes fra kost-, krav- eller ressurslister. Den visuelle kontrakten for element- og ressursplassering ligger i [felles spesifikasjon for kortutseende](../../../shared/docs/card-appearance.md).
 
-En deck kan inneholde både terreng og monstre i samme 52-korts produkt. Printark renderer derfor bakside per korttype for hvert kort. `MonsterBackImageTexture` og `TerrainBackImageTexture` kan brukes som deck-spesifikke overrides per korttype.
+En deck kan inneholde både terreng og monstre i samme 52-korts produkt. Printark renderer derfor bakside per korttype for hvert kort. `MonsterBackImageSourcePath` og `TerrainBackImageSourcePath` velger deck-spesifikt artwork, med egne scale modes. Tomt path bruker default-SVG-en for korttypen. De eldre texture-feltene beholdes som fallback for allerede lagrede deckresources.
 
 `CardToolConfigResource` lagrer langvarige verktøyinnstillinger som default card, deck, output, format, papir, DPI, bakside-speiling, deck layout, gridkolonner og spacing. Default card er tom etter fabrikkreset; default deck er `default_deck`. Configen ligger som redigerbar Godot resource i `resources/config/card_tool_config.tres`.
 
@@ -203,15 +203,17 @@ print_guides
 
 `transparent_canvas` er selve PNG-flaten utenfor kortet. Den skal være transparent, slik at kortet kan legges på andre bakgrunner uten en fast firkant rundt seg.
 
-Kortbakside bygges slik:
+Kortbakside bygges med samme ramme- og artwork-pipeline som forsiden:
 
 ```text
-base_background_or_border
-card_type_back_image
+transparent_canvas
+card_type_base_background
+card_type_frame
+back_artwork
 optional_print_guides
 ```
 
-Basebakgrunnen bruker separate, dempede nøytraltoner for monster og terreng. Kort uten image source path bruker samme grafittfargede placeholder for begge korttyper, slik at placeholderen ikke signaliserer et element. Et ikke-tomt path som ikke kan finnes eller lastes bruker en separat crossed-image-placeholder. Monster og terreng bruker hvert sitt eksplisitte element uavhengig av henholdsvis krav og produksjon. Elementplassering, medaljonger og terrenghjørner følger [felles spesifikasjon for kortutseende](../../../shared/docs/card-appearance.md).
+Basebakgrunnen og rammen bruker de samme typebaserte fargene, dimensjonene og avrundingsverdiene foran og bak. Baksideartwork er et kantløst bilde som skaleres med `Fit`, `Stretch` eller `Cover` i samme indre `598x898`-område som frontillustrasjonen. Deckens monster- og terrengbakside har egne source paths og scale modes; tomt path bruker det pakkede default-artworket. Kort uten front-image source path bruker samme grafittfargede placeholder for begge korttyper, slik at placeholderen ikke signaliserer et element. Et ikke-tomt frontpath som ikke kan finnes eller lastes bruker en separat crossed-image-placeholder. Monster og terreng bruker hvert sitt eksplisitte element uavhengig av henholdsvis krav og produksjon. Elementplassering, medaljonger og terrenghjørner følger [felles spesifikasjon for kortutseende](../../../shared/docs/card-appearance.md).
 
 Faktiske monster- og terrengbilder finnes ikke ennå. `assets/placeholders/` brukes som midlertidige bilder fram til de endelige bildene finnes.
 

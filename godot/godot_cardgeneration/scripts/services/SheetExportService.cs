@@ -135,7 +135,7 @@ public sealed class SheetExportService
                         var cardType = pagePlan.FilledBackType ?? pagePlan.FrontCards[slotIndex].CardType;
                         progress?.Invoke(new ExportProgress(currentProgress, totalProgress, $"Placing back slot {slotIndex + 1}/{backSlotCount} on page {sheetIndex + 1}/{sheetCount}"));
                         var position = GetCardPosition(slotIndex, columns, cardWidth, cardHeight, xGap, yGap);
-                        var backImage = GetBackImage(cardType, deck.GetBackImageTexture(cardType), cardWidth, cardHeight, backImages);
+                        var backImage = GetBackImage(cardType, deck, cardWidth, cardHeight, backImages);
                         backSheet.BlendRect(backImage, new Rect2I(Vector2I.Zero, backImage.GetSize()), position);
                         currentProgress++;
                         progress?.Invoke(new ExportProgress(currentProgress, totalProgress, $"Placed back slot {slotIndex + 1}/{backSlotCount} on page {sheetIndex + 1}/{sheetCount}"));
@@ -246,7 +246,7 @@ public sealed class SheetExportService
                         var cardType = pagePlan.FilledBackType ?? pagePlan.FrontCards[slotIndex].CardType;
                         progress?.Invoke(new ExportProgress(currentProgress, totalProgress, $"Rendering preview back {slotIndex + 1}/{backSlotCount} on page {sheetIndex + 1}/{sheetCount}"));
                         var position = GetCardPosition(slotIndex, columns, cardWidth, cardHeight, xGap, yGap);
-                        var backImage = GetBackImage(cardType, deck.GetBackImageTexture(cardType), cardWidth, cardHeight, backImages);
+                        var backImage = GetBackImage(cardType, deck, cardWidth, cardHeight, backImages);
                         backSheet.BlendRect(backImage, new Rect2I(Vector2I.Zero, backImage.GetSize()), position);
                         currentProgress++;
                         progress?.Invoke(new ExportProgress(currentProgress, totalProgress, $"Rendered preview back {slotIndex + 1}/{backSlotCount} on page {sheetIndex + 1}/{sheetCount}"));
@@ -617,7 +617,13 @@ public sealed class SheetExportService
             var cardType = cardTypes[firstSlot + index];
             if (!cache.TryGetValue(cardType, out var buffer))
             {
-                using var image = CardImageRenderer.RenderBackResized(cardType, deck.GetBackImageTexture(cardType), cardWidth, cardHeight);
+                using var image = CardImageRenderer.RenderBackResized(
+                    cardType,
+                    deck.GetBackImageTexture(cardType),
+                    deck.GetBackImageSourcePath(cardType),
+                    deck.GetBackImageScaleMode(cardType),
+                    cardWidth,
+                    cardHeight);
                 buffer = new CardPixelBuffer(cardType.ToString(), image.GetData());
                 cache[cardType] = buffer;
             }
@@ -776,11 +782,17 @@ public sealed class SheetExportService
         return cards;
     }
 
-    private static Image GetBackImage(CardType cardType, Texture2D? backImageTexture, int width, int height, Dictionary<CardType, Image> backImages)
+    private static Image GetBackImage(CardType cardType, CardDeckResource deck, int width, int height, Dictionary<CardType, Image> backImages)
     {
         if (!backImages.TryGetValue(cardType, out var backImage))
         {
-            backImage = CardImageRenderer.RenderBackResized(cardType, backImageTexture, width, height);
+            backImage = CardImageRenderer.RenderBackResized(
+                cardType,
+                deck.GetBackImageTexture(cardType),
+                deck.GetBackImageSourcePath(cardType),
+                deck.GetBackImageScaleMode(cardType),
+                width,
+                height);
             backImages[cardType] = backImage;
         }
 

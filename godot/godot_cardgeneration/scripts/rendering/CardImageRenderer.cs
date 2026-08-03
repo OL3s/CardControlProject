@@ -45,21 +45,26 @@ public static class CardImageRenderer
 
     public static Image RenderBack(CardType cardType, Texture2D? backImageTexture = null)
     {
-        return RenderBack(cardType, backImageTexture, new Vector2I(PreviewWidth, PreviewHeight));
+        return RenderBack(cardType, backImageTexture, string.Empty, CardImageScaleMode.Cover, new Vector2I(PreviewWidth, PreviewHeight));
     }
 
     public static Image RenderBack(CardType cardType, Texture2D? backImageTexture, Vector2I size)
     {
+        return RenderBack(cardType, backImageTexture, string.Empty, CardImageScaleMode.Cover, size);
+    }
+
+    public static Image RenderBack(
+        CardType cardType,
+        Texture2D? backImageTexture,
+        string backImageSourcePath,
+        CardImageScaleMode scaleMode,
+        Vector2I size)
+    {
         var image = CreateTargetImage(size);
         image.Fill(new Color(0, 0, 0, 0));
 
-        if (backImageTexture is null && TryDrawImageSource(image, GetDefaultCardBackPath(cardType), new Rect2I(0, 0, PreviewWidth, PreviewHeight)))
-        {
-            return image;
-        }
-
         DrawCardBase(image, cardType);
-        DrawCardBackImage(image, cardType, backImageTexture);
+        DrawCardBackImage(image, cardType, backImageTexture, backImageSourcePath, scaleMode);
 
         return image;
     }
@@ -72,6 +77,17 @@ public static class CardImageRenderer
     public static Image RenderBackResized(CardType cardType, Texture2D? backImageTexture, int width, int height)
     {
         return RenderBack(cardType, backImageTexture, new Vector2I(width, height));
+    }
+
+    public static Image RenderBackResized(
+        CardType cardType,
+        Texture2D? backImageTexture,
+        string backImageSourcePath,
+        CardImageScaleMode scaleMode,
+        int width,
+        int height)
+    {
+        return RenderBack(cardType, backImageTexture, backImageSourcePath, scaleMode, new Vector2I(width, height));
     }
 
     private static Image CreateTargetImage(Vector2I size)
@@ -212,16 +228,29 @@ public static class CardImageRenderer
         target.BlendRect(composed, new Rect2I(Vector2I.Zero, composed.GetSize()), targetRect.Position);
     }
 
-    private static void DrawCardBackImage(Image image, CardType cardType, Texture2D? backImageTexture)
+    private static void DrawCardBackImage(
+        Image image,
+        CardType cardType,
+        Texture2D? backImageTexture,
+        string backImageSourcePath,
+        CardImageScaleMode scaleMode)
     {
-        var backImageRect = new Rect2I(62, 62, 626, 926);
+        var backImageRect = new Rect2I(76, 76, 598, 898);
         if (backImageTexture is not null)
         {
-            DrawTexture(image, backImageTexture, backImageRect);
+            DrawTexture(image, backImageTexture, backImageRect, 24, scaleMode);
             return;
         }
 
-        FillRoundedRect(image, backImageRect, 28, GetBackFieldColor(cardType));
+        var sourcePath = string.IsNullOrWhiteSpace(backImageSourcePath)
+            ? GetDefaultCardBackPath(cardType)
+            : backImageSourcePath;
+        if (TryDrawImageSource(image, sourcePath, backImageRect, 24, scaleMode))
+        {
+            return;
+        }
+
+        FillRoundedRect(image, backImageRect, 24, GetBackFieldColor(cardType));
 
         var center = new Vector2I(375, 525);
         var accentColor = GetFrameColor(cardType);
@@ -423,15 +452,25 @@ public static class CardImageRenderer
             : Math.Max(1, Math.Min(preferredStep, (maxSpan - size) / (count - 1)));
     }
 
-    private static void DrawTexture(Image target, Texture2D? texture, Rect2I targetRect, int cornerRadius = 0)
+    private static void DrawTexture(
+        Image target,
+        Texture2D? texture,
+        Rect2I targetRect,
+        int cornerRadius = 0,
+        CardImageScaleMode scaleMode = CardImageScaleMode.Stretch)
     {
-        if (!TryDrawTexture(target, texture, targetRect, cornerRadius))
+        if (!TryDrawTexture(target, texture, targetRect, cornerRadius, scaleMode))
         {
             FillRoundedRect(target, targetRect, Math.Min(targetRect.Size.X, targetRect.Size.Y) / 2, new Color(0.85f, 0.82f, 0.72f));
         }
     }
 
-    private static bool TryDrawTexture(Image target, Texture2D? texture, Rect2I targetRect, int cornerRadius = 0)
+    private static bool TryDrawTexture(
+        Image target,
+        Texture2D? texture,
+        Rect2I targetRect,
+        int cornerRadius = 0,
+        CardImageScaleMode scaleMode = CardImageScaleMode.Stretch)
     {
         if (texture is null)
         {
@@ -450,15 +489,7 @@ public static class CardImageRenderer
 
         try
         {
-            targetRect = ScaleRect(target, targetRect);
-            source.Convert(Image.Format.Rgba8);
-            source.Resize(targetRect.Size.X, targetRect.Size.Y, Image.Interpolation.Lanczos);
-            if (cornerRadius > 0)
-            {
-                ApplyRoundedAlphaMask(source, ScaleRadius(target, cornerRadius));
-            }
-
-            target.BlendRect(source, new Rect2I(Vector2I.Zero, source.GetSize()), targetRect.Position);
+            DrawCardArtwork(target, source, targetRect, cornerRadius, scaleMode);
             return true;
         }
         finally

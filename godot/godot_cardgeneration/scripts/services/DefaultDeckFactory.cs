@@ -20,7 +20,9 @@ public static class DefaultDeckFactory
     {
         return new CardDeckResource
         {
-            Id = string.Empty
+            Id = string.Empty,
+            MonsterBackImageScaleMode = CardImageScaleMode.Cover,
+            TerrainBackImageScaleMode = CardImageScaleMode.Cover
         };
     }
 
@@ -32,6 +34,8 @@ public static class DefaultDeckFactory
         return new CardDeckResource
         {
             Id = Default52CardDeckId,
+            MonsterBackImageScaleMode = CardImageScaleMode.Cover,
+            TerrainBackImageScaleMode = CardImageScaleMode.Cover,
             NeutralElementIconTexture = LoadRequiredTexture($"{ElementIconDirectory}/neutral.svg"),
             GrassElementIconTexture = LoadRequiredTexture($"{ElementIconDirectory}/grass.svg"),
             FlameElementIconTexture = LoadRequiredTexture($"{ElementIconDirectory}/flame.svg"),

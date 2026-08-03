@@ -10,6 +10,10 @@ public partial class CardDeckResource : Resource
     [Export] public string Id { get; set; } = string.Empty;
     [Export] public Texture2D? MonsterBackImageTexture { get; set; }
     [Export] public Texture2D? TerrainBackImageTexture { get; set; }
+    [Export] public string MonsterBackImageSourcePath { get; set; } = string.Empty;
+    [Export] public string TerrainBackImageSourcePath { get; set; } = string.Empty;
+    [Export] public CardImageScaleMode MonsterBackImageScaleMode { get; set; } = CardImageScaleMode.Stretch;
+    [Export] public CardImageScaleMode TerrainBackImageScaleMode { get; set; } = CardImageScaleMode.Stretch;
     [Export] public Texture2D? NeutralElementIconTexture { get; set; }
     [Export] public Texture2D? GrassElementIconTexture { get; set; }
     [Export] public Texture2D? FlameElementIconTexture { get; set; }
@@ -37,6 +41,57 @@ public partial class CardDeckResource : Resource
                 break;
             case CardType.Terrain:
                 TerrainBackImageTexture = texture;
+                break;
+        }
+    }
+
+    public string GetBackImageSourcePath(CardType cardType)
+    {
+        return cardType switch
+        {
+            CardType.Monster => MonsterBackImageSourcePath,
+            CardType.Terrain => TerrainBackImageSourcePath,
+            _ => string.Empty
+        };
+    }
+
+    public void SetBackImageSourcePath(CardType cardType, string sourcePath)
+    {
+        switch (cardType)
+        {
+            case CardType.Monster:
+                MonsterBackImageSourcePath = sourcePath;
+                break;
+            case CardType.Terrain:
+                TerrainBackImageSourcePath = sourcePath;
+                break;
+        }
+    }
+
+    public CardImageScaleMode GetBackImageScaleMode(CardType cardType)
+    {
+        if (GetBackImageTexture(cardType) is null && string.IsNullOrWhiteSpace(GetBackImageSourcePath(cardType)))
+        {
+            return CardImageScaleMode.Cover;
+        }
+
+        return cardType switch
+        {
+            CardType.Monster => MonsterBackImageScaleMode,
+            CardType.Terrain => TerrainBackImageScaleMode,
+            _ => CardImageScaleMode.Cover
+        };
+    }
+
+    public void SetBackImageScaleMode(CardType cardType, CardImageScaleMode scaleMode)
+    {
+        switch (cardType)
+        {
+            case CardType.Monster:
+                MonsterBackImageScaleMode = scaleMode;
+                break;
+            case CardType.Terrain:
+                TerrainBackImageScaleMode = scaleMode;
                 break;
         }
     }

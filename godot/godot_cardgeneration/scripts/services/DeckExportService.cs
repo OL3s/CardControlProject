@@ -184,7 +184,11 @@ public sealed class DeckExportService
         {
             if (backMode == ImageBackMode.All || backMode == ImageBackMode.Used && ContainsCardType(cards, cardType))
             {
-                items.Add(DeckImageItem.ForBack(cardType, deck.GetBackImageTexture(cardType)));
+                items.Add(DeckImageItem.ForBack(
+                    cardType,
+                    deck.GetBackImageTexture(cardType),
+                    deck.GetBackImageSourcePath(cardType),
+                    deck.GetBackImageScaleMode(cardType)));
             }
         }
 
@@ -212,7 +216,7 @@ public sealed class DeckExportService
     private static Image RenderImageItem(DeckImageItem item, Vector2I size)
     {
         return item.Card is null
-            ? CardImageRenderer.RenderBack(item.CardType, item.BackImageTexture, size)
+            ? CardImageRenderer.RenderBack(item.CardType, item.BackImageTexture, item.BackImageSourcePath, item.BackImageScaleMode, size)
             : CardImageRenderer.Render(item.Card, size, item.ElementIconOverrides, item.PowerIconOverride);
     }
 
@@ -254,16 +258,18 @@ public sealed class DeckExportService
         CardResource? Card,
         CardType CardType,
         Texture2D? BackImageTexture,
+        string BackImageSourcePath,
+        CardImageScaleMode BackImageScaleMode,
         IReadOnlyDictionary<ElementType, Texture2D>? ElementIconOverrides,
         Texture2D? PowerIconOverride)
     {
         public static DeckImageItem ForFront(CardResource card, IReadOnlyDictionary<ElementType, Texture2D> elementIconOverrides, Texture2D? powerIconOverride)
-            => new(card.Id, card.Id, card, card.CardType, null, elementIconOverrides, powerIconOverride);
+            => new(card.Id, card.Id, card, card.CardType, null, string.Empty, CardImageScaleMode.Cover, elementIconOverrides, powerIconOverride);
 
-        public static DeckImageItem ForBack(CardType cardType, Texture2D? texture)
+        public static DeckImageItem ForBack(CardType cardType, Texture2D? texture, string sourcePath, CardImageScaleMode scaleMode)
         {
             var typeName = cardType.ToString().ToLowerInvariant();
-            return new DeckImageItem($"{typeName} back", $"{typeName}_back", null, cardType, texture, null, null);
+            return new DeckImageItem($"{typeName} back", $"{typeName}_back", null, cardType, texture, sourcePath, scaleMode, null, null);
         }
     }
 }

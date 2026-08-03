@@ -14,7 +14,7 @@ Dette dokumentet er felles visuell source of truth for kort i **Elements: Conquo
 
 ## Felles Visuelt Språk
 
-Kortbaksidene etablerer det visuelle hovedspråket: mørke, lagdelte flater med tydelig dybde og avgrensning. Forsidene skal videreføre dette språket i rammer, paneler og bakgrunner uten å la elementfargene dominere hele kortet.
+Kortbaksidene bruker samme typebaserte ramme, marger, hjørner og bildeområde som forsiden. Baksidebildet er kun et kantløst artwork-lag innenfor denne felles rammen. Monster- og terrengkort beholder dermed identiske kanter på begge sider, mens det valgte baksidebildet kan byttes uten å bygge inn en ny ramme. De mørke, lagdelte baksideflatene etablerer fortsatt det visuelle hovedspråket.
 
 Elementikoner vises i lyse, svakt elementtonede medaljonger. Medaljongene skal ha tydelig outline, slik at ikonene beholder kontrast mot både illustrasjon og mørke flater.
 

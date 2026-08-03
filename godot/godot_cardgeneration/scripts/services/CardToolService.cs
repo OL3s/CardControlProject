@@ -11,7 +11,7 @@ namespace CardGeneration.Services;
 
 public sealed class CardToolService
 {
-    private const string DefaultContentVersion = "deck_scoped_glyphs_any_post_cost_v7";
+    private const string DefaultContentVersion = "shared_back_artwork_pipeline_v8";
     private const string DefaultContentVersionPath = "user://resources/default_content_version.txt";
 
     private readonly CardRepository _cardRepository;
@@ -710,6 +710,8 @@ public sealed class CardToolService
         clone.CardImageSourcePath = source.CardImageSourcePath;
         clone.ImageScaleMode = source.ImageScaleMode;
         clone.BackImageTexture = source.BackImageTexture;
+        clone.BackImageSourcePath = source.BackImageSourcePath;
+        clone.BackImageScaleMode = source.BackImageScaleMode;
 
         if (source is MonsterCardResource sourceMonster && clone is MonsterCardResource cloneMonster)
         {
@@ -734,6 +736,10 @@ public sealed class CardToolService
             Id = source.Id,
             MonsterBackImageTexture = source.MonsterBackImageTexture,
             TerrainBackImageTexture = source.TerrainBackImageTexture,
+            MonsterBackImageSourcePath = source.MonsterBackImageSourcePath,
+            TerrainBackImageSourcePath = source.TerrainBackImageSourcePath,
+            MonsterBackImageScaleMode = source.MonsterBackImageScaleMode,
+            TerrainBackImageScaleMode = source.TerrainBackImageScaleMode,
             NeutralElementIconTexture = source.NeutralElementIconTexture,
             GrassElementIconTexture = source.GrassElementIconTexture,
             FlameElementIconTexture = source.FlameElementIconTexture,
