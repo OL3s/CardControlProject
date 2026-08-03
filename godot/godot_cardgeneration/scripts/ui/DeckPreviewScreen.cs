@@ -49,8 +49,8 @@ public partial class DeckPreviewScreen : CardToolScreen
         backs.AddThemeConstantOverride("separation", 18);
         rowScroll.AddChild(backs);
 
-        AddBackPreview(backs, "Monster", new MonsterCardResource { Id = "monster_back_preview" });
-        AddBackPreview(backs, "Terrain", new TerrainCardResource { Id = "terrain_back_preview" });
+        AddBackPreview(backs, new MonsterCardResource { Id = "monster_back_preview" });
+        AddBackPreview(backs, new TerrainCardResource { Id = "terrain_back_preview" });
         AddDeckGlyphPreview(backs);
     }
 
@@ -101,7 +101,7 @@ public partial class DeckPreviewScreen : CardToolScreen
         });
     }
 
-    private void AddBackPreview(HBoxContainer parent, string title, CardResource card)
+    private void AddBackPreview(HBoxContainer parent, CardResource card)
     {
         var column = new VBoxContainer
         {
@@ -116,11 +116,6 @@ public partial class DeckPreviewScreen : CardToolScreen
             showBack: true,
             minimumSize: new Vector2(90, 126),
             renderSize: new Vector2I(90, 126)));
-        column.AddChild(new Label
-        {
-            Text = title,
-            HorizontalAlignment = HorizontalAlignment.Center
-        });
     }
 
     private void AddDeckGrid(VBoxContainer content)
