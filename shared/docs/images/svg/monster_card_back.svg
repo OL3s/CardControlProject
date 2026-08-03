@@ -7,5 +7,4 @@
   <circle cx="375" cy="525" r="236" fill="#120505" stroke="url(#blood)" stroke-width="16"/><circle cx="375" cy="525" r="174" fill="none" stroke="#5e1718" stroke-width="20" opacity="0.95"/>
   <path d="M375 220 C475 355 550 425 550 525 C550 625 475 695 375 830 C275 695 200 625 200 525 C200 425 275 355 375 220 Z" fill="#190707" stroke="url(#blood)" stroke-width="18"/><path d="M375 285 C450 395 488 455 488 525 C488 595 450 655 375 765 C300 655 262 595 262 525 C262 455 300 395 375 285 Z" fill="#250909" stroke="#dc5639" stroke-width="7" opacity="0.9"/>
   <path d="M285 525 Q375 440 465 525 Q375 610 285 525 Z" fill="#120505" stroke="#dc5639" stroke-width="10" stroke-linejoin="round"/><circle cx="375" cy="525" r="36" fill="#9f1f1f" stroke="#ff7148" stroke-width="6"/><ellipse cx="375" cy="525" rx="11" ry="27" fill="#050303"/>
-  <g fill="url(#blood)" stroke="#ff7148" stroke-width="3" stroke-linejoin="round"><path d="M375 218 L392 244 L375 270 L358 244 Z"/><path d="M580 525 L554 542 L528 525 L554 508 Z"/><path d="M375 832 L358 806 L375 780 L392 806 Z"/><path d="M170 525 L196 508 L222 525 L196 542 Z"/></g>
 </svg>
