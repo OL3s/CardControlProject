@@ -28,9 +28,13 @@ public partial class ExportCenterScreen : CardToolScreen
     private CheckBox _measurementGuide = null!;
     private SpinBox _columns = null!;
     private SpinBox _spacing = null!;
+    private HSlider _printCompensationSlider = null!;
+    private SpinBox _printCompensationValue = null!;
     private Button _exportButton = null!;
     private Button _previewButton = null!;
     private Button _reloadButton = null!;
+    private Button _calibrationExportButton = null!;
+    private Button _calibrationPreviewButton = null!;
     private ProgressBar _progressBar = null!;
     private Label _progressLabel = null!;
     private VBoxContainer _imageBackOptions = null!;
@@ -41,6 +45,7 @@ public partial class ExportCenterScreen : CardToolScreen
     private VBoxContainer _printOptions = null!;
     private FileDialog _outputPathDialog = null!;
     private bool _startExportAfterPathSelection;
+    private bool _startCalibrationExportAfterPathSelection;
     private string _selectedOutputPath = string.Empty;
 
     public override void _Ready()
@@ -59,10 +64,9 @@ public partial class ExportCenterScreen : CardToolScreen
         {
             content.AddChild(new Label
             {
-                Text = "No saved decks found. Create a deck before exporting.",
+                Text = "No saved decks found. Deck export is unavailable, but print calibration can still be previewed and exported.",
                 AutowrapMode = TextServer.AutowrapMode.WordSmart
             });
-            return;
         }
 
         _targetType = AddOptionButton(content, "Export Target", ["Deck"]);
@@ -98,6 +102,7 @@ public partial class ExportCenterScreen : CardToolScreen
         SelectOption(_paper, config.DefaultPaper);
         _dpi = AddOptionButton(_printOptions, "Print DPI", ["150", "300", "600", "1200"]);
         SelectOption(_dpi, config.DefaultDpi.ToString());
+        AddPrintCompensationControl(_printOptions, config.DefaultPrintCompensationPercent);
         _backMirror = AddOptionButton(_printOptions, "Back Mirror", ["none", "width", "height", "both"]);
         SelectOption(_backMirror, config.DefaultBackMirror);
         _easyPrintBacks = new CheckBox
@@ -115,6 +120,12 @@ public partial class ExportCenterScreen : CardToolScreen
             TooltipText = "Draws a 10 cm ruler line with 1 cm ticks on print sheets so printed scale can be checked."
         };
         _printOptions.AddChild(_measurementGuide);
+
+        var calibrationButtons = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Begin };
+        calibrationButtons.AddThemeConstantOverride("separation", 8);
+        _printOptions.AddChild(calibrationButtons);
+        _calibrationPreviewButton = AddIconButton(calibrationButtons, PreviewIconPath, "Preview two-page print calibration test", ShowCalibrationPreview);
+        _calibrationExportButton = AddIconButton(calibrationButtons, ExportIconPath, "Export two-page print calibration test", OpenCalibrationOutputDialog);
 
         var buttons = new HBoxContainer();
         buttons.AddThemeConstantOverride("separation", 8);
@@ -207,6 +218,13 @@ public partial class ExportCenterScreen : CardToolScreen
     private void OnOutputDirectorySelected(string directory)
     {
         _selectedOutputPath = directory;
+        if (_startCalibrationExportAfterPathSelection)
+        {
+            _startCalibrationExportAfterPathSelection = false;
+            ExportCalibrationTest();
+            return;
+        }
+
         StartExportAfterPathSelection();
     }
 
@@ -218,6 +236,14 @@ public partial class ExportCenterScreen : CardToolScreen
 
     private void OnOutputPathDialogCanceled()
     {
+        if (_startCalibrationExportAfterPathSelection)
+        {
+            _startCalibrationExportAfterPathSelection = false;
+            ResetProgress();
+            SetStatus("Print calibration export cancelled.");
+            return;
+        }
+
         if (!_startExportAfterPathSelection)
         {
             return;
@@ -226,6 +252,107 @@ public partial class ExportCenterScreen : CardToolScreen
         _startExportAfterPathSelection = false;
         ResetProgress();
         SetStatus("Export cancelled.");
+    }
+
+    private void OpenCalibrationOutputDialog()
+    {
+        _startExportAfterPathSelection = false;
+        _startCalibrationExportAfterPathSelection = true;
+        _outputPathDialog.FileMode = FileDialog.FileModeEnum.OpenDir;
+        _outputPathDialog.Title = "Choose Print Calibration Export Folder";
+        var globalOutputPath = GetDialogStartPath(ExportOutputMode.Folder);
+        Directory.CreateDirectory(globalOutputPath);
+        _outputPathDialog.CurrentDir = globalOutputPath;
+        _outputPathDialog.CurrentFile = string.Empty;
+        _outputPathDialog.PopupCenteredRatio(0.72f);
+    }
+
+    private async void ExportCalibrationTest()
+    {
+        ResetProgress();
+        SetExportControlsDisabled(true);
+        SetStatus("Exporting two-page print calibration test...");
+        try
+        {
+            var paper = GetSelectedText(_paper).ToLowerInvariant();
+            var compensation = _printCompensationValue.Value;
+            var outputPath = ResolveMultiOutputPath(_selectedOutputPath, $"print_test_{paper}_{compensation:0.#}pct");
+            var result = await Task.Run(() => CardToolService.ExportPrintCalibration(outputPath, paper, compensation));
+            if (!CanUpdateUi())
+            {
+                return;
+            }
+
+            SetStatus(result.Message, !result.Success);
+        }
+        catch (Exception exception)
+        {
+            AppLogger.GuiError("Print calibration export failed.", exception);
+            if (CanUpdateUi())
+            {
+                SetStatus($"Print calibration export failed: {exception.Message}", true);
+            }
+        }
+        finally
+        {
+            if (CanUpdateUi())
+            {
+                SetExportControlsDisabled(false);
+            }
+        }
+    }
+
+    private async void ShowCalibrationPreview()
+    {
+        ResetProgress();
+        SetExportControlsDisabled(true);
+        SetStatus("Rendering print calibration preview...");
+        try
+        {
+            var paper = GetSelectedText(_paper).ToLowerInvariant();
+            var compensation = _printCompensationValue.Value;
+            var result = await Task.Run(() =>
+            {
+                var previews = CardToolService.RenderPrintCalibrationPreviews(paper, compensation, out var error);
+                return (Previews: previews, Error: error);
+            });
+            if (!CanUpdateUi())
+            {
+                if (result.Previews is not null)
+                {
+                    foreach (var preview in result.Previews)
+                    {
+                        preview.Dispose();
+                    }
+                }
+
+                return;
+            }
+
+            if (result.Previews is null)
+            {
+                SetStatus(result.Error, true);
+                return;
+            }
+
+            ShowImagePreviewPopup(result.Previews);
+            SetStatus($"Showing two-page {paper.ToUpperInvariant()} print calibration preview at {compensation:0.#}%.");
+        }
+        catch (Exception exception)
+        {
+            AppLogger.GuiError("Print calibration preview failed.", exception);
+            if (CanUpdateUi())
+            {
+                SetStatus($"Print calibration preview failed: {exception.Message}", true);
+            }
+        }
+        finally
+        {
+            if (CanUpdateUi())
+            {
+                SetExportControlsDisabled(false);
+            }
+        }
     }
 
     private string GetDialogStartPath(ExportOutputMode mode)
@@ -430,7 +557,8 @@ public partial class ExportCenterScreen : CardToolScreen
             var easyPrintBacks = _easyPrintBacks.ButtonPressed;
             var modeSuffix = easyPrintBacks ? "_easy_backs" : string.Empty;
             var sheetOutputPath = ResolveMultiOutputPath(outputPath, $"{selectedDeck.Id}_{paper}_{dpi}dpi{modeSuffix}_sheets");
-            return () => CardToolService.ExportSheet(selectedDeck, sheetOutputPath, paper, dpi, backMirror, includeMeasurementGuide, progress, easyPrintBacks);
+            var printCompensationPercent = _printCompensationValue.Value;
+            return () => CardToolService.ExportSheet(selectedDeck, sheetOutputPath, paper, dpi, backMirror, includeMeasurementGuide, progress, easyPrintBacks, printCompensationPercent);
         }
 
         var layout = GetSelectedText(_layout);
@@ -580,9 +708,10 @@ public partial class ExportCenterScreen : CardToolScreen
         var backMirror = GetSelectedText(_backMirror);
         var includeMeasurementGuide = _measurementGuide.ButtonPressed;
         var easyPrintBacks = _easyPrintBacks.ButtonPressed;
+        var printCompensationPercent = _printCompensationValue.Value;
         var result = await Task.Run(() =>
         {
-            var previewPages = CardToolService.RenderSheetPreviews(previewDeck, paper, dpi, backMirror, includeMeasurementGuide, easyPrintBacks, out var error, ReportExportProgress);
+            var previewPages = CardToolService.RenderSheetPreviews(previewDeck, paper, dpi, backMirror, includeMeasurementGuide, easyPrintBacks, out var error, ReportExportProgress, printCompensationPercent);
             return (Pages: previewPages, Error: error);
         });
         var pages = result.Pages;
@@ -801,6 +930,8 @@ public partial class ExportCenterScreen : CardToolScreen
         _exportButton.Disabled = disabled;
         _previewButton.Disabled = disabled;
         _reloadButton.Disabled = disabled;
+        _calibrationExportButton.Disabled = disabled;
+        _calibrationPreviewButton.Disabled = disabled;
         _targetType.Disabled = disabled;
         _card.Disabled = disabled;
         _deck.Disabled = disabled;
@@ -812,8 +943,52 @@ public partial class ExportCenterScreen : CardToolScreen
         _easyPrintBacks.Disabled = disabled;
         _backMirror.Disabled = disabled || _easyPrintBacks.ButtonPressed;
         _measurementGuide.Disabled = disabled;
+        _printCompensationSlider.Editable = !disabled;
+        _printCompensationValue.Editable = !disabled;
         _columns.Editable = !disabled;
         _spacing.Editable = !disabled;
+    }
+
+    private void AddPrintCompensationControl(VBoxContainer parent, double initialValue)
+    {
+        parent.AddChild(new Label
+        {
+            Text = "Print Compensation (%)",
+            TooltipText = "Increase this when the printer shrinks the page. Card size, bleed, grid placement, and the 10 cm guide are scaled together."
+        });
+        var row = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        row.AddThemeConstantOverride("separation", 10);
+        parent.AddChild(row);
+
+        _printCompensationSlider = new HSlider
+        {
+            MinValue = PrintSheetLayout.MinCompensationPercent,
+            MaxValue = PrintSheetLayout.MaxCompensationPercent,
+            Step = 0.1,
+            Value = initialValue,
+            TickCount = 3,
+            TicksOnBorders = true,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            TooltipText = "90% to 110%. Start at 100%, print a test, and adjust until the 10 cm line and 63 x 88 mm trim outline measure correctly."
+        };
+        row.AddChild(_printCompensationSlider);
+        _printCompensationValue = new SpinBox
+        {
+            MinValue = PrintSheetLayout.MinCompensationPercent,
+            MaxValue = PrintSheetLayout.MaxCompensationPercent,
+            Step = 0.1,
+            Value = initialValue,
+            Suffix = "%",
+            CustomMinimumSize = new Vector2(120, 0)
+        };
+        row.AddChild(_printCompensationValue);
+        _printCompensationSlider.ValueChanged += value => _printCompensationValue.Value = value;
+        _printCompensationValue.ValueChanged += value => _printCompensationSlider.Value = value;
+    }
+
+    private bool CanUpdateUi()
+    {
+        return GodotObject.IsInstanceValid(this) && IsInsideTree();
     }
 
     private enum ExportOutputMode

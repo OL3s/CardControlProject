@@ -74,6 +74,22 @@ public static class CardImageRenderer
         return Render(card, new Vector2I(width, height));
     }
 
+    public static Image RenderPrint(
+        CardResource card,
+        Vector2I exportSize,
+        Rect2I trimRect,
+        IReadOnlyDictionary<ElementType, Texture2D>? elementIconOverrides,
+        Texture2D? powerIconOverride)
+    {
+        var image = CreateTargetImage(exportSize);
+        // The authored card edge is the type-specific outer ink, so extending it through the
+        // bleed prevents white seams without moving the internal frame or safe-zone content.
+        image.Fill(GetOuterInkColor(card.CardType));
+        using var trimImage = Render(card, trimRect.Size, elementIconOverrides, powerIconOverride);
+        image.BlendRect(trimImage, new Rect2I(Vector2I.Zero, trimImage.GetSize()), trimRect.Position);
+        return image;
+    }
+
     public static Image RenderBackResized(CardType cardType, Texture2D? backImageTexture, int width, int height)
     {
         return RenderBack(cardType, backImageTexture, new Vector2I(width, height));
@@ -88,6 +104,23 @@ public static class CardImageRenderer
         int height)
     {
         return RenderBack(cardType, backImageTexture, backImageSourcePath, scaleMode, new Vector2I(width, height));
+    }
+
+    public static Image RenderBackPrint(
+        CardType cardType,
+        Texture2D? backImageTexture,
+        string backImageSourcePath,
+        CardImageScaleMode scaleMode,
+        Vector2I exportSize,
+        Rect2I trimRect)
+    {
+        var image = CreateTargetImage(exportSize);
+        // Back artwork is intentionally inset by the shared frame; only the outer edge ink
+        // continues through bleed so front and back keep identical trim geometry.
+        image.Fill(GetOuterInkColor(cardType));
+        using var trimImage = RenderBack(cardType, backImageTexture, backImageSourcePath, scaleMode, trimRect.Size);
+        image.BlendRect(trimImage, new Rect2I(Vector2I.Zero, trimImage.GetSize()), trimRect.Position);
+        return image;
     }
 
     private static Image CreateTargetImage(Vector2I size)

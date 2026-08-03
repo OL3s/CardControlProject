@@ -17,6 +17,7 @@ public partial class SettingsPanel : CardToolScreen
     private OptionButton _defaultDeckLayout = null!;
     private SpinBox _defaultGridColumns = null!;
     private SpinBox _defaultSpacing = null!;
+    private SpinBox _defaultPrintCompensation = null!;
 
     public override void _Ready()
     {
@@ -38,6 +39,7 @@ public partial class SettingsPanel : CardToolScreen
         _defaultDeckLayout = AddOptionButton(form, "Default Deck Layout", ["individual", "grid", "strip"]);
         _defaultGridColumns = AddSpinBox(form, "Default Grid Columns", 0, 24, 1);
         _defaultSpacing = AddSpinBox(form, "Default Spacing", 0, 256, 1);
+        _defaultPrintCompensation = AddSpinBox(form, "Default Print Compensation (%)", PrintSheetLayout.MinCompensationPercent, PrintSheetLayout.MaxCompensationPercent, 0.1);
 
         var buttons = new HBoxContainer
         {
@@ -65,6 +67,7 @@ public partial class SettingsPanel : CardToolScreen
         SelectOption(_defaultDeckLayout, config.DefaultDeckLayout);
         _defaultGridColumns.Value = config.DefaultGridColumns;
         _defaultSpacing.Value = config.DefaultSpacing;
+        _defaultPrintCompensation.Value = config.DefaultPrintCompensationPercent;
         SetStatus($"Loaded {ConfigRepository.ConfigPath}");
     }
 
@@ -81,7 +84,8 @@ public partial class SettingsPanel : CardToolScreen
             DefaultBackMirror = GetSelectedText(_defaultBackMirror),
             DefaultDeckLayout = GetSelectedText(_defaultDeckLayout),
             DefaultGridColumns = (int)_defaultGridColumns.Value,
-            DefaultSpacing = (int)_defaultSpacing.Value
+            DefaultSpacing = (int)_defaultSpacing.Value,
+            DefaultPrintCompensationPercent = _defaultPrintCompensation.Value
         });
 
         SetStatus(result.Message, !result.Success);

@@ -12,4 +12,5 @@ public sealed class CardToolConfigUpdate
     public string? DefaultDeckLayout { get; init; }
     public int? DefaultGridColumns { get; init; }
     public int? DefaultSpacing { get; init; }
+    public double? DefaultPrintCompensationPercent { get; init; }
 }

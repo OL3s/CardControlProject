@@ -10,6 +10,7 @@ namespace CardGeneration.Services;
 public static class DefaultDeckFactory
 {
     public const string Default52CardDeckId = "default_deck";
+    public const string DefaultTestDeckId = "default_test";
     private const string MonsterArtworkDirectory = "res://assets/artwork/monsters";
     private const string TerrainArtworkDirectory = "res://assets/artwork/terrain";
     private const string ElementIconDirectory = "res://assets/icons/elements";
@@ -49,6 +50,44 @@ public static class DefaultDeckFactory
                     Count = 1
                 })
                 .ToArray()
+        };
+    }
+
+    public static CardDeckResource CreateDefaultTestDeck(CardDeckResource defaultDeck)
+    {
+        var cards = defaultDeck.Entries
+            .Select(entry => entry.Card)
+            .OfType<CardResource>()
+            .ToArray();
+
+        return new CardDeckResource
+        {
+            Id = DefaultTestDeckId,
+            MonsterBackImageTexture = defaultDeck.MonsterBackImageTexture,
+            TerrainBackImageTexture = defaultDeck.TerrainBackImageTexture,
+            MonsterBackImageSourcePath = defaultDeck.MonsterBackImageSourcePath,
+            TerrainBackImageSourcePath = defaultDeck.TerrainBackImageSourcePath,
+            MonsterBackImageScaleMode = defaultDeck.MonsterBackImageScaleMode,
+            TerrainBackImageScaleMode = defaultDeck.TerrainBackImageScaleMode,
+            NeutralElementIconTexture = defaultDeck.NeutralElementIconTexture,
+            GrassElementIconTexture = defaultDeck.GrassElementIconTexture,
+            FlameElementIconTexture = defaultDeck.FlameElementIconTexture,
+            WaterElementIconTexture = defaultDeck.WaterElementIconTexture,
+            AnyElementIconTexture = defaultDeck.AnyElementIconTexture,
+            PowerIconTexture = defaultDeck.PowerIconTexture,
+            Entries =
+            [
+                new CardDeckEntryResource
+                {
+                    Card = cards.First(card => card.CardType == CardType.Terrain),
+                    Count = 1
+                },
+                new CardDeckEntryResource
+                {
+                    Card = cards.First(card => card.CardType == CardType.Monster),
+                    Count = 1
+                }
+            ]
         };
     }
 

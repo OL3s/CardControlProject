@@ -19,7 +19,7 @@ public sealed class DiyExportService
         _sheetExportService = sheetExportService;
     }
 
-    public ToolResult ExportDiy(CardDeckResource deck, string outputPath, int dpi, string backMirror = "none", bool includeMeasurementGuide = false, Action<ExportProgress>? progress = null)
+    public ToolResult ExportDiy(CardDeckResource deck, string outputPath, int dpi, string backMirror = "none", bool includeMeasurementGuide = false, Action<ExportProgress>? progress = null, double printCompensationPercent = PrintSheetLayout.DefaultCompensationPercent)
     {
         var outputDirectory = ProjectPaths.ToGlobalPath(outputPath);
         if (Path.GetExtension(outputDirectory).Equals(".png", StringComparison.OrdinalIgnoreCase))
@@ -27,18 +27,18 @@ public sealed class DiyExportService
             return ToolResult.Fail("DIY export requires an output directory, not a .png file path.");
         }
 
-        var a4Result = _sheetExportService.ExportSheet(deck, Path.Combine(outputDirectory, "a4"), "a4", dpi, backMirror, includeMeasurementGuide, progress);
+        var a4Result = _sheetExportService.ExportSheet(deck, Path.Combine(outputDirectory, "a4"), "a4", dpi, backMirror, includeMeasurementGuide, progress, printCompensationPercent: printCompensationPercent);
         if (!a4Result.Success)
         {
             return a4Result;
         }
 
-        var a3Result = _sheetExportService.ExportSheet(deck, Path.Combine(outputDirectory, "a3"), "a3", dpi, backMirror, includeMeasurementGuide, progress);
+        var a3Result = _sheetExportService.ExportSheet(deck, Path.Combine(outputDirectory, "a3"), "a3", dpi, backMirror, includeMeasurementGuide, progress, printCompensationPercent: printCompensationPercent);
         if (!a3Result.Success)
         {
             return a3Result;
         }
 
-        return ToolResult.Ok($"Exported DIY print sheets for deck '{deck.Id}' as A4 and A3 at {dpi} DPI to {outputDirectory}.");
+        return ToolResult.Ok($"Exported DIY print sheets for deck '{deck.Id}' as A4 and A3 at {dpi} DPI with {printCompensationPercent:0.#}% print compensation to {outputDirectory}.");
     }
 }

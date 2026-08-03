@@ -64,6 +64,8 @@ Verktøyet bør støtte:
 * Separate filer for forside og bakside dersom det trengs for print.
 * Eksport til PDF for print og PNG for preview/testing.
 
+Kortgeneratoren har et tosidig kalibreringsark med trim-/bleed-omriss, 10 cm-linje og mirror-guide. Print compensation justeres mellom `90-110%` til det utskrevne trimomrisset måler `63 x 88 mm` og kontrollinjen måler `10 cm`; samme verdi brukes deretter på vanlige front-/baksideark.
+
 Fysisk versjon bør bare dokumentere kravene til utskrift og produksjon her. Selve verktøyets struktur, dataflyt og tekniske valg bør ligge i `../godot_cardgeneration/`.
 
 Mulig fremtidig struktur:

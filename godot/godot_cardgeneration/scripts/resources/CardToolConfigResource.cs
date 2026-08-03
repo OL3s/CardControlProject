@@ -15,4 +15,5 @@ public partial class CardToolConfigResource : Resource
     [Export(PropertyHint.Enum, "individual,grid,strip")] public string DefaultDeckLayout { get; set; } = "individual";
     [Export(PropertyHint.Range, "0,24,1")] public int DefaultGridColumns { get; set; }
     [Export(PropertyHint.Range, "0,256,1")] public int DefaultSpacing { get; set; } = 24;
+    [Export(PropertyHint.Range, "90,110,0.1")] public double DefaultPrintCompensationPercent { get; set; } = 100.0;
 }
