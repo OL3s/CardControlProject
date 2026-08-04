@@ -10,6 +10,12 @@ Conquora Card Generation skal kunne kjøres i Godot headless. CLI brukes for bat
 godot --headless --path godot/godot_cardgeneration -- --command <command> [options]
 ```
 
+## Testpolicy
+
+Ved utvikling og validering av endringer skal CLI-kommandoer som hovedregel bruke `--deck default_test`. Decken har ett terrengkort og ett monsterkort og er derfor den raske standarden for validering, rendering og eksport.
+
+Bruk hele `default_deck` når testen må dekke alle kort, elementer, tiers eller innholdsvarianter, eller når en kritisk endring trenger full sluttvalidering. Dette gjelder særlig endringer i defaultinnhold, kortspesifikk layout og samlet produksjonseksport.
+
 Eksempel:
 
 ```sh
@@ -38,6 +44,7 @@ validate-deck
 export-deck
 export-sheet
 export-diy
+export-print-test
 export-showcase
 ```
 
@@ -48,7 +55,7 @@ Status:
 * `show-config`: implementert.
 * `set-config`: implementert.
 * `reset-config`: implementert for å nullstille config/settings til fabrikkverdier.
-* `reset-content`: implementert for å slette lagrede kort/decks og regenerere defaultkort og decken `default_deck`.
+* `reset-content`: implementert for å slette lagrede kort/decks og regenerere defaultkort og deckene `default_deck` og `default_test`.
 * `import-card`: implementert for `.tres` kortresource.
 * `import-deck`: implementert for `.tres` deckresource.
 * `delete-card`: implementert for vanlige user card resources og genererte defaultkort; packaged `res://` defaults kan ikke slettes.
@@ -58,8 +65,9 @@ Status:
 * `validate-cards`: implementert.
 * `validate-deck`: implementert for lagrede og innebygde deckresources.
 * `export-deck`: implementert for PNG-layoutene `individual`, `grid` og `strip`.
-* `export-sheet`: implementert for A4 og A3 PNG-printark med front/back, valgbar DPI, valgfri bakside-speiling og valgfri 10 cm målelinje.
+* `export-sheet`: implementert for A4 og A3 PNG-printark med `3 mm` bleed, front/back, valgbar DPI, print compensation, valgfri bakside-speiling og valgfri 10 cm målelinje.
 * `export-diy`: implementert som A4- og A3-printark i egne undermapper med samme printvalg.
+* `export-print-test`: implementert som et tosidig 300 DPI-kalibreringsark med trim, bleed, mirror-guide og 10 cm-linje.
 * `export-showcase`: implementert som et eldre grid-output-preset for CLI.
 
 ## Eksempler
@@ -172,6 +180,12 @@ Eksportere printark:
 godot --headless --path godot/godot_cardgeneration -- --command export-sheet --deck monster_cards --paper a4 --dpi 600 --output output/sheets
 ```
 
+Default er blekkbesparende hjemmeprint. Velg full produksjonsbleed eksplisitt:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command export-sheet --deck monster_cards --paper a4 --dpi 600 --print-mode production --output output/sheets
+```
+
 Speile baksidearket venstre/høyre for tosidig print:
 
 ```sh
@@ -182,6 +196,18 @@ Legge til 10 cm målelinje for å sjekke printskalering:
 
 ```sh
 godot --headless --path godot/godot_cardgeneration -- --command export-sheet --deck monster_cards --paper a4 --dpi 600 --measurement-guide --output output/sheets
+```
+
+Kompensere dersom printeren krymper utskriften:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command export-sheet --deck monster_cards --paper a4 --dpi 600 --measurement-guide --print-compensation 106 --output output/sheets
+```
+
+Lage det tosidige kalibreringsarket uten deck:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command export-print-test --paper a4 --print-compensation 106 --output output/print-test
 ```
 
 A3 bruker samme kommando med `--paper a3`:
@@ -213,9 +239,11 @@ monster_cards_a4_600dpi_front_002.png
 monster_cards_a4_600dpi_back_002.png
 ```
 
-Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, ved valgt DPI. En deck kan inneholde flere korttyper, så baksiden renderes per korttype for hvert kort. Front- og baksideark bruker samme slot-beregning; speiling skjer på hele baksidearket etter at alle baksider er plassert. `--measurement-guide` reserverer en liten bunnstripe og tegner en 10 cm linje med centimeter-ticks nederst på arkene.
+Hvert kort bruker et `69 x 94 mm` slot med et sentrert `63 x 88 mm` trimområde. `--print-mode home` er default og lar de ytre `3 mm` være hvite for blekkbesparende manuell kutting. `--print-mode production` fyller området med kortets ytterfarge som full bleed. Kortinnholdet beholder sitt kanoniske `5:7`-forhold uten strekking i begge moduser. `--print-compensation` godtar `90-110%` og skalerer trim, arbeidsfelt, gridankere og 10 cm-linjen samlet; default er `100%`. En deck kan inneholde flere korttyper, så baksiden renderes per korttype for hvert kort. Front- og baksideark bruker de samme slot-rektanglene; speiling skjer på hele baksidearket etter at alle baksider er plassert. `--measurement-guide` reserverer en bunnstripe og tegner kontrollinjen med centimeter-ticks.
 
-Store printark bruker automatisk memory-safe PNG-streaming i stedet for å allokere hele arket som én RGBA-buffer. Dette gjelder normalt A3 ved `600`/`1200 DPI` og A4 ved `1200 DPI`. Arkene skrives fortsatt sekvensielt og atomisk til de samme PNG-filnavnene; funksjonen endrer ikke layout, speiling eller målelinjen.
+Kalibreringsarket utelater nederste-høyre kort på begge sider. Baksiden er alltid uspeilet. Etter fysisk duplex-print holdes arket mot lys: manglende bakside øverst venstre betyr `both`, øverst høyre `height`, nederst venstre `width`, og nederst høyre `none`. Juster kompensasjonen til solid trimomriss måler `63 x 88 mm` og kontrollinjen måler `10 cm`.
+
+Store printark bruker automatisk memory-safe PNG-streaming i stedet for å allokere hele arket som én RGBA-buffer. Dette gjelder normalt A3 ved `600`/`1200 DPI` og A4 ved `1200 DPI`. Arkene skrives fortsatt sekvensielt og atomisk til de samme PNG-filnavnene; funksjonen endrer ikke layout, printmodus, speiling eller målelinjen. Både vanlig og streamet eksport skriver korrekt fysisk DPI-metadata i PNG-filen.
 
 `--easy-backs` grupperer forsidene etter korttype og fyller alle slots på hvert tilhørende baksideark. Modusen bruker mer papir og blekk, men gjør slot-alignment og `--back-mirror` unødvendig; speiling ignoreres når easy backs er aktivert.
 
@@ -302,16 +330,18 @@ Felt som brukes som defaults:
 * `DefaultPaper`
 * `DefaultDpi`
 * `DefaultBackMirror`
+* `DefaultPrintMode`
 * `DefaultDeckLayout`
 * `DefaultGridColumns`
 * `DefaultSpacing`
+* `DefaultPrintCompensationPercent`
 
 Default card er tom etter fabrikkreset; default deck er `default_deck`. CLI bruker configverdier når tilsvarende flagg ikke er oppgitt. Direkte CLI-flagg overstyrer config for den ene kjøringen uten å lagre endringen. `set-config` lagrer bare feltene som oppgis.
 
 GUI Settings-panelet bruker samme config-resource. Export-skjermen bruker disse verdiene som startverdier, men endringer i Export gjelder bare den ene eksporten og lagres ikke som nye defaults. Endringer i GUI Settings og CLI `set-config` skal derfor være synlige for hverandre.
 
-Cards/Decks-listene viser både default resources under `res://resources/...` og brukerbiblioteket under `user://resources/...`. User resources overstyrer default resources med samme ID. Ved oppstart genereres manglende defaultkort til `user://resources/cards/default/...` med `default_`-prefix, og decken `default_deck` genereres til `user://resources/decks/default/default_deck.tres` hvis den mangler fra både default- og brukerressurser.
+Cards/Decks-listene viser både default resources under `res://resources/...` og brukerbiblioteket under `user://resources/...`. User resources overstyrer default resources med samme ID. Ved oppstart genereres manglende defaultkort til `user://resources/cards/default/...` med `default_`-prefix, og deckene `default_deck` og `default_test` genereres under `user://resources/decks/default/` hvis de mangler fra både default- og brukerressurser.
 
 Packaged `res://` resources er read-only også i CLI. Genererte defaultkort/decks under `user://resources/.../default` kan slettes og lages på nytt ved oppstart hvis de mangler. Endringer i defaults skal starte med `duplicate-card`/`duplicate-deck` eller GUI `Save as new`.
 
-Default deck er `default_deck`. Den er en innebygd 52-korts preset fra `DefaultDeckFactory`, og de 52 kortene fra decken blir også tilgjengelige som card resources med `default_`-prefix ved oppstart.
+Default deck er `default_deck`. Den er en innebygd 52-korts preset fra `DefaultDeckFactory`, og de 52 kortene fra decken blir også tilgjengelige som card resources med `default_`-prefix ved oppstart. `default_test` inneholder ett terrengkort og ett monsterkort for raske CLI- og eksporttester.

@@ -36,9 +36,11 @@ Første GUI-retning bruker en smal hovedmeny:
 
 `Cards` viser kort fra default resources og brukerbiblioteket, preview, edit, duplicate og delete. Nye kort opprettes med `+` inne på denne skjermen. Før editoren åpnes velges korttype, fordi monster- og terrengkort har ulik data og oppsett.
 
-`Decks` viser kortstokker fra default resources og brukerbiblioteket, korttelling, preview, edit, duplicate og delete. Nye kortstokker opprettes med `+` inne på denne skjermen. `+` kan starte en tom kortstokk eller en default 52-korts preset fra `shared/docs`. Ved oppstart sjekker appen om decken `default_deck` og alle kortene fra den finnes i default- eller brukerressurser, og genererer manglende resources til `user://`.
+`Decks` viser kortstokker fra default resources og brukerbiblioteket, korttelling, preview, edit, duplicate og delete. Nye kortstokker opprettes med `+` inne på denne skjermen. `+` kan starte en tom kortstokk eller en default 52-korts preset fra `shared/docs`. Ved oppstart sjekker appen om deckene `default_deck` og `default_test`, samt alle defaultkortene, finnes i default- eller brukerressurser, og genererer manglende resources til `user://`.
 
-Default deck er `default_deck` og representerer **Elements: Conquora**. Korttabellene i `shared/docs` er source of truth, og `DefaultDeckFactory` speiler dem som 20 terreng og 32 monstre. Hvert monsterelement har fordelingen 4 Tier 1, 3 Tier 2 og 1 Tier 3. Ved oppstart lagres manglende defaultkort med `default_`-prefix til `user://resources/cards/default/...` og manglende defaultdeck til `user://resources/decks/default/default_deck.tres`, slik at de kommer tilbake etter sletting og ny appstart. En intern innholdsversjon erstatter automatisk eldre genererte defaults når presetformatet endres, uten å slette vanlige brukerkort eller bruker-decks. `sample_monster_deck` er bare en liten smoke-test resource.
+Default deck er `default_deck` og representerer **Elements: Conquora**. Korttabellene i `shared/docs` er source of truth, og `DefaultDeckFactory` speiler dem som 20 terreng og 32 monstre. Hvert monsterelement har fordelingen 4 Tier 1, 3 Tier 2 og 1 Tier 3. `default_test` inneholder ett terrengkort og ett monsterkort for raske eksporttester. Ved oppstart lagres manglende defaultkort med `default_`-prefix til `user://resources/cards/default/...` og manglende defaultdecks til `user://resources/decks/default/...`, slik at de kommer tilbake etter sletting og ny appstart. En intern innholdsversjon erstatter automatisk eldre genererte defaults når presetformatet endres, uten å slette vanlige brukerkort eller bruker-decks. `sample_monster_deck` er bare en liten smoke-test resource.
+
+Ved utvikling skal CLI-validering, rendering og eksport som hovedregel bruke `default_test`. Det gir rask dekning av både terreng- og monsterflyten uten å rendre alle 52 kortene. Bruk `default_deck` når endringen påvirker hele kortsettet, avhenger av variasjon mellom elementer eller tiers, eller trenger kritisk sluttvalidering av full deck.
 
 Packaged default resources under `res://` er read-only i appen. Genererte defaultkort/decks under `user://resources/.../default` kan slettes, og manglende defaultkort/decks lages på nytt ved neste oppstart. Defaults kan åpnes i editoren for inspeksjon og som utgangspunkt, men `Save` nekter å overskrive dem. Bruk `Save as new` eller duplicate for å lage en vanlig user resource før endringer lagres.
 
@@ -46,9 +48,9 @@ Hovedmenyen skal ikke vise et tilfeldig kortpreview og skal ikke ha egne `New Ca
 
 Korteditoren støtter felles kortfelt, image source path, preview, lagring og PNG-eksport. Korttypen er valgt før editoren åpnes. Den avtalte kortmodellen har eksplisitt element for både monster og terreng. Elementet er uavhengig av monsterets ressurskrav og terrengets produserte ressurser. Monster har i tillegg eksplisitt Tier 1-3, vist som kobberdiamanter ved elementmedaljongen. [Felles spesifikasjon for kortutseende](../../shared/docs/card-appearance.md) er visuell source of truth.
 
-Deckeditoren støtter deck-ID, tilgjengelige kort på tvers av korttyper, deck entries med antall, `Save` og `Save New`. Venstre side viser lagrede kort som preview-fliser i en horisontal scrollrad med ikonknapper for å legge til én kopi eller velge flere kort. Høyre side viser deckinnhold som preview-fliser med ikonknapper for slett, dupliser og multiselect. Eksport gjøres bare fra `Export`-skjermen. En deck er et ferdig produkt med både monster- og terrengkort.
+Deckeditoren støtter deck-ID, tilgjengelige kort på tvers av korttyper, deck entries med antall, `Save` og `Save New`. Monster- og terrengbakside velges som egne deck-eide artwork source paths med `Fit`, `Stretch` eller `Cover`; tomt path bruker default-artworket. Venstre side viser lagrede kort som preview-fliser i en horisontal scrollrad med ikonknapper for å legge til én kopi eller velge flere kort. Høyre side viser deckinnhold som preview-fliser med ikonknapper for slett, dupliser og multiselect. Eksport gjøres bare fra `Export`-skjermen. En deck er et ferdig produkt med både monster- og terrengkort.
 
-`Export` er eneste eksportflate og eksporterer alltid en deck, med to eksporttyper: `Images` og `Print`. Images eksporterer en deck som individuelle bilder, grid eller strip, og kan forhåndsvises uten å skrive filer. Kort alene eksporteres ikke, siden ikoner, power-glyph og baksider er deck-eid. `Back Images` kan utelate baksider, legge til baksiden for hver korttype som faktisk brukes, eller legge til begge baksidetypene. Baksidene kommer først i rekkefølgen Monster og Terrain. Print lager nummererte A4- eller A3-ark med for- og baksider for fysisk utskrift og kutting. Normal print beholder samme kortplassering foran og bak. `Easy backs` grupperer forsidene etter korttype og fyller alle plassene på det tilhørende baksidearket; dette bruker mer papir og blekk, men krever ikke speiling eller nøyaktig slot-alignment. Preview genereres asynkront med fremdriftslinje og viser resultatet i en scrollbar visning. Verdiene starter fra lagrede defaults, men kan endres direkte i Export for den ene eksporten uten å lagres som nye defaults.
+`Export` er eneste eksportflate og eksporterer alltid en deck, med to eksporttyper: `Images` og `Print`. Images eksporterer en deck som individuelle bilder, grid eller strip, og kan forhåndsvises uten å skrive filer. Kort alene eksporteres ikke, siden ikoner, power-glyph og baksider er deck-eid. `Back Images` kan utelate baksider, legge til baksiden for hver korttype som faktisk brukes, eller legge til begge baksidetypene. Baksidene kommer først i rekkefølgen Monster og Terrain. Print lager nummererte A4- eller A3-ark med `63 x 88 mm` trimområde i et `69 x 94 mm` slot. Default `home` lar 3 mm-feltet være hvitt; `production` fyller det som bleed. Normal print beholder samme kortplassering foran og bak. `Easy backs` grupperer forsidene etter korttype og fyller alle plassene på det tilhørende baksidearket; dette bruker mer papir og blekk, men krever ikke speiling eller nøyaktig slot-alignment. Print compensation kan justeres fra `90-110%` og skalerer kort, arbeidsfelt, grid og 10 cm-linjen samlet for å motvirke printerskalering. Export har også preview og eksport av et tosidig kalibreringsark som viser mål og finner riktig mirror-valg. Verdiene starter fra lagrede defaults, men kan endres direkte i Export for den ene eksporten uten å lagres som nye defaults.
 
 Export-knappen åpner Godots file dialog i valgt/default exportmappe. Cancel avbryter eksporten, og Save eller mappevalg starter eksporten.
 
@@ -91,9 +93,9 @@ Monsterets eksplisitte element vises øverst til høyre. Terrengets eksplisitte 
 
 `print_guides` er kun for fysisk produksjon, for eksempel kuttemerker, bleed eller hjelpelinjer. Slike lag skal ikke være del av vanlig preview med mindre brukeren eksplisitt velger det.
 
-Baksiden bygges også i lag. Nederst ligger samme korttypebaserte basefarge/kant som skiller korttypen. Oppå den ligger baksidebildet for korttypen. Baksiden skal ikke avsløre kortspesifikke data som element, krav, styrke eller effekt. Printark bruker korttypen til hvert enkelt kort, siden én ferdig deck kan inneholde både terreng og monstre.
+Baksiden bruker samme renderer-pipeline, korttypebaserte basefarge, ramme, indre `598x898`-bildeområde og avrundingsverdier som forsiden. Baksidebildet er et kantløst artwork-lag som skaleres med `Fit`, `Stretch` eller `Cover` innenfor den felles rammen. Baksiden skal ikke avsløre kortspesifikke data som element, krav, styrke eller effekt. Printark bruker korttypen til hvert enkelt kort, siden én ferdig deck kan inneholde både terreng og monstre.
 
-Kortbaksidene ligger som SVG under `assets/card_backs/` og er kopiert fra `shared/docs/images/svg/`. Monsterbaksiden er tonet litt ned i rødfargen for å fungere bedre med gress- og vannmonstre.
+Default-artwork for kortbaksidene ligger som kantløse SVG-er under `assets/card_backs/`, med dokumentasjonskilder under `shared/docs/images/svg/`. Monsterbaksiden er tonet litt ned i rødfargen for å fungere bedre med gress- og vannmonstre.
 
 ## Printkrav
 
@@ -112,7 +114,14 @@ Begreper:
 * Ferdig kortstørrelse er størrelsen etter kutting.
 * Bleed er ekstra bildeområde utenfor kuttekanten, slik at små kutteavvik ikke gir hvite kanter.
 * Eksportert kortstørrelse er ferdig kortstørrelse pluss bleed på alle sider.
-* Godot jobber i piksler, ikke ekte DPI. `600 DPI` betyr her at `1630 x 2220 px` printes som `69 x 94 mm`.
+* `600 DPI` betyr at produksjonssloten er `1630 x 2220 px` for `69 x 94 mm`. Print-PNG-er lagrer også fysisk DPI-metadata, slik at utskriftsprogrammer kan tolke arkstørrelsen korrekt.
+
+Printmodus:
+
+* `home` er default. Den beholder et hvitt `3 mm` arbeidsfelt rundt `63 x 88 mm`-kortet, slik at den avrundede ytterkanten er synlig og kan følges ved manuell kutting.
+* `production` fyller arbeidsfeltet med korttypens ytterfarge som full bleed. Denne modusen er beregnet for profesjonell produksjon og maskinkutting.
+
+Kortinnholdet beholder det kanoniske `750 x 1050`-formatets `5:7`-forhold i begge moduser. Det sentreres i det eksakte `63 x 88 mm` trimområdet uten uavhengig horisontal og vertikal strekking, mens den synlige kortsilhuetten følger trimgrensen.
 
 DPI skal velges fra faste normalverdier i eksportmenyen:
 
@@ -130,7 +139,7 @@ Baksidearket kan eksporteres med speiling hvis skriveroppsettet trenger det for 
 
 Front- og baksideark bruker samme kortstørrelse og slot-beregning. For best fysisk treff må utskrift normalt kjøres uten skalering, og skriveren må ha god nok mating/duplex-presisjon.
 
-Printark kan få en valgfri `10 cm` målelinje med `1 cm`-ticks nederst på arket. Den brukes til å sjekke med linjal etter utskrift at skriver/PDF-viewer ikke har skalert arket feil.
+Printark kan få en valgfri `10 cm` målelinje med `1 cm`-ticks nederst på arket. Linjen følger valgt print compensation, slik at den skal måle fysisk `10 cm` når printerens skalering er korrekt kompensert. Det tosidige kalibreringsarket viser i tillegg `63 x 88 mm` trimomriss, `69 x 94 mm` bleed-omriss og hvilken mirror-innstilling printerens duplex-retning krever.
 
 Verktøyet bør støtte:
 
@@ -197,6 +206,7 @@ Planlagte kommandoer:
 * `export-deck`
 * `export-sheet`
 * `export-diy`
+* `export-print-test`
 * `export-showcase`
 
 CLI-kommandoene skal bare parse argumenter og kalle samme service-lag som GUI bruker. CLI skal dekke batch/data/export-funksjoner, men trenger ikke å ha full interaktiv redigering av kort- og deckinnhold i denne fasen.
@@ -220,6 +230,7 @@ Første implementerte CLI-funksjoner:
 * `export-deck` renderer en kortstokk til PNG som enkeltbilder, samlet grid eller lang strip.
 * `export-sheet` renderer A4/A3-printark med egne front- og baksideark, valgbar DPI, valgfri bakside-speiling og valgfri 10 cm målelinje.
 * `export-diy` renderer både A4- og A3-printark for en kortstokk, med samme DPI, bakside-speiling og målelinjevalg.
+* `export-print-test` renderer et tosidig 300 DPI-kalibreringsark for valgt papir og print compensation.
 * `export-showcase` renderer en showcase-grid for en kortstokk.
 
 `export-showcase` bruker foreløpig samme grid-output som `export-deck --layout grid`.

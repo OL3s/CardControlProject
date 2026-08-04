@@ -114,6 +114,8 @@ public partial class DeckPreviewScreen : CardToolScreen
         parent.AddChild(column);
 
         card.BackImageTexture = _deck?.GetBackImageTexture(card.CardType);
+        card.BackImageSourcePath = _deck?.GetBackImageSourcePath(card.CardType) ?? string.Empty;
+        card.BackImageScaleMode = _deck?.GetBackImageScaleMode(card.CardType) ?? CardGeneration.Resources.Enums.CardImageScaleMode.Cover;
         column.AddChild(CardPreviewControl.Create(
             card,
             showBack: true,

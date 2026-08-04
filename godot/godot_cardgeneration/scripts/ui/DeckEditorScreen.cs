@@ -17,6 +17,8 @@ public partial class DeckEditorScreen : CardToolScreen
     private readonly List<CardDeckEntryResource> _entries = [];
     private readonly HashSet<string> _selectedAvailableCardIds = [];
     private readonly HashSet<string> _selectedDeckCardIds = [];
+    private readonly Dictionary<CardType, LineEdit> _backImageSourcePaths = [];
+    private readonly Dictionary<CardType, OptionButton> _backImageScaleModes = [];
     private IReadOnlyList<CardResource> _availableCards = Array.Empty<CardResource>();
     private string _originalResourcePath = string.Empty;
     private CardType _backImageTargetType = CardType.Monster;
@@ -36,7 +38,13 @@ public partial class DeckEditorScreen : CardToolScreen
     public void SetDeck(CardDeckResource? deck)
     {
         _originalResourcePath = deck?.ResourcePath ?? string.Empty;
-        _editingDeck = deck is null ? new CardDeckResource() : CloneDeck(deck);
+        _editingDeck = deck is null
+            ? new CardDeckResource
+            {
+                MonsterBackImageScaleMode = CardImageScaleMode.Cover,
+                TerrainBackImageScaleMode = CardImageScaleMode.Cover
+            }
+            : CloneDeck(deck);
         _entries.Clear();
         _selectedAvailableCardIds.Clear();
         _selectedDeckCardIds.Clear();
@@ -727,6 +735,22 @@ public partial class DeckEditorScreen : CardToolScreen
     private void ApplyFieldsToDeck()
     {
         _editingDeck.Id = _id.Text.Trim();
+        foreach (var (cardType, sourcePath) in _backImageSourcePaths)
+        {
+            var updatedPath = sourcePath.Text.Trim();
+            if (!string.Equals(updatedPath, _editingDeck.GetBackImageSourcePath(cardType), StringComparison.Ordinal))
+            {
+                _editingDeck.SetBackImageTexture(cardType, null);
+            }
+
+            _editingDeck.SetBackImageSourcePath(cardType, updatedPath);
+        }
+
+        foreach (var (cardType, scaleMode) in _backImageScaleModes)
+        {
+            _editingDeck.SetBackImageScaleMode(cardType, GetSelectedBackImageScaleMode(scaleMode));
+        }
+
         _editingDeck.Entries = _entries
             .Where(entry => entry.Card is not null && entry.Count > 0)
             .ToArray();
@@ -747,15 +771,20 @@ public partial class DeckEditorScreen : CardToolScreen
             return;
         }
 
-        _editingDeck.SetBackImageTexture(_backImageTargetType, ImageTexture.CreateFromImage(image));
         image.Dispose();
+        ApplyFieldsToDeck();
+        _editingDeck.SetBackImageTexture(_backImageTargetType, null);
+        _editingDeck.SetBackImageSourcePath(_backImageTargetType, filePath);
         RefreshBackPreview();
-        SetStatus($"Loaded {_backImageTargetType} back image '{filePath}'.");
+        SetStatus($"Selected {_backImageTargetType} back artwork '{filePath}'.");
     }
 
     private void ClearBackImage(CardType cardType)
     {
+        ApplyFieldsToDeck();
         _editingDeck.SetBackImageTexture(cardType, null);
+        _editingDeck.SetBackImageSourcePath(cardType, string.Empty);
+        _editingDeck.SetBackImageScaleMode(cardType, CardImageScaleMode.Cover);
         RefreshBackPreview();
         SetStatus($"Using the default {cardType} back image.");
     }
@@ -834,6 +863,8 @@ public partial class DeckEditorScreen : CardToolScreen
         }
 
         ClearContainer(_backPreviewRow);
+        _backImageSourcePaths.Clear();
+        _backImageScaleModes.Clear();
         AddBackPreview(_backPreviewRow, "Monster", CardType.Monster);
         AddBackPreview(_backPreviewRow, "Terrain", CardType.Terrain);
     }
@@ -958,8 +989,56 @@ public partial class DeckEditorScreen : CardToolScreen
             Text = title,
             HorizontalAlignment = HorizontalAlignment.Center
         });
-        AddIconButton(column, BrowseIconPath, $"Choose {title} back image", () => OpenBackImageDialog(cardType), new Vector2(36, 34));
-        AddIconButton(column, ClearIconPath, $"Use default {title} back image", () => ClearBackImage(cardType), new Vector2(36, 34));
+
+        var pathRow = new HBoxContainer
+        {
+            CustomMinimumSize = new Vector2(250, 0),
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        pathRow.AddThemeConstantOverride("separation", 4);
+        column.AddChild(pathRow);
+        var sourcePath = new LineEdit
+        {
+            Text = _editingDeck.GetBackImageSourcePath(cardType),
+            PlaceholderText = $"Default {title} artwork",
+            TooltipText = $"{title} back artwork source path",
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        sourcePath.TextSubmitted += path =>
+        {
+            ApplyFieldsToDeck();
+            RefreshBackPreview();
+        };
+        pathRow.AddChild(sourcePath);
+        _backImageSourcePaths[cardType] = sourcePath;
+        AddIconButton(pathRow, BrowseIconPath, $"Choose {title} back artwork", () => OpenBackImageDialog(cardType), new Vector2(36, 34));
+        AddIconButton(pathRow, ClearIconPath, $"Use default {title} back artwork", () => ClearBackImage(cardType), new Vector2(36, 34));
+
+        var scaleMode = new OptionButton
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            TooltipText = "Fit shows the full artwork, Stretch fills without preserving aspect ratio, and Cover crops while preserving aspect ratio."
+        };
+        scaleMode.AddItem("Fit inside", (int)CardImageScaleMode.Fit);
+        scaleMode.AddItem("Stretch to fill", (int)CardImageScaleMode.Stretch);
+        scaleMode.AddItem("Cover target", (int)CardImageScaleMode.Cover);
+        var selectedScaleMode = _editingDeck.GetBackImageScaleMode(cardType);
+        for (var index = 0; index < scaleMode.ItemCount; index++)
+        {
+            if (scaleMode.GetItemId(index) == (int)selectedScaleMode)
+            {
+                scaleMode.Select(index);
+                break;
+            }
+        }
+
+        scaleMode.ItemSelected += _ =>
+        {
+            ApplyFieldsToDeck();
+            RefreshBackPreview();
+        };
+        column.AddChild(scaleMode);
+        _backImageScaleModes[cardType] = scaleMode;
     }
 
     private CardResource CreateBackPreviewCard(CardType cardType)
@@ -971,6 +1050,8 @@ public partial class DeckEditorScreen : CardToolScreen
             _ => throw new ArgumentOutOfRangeException(nameof(cardType), cardType, "Only monster and terrain cards are supported.")
         };
         card.BackImageTexture = _editingDeck.GetBackImageTexture(cardType);
+        card.BackImageSourcePath = _editingDeck.GetBackImageSourcePath(cardType);
+        card.BackImageScaleMode = _editingDeck.GetBackImageScaleMode(cardType);
         return card;
     }
 
@@ -986,6 +1067,10 @@ public partial class DeckEditorScreen : CardToolScreen
             Id = source.Id,
             MonsterBackImageTexture = source.MonsterBackImageTexture,
             TerrainBackImageTexture = source.TerrainBackImageTexture,
+            MonsterBackImageSourcePath = source.MonsterBackImageSourcePath,
+            TerrainBackImageSourcePath = source.TerrainBackImageSourcePath,
+            MonsterBackImageScaleMode = source.MonsterBackImageScaleMode,
+            TerrainBackImageScaleMode = source.TerrainBackImageScaleMode,
             NeutralElementIconTexture = source.NeutralElementIconTexture,
             GrassElementIconTexture = source.GrassElementIconTexture,
             FlameElementIconTexture = source.FlameElementIconTexture,
@@ -1000,6 +1085,19 @@ public partial class DeckEditorScreen : CardToolScreen
                 })
                 .ToArray()
         };
+    }
+
+    private static CardImageScaleMode GetSelectedBackImageScaleMode(OptionButton selector)
+    {
+        if (selector.Selected < 0)
+        {
+            return CardImageScaleMode.Cover;
+        }
+
+        var modeId = selector.GetItemId(selector.Selected);
+        return Enum.IsDefined(typeof(CardImageScaleMode), modeId)
+            ? (CardImageScaleMode)modeId
+            : CardImageScaleMode.Cover;
     }
 
     private static string EnsureTresExtension(string filePath)

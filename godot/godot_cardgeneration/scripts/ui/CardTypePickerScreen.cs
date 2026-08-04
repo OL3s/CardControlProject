@@ -91,8 +91,8 @@ public partial class CardTypePickerScreen : CardToolScreen
     {
         return cardType switch
         {
-            CardType.Monster => new MonsterCardResource { Id = "monster_back_preview" },
-            CardType.Terrain => new TerrainCardResource { Id = "terrain_back_preview" },
+            CardType.Monster => new MonsterCardResource { Id = "monster_back_preview", BackImageScaleMode = CardImageScaleMode.Cover },
+            CardType.Terrain => new TerrainCardResource { Id = "terrain_back_preview", BackImageScaleMode = CardImageScaleMode.Cover },
             _ => throw new ArgumentOutOfRangeException(nameof(cardType), cardType, "Only monster and terrain cards are supported.")
         };
     }

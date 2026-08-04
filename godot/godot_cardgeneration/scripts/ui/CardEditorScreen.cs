@@ -774,6 +774,8 @@ public partial class CardEditorScreen : CardToolScreen
         target.CardImageSourcePath = source.CardImageSourcePath;
         target.ImageScaleMode = source.ImageScaleMode;
         target.BackImageTexture = source.BackImageTexture;
+        target.BackImageSourcePath = source.BackImageSourcePath;
+        target.BackImageScaleMode = source.BackImageScaleMode;
     }
 
     private static CardResource CreateCardForType(CardType cardType)

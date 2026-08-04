@@ -101,7 +101,12 @@ public partial class CardPreviewControl : TextureRect
     public static Image RenderImage(CardPreviewRenderRequest request)
     {
         return request.ShowBack
-            ? CardImageRenderer.RenderBack(request.Card.CardType, request.Card.BackImageTexture, request.RenderSize)
+            ? CardImageRenderer.RenderBack(
+                request.Card.CardType,
+                request.Card.BackImageTexture,
+                request.Card.BackImageSourcePath,
+                request.Card.BackImageScaleMode,
+                request.RenderSize)
             : CardImageRenderer.Render(request.Card, request.RenderSize, request.ElementIconOverrides, request.PowerIconOverride);
     }
 
@@ -308,7 +313,12 @@ public partial class CardPreviewControl : TextureRect
         }
 
         var image = _showBack
-            ? CardImageRenderer.RenderBack(_card.CardType, _card.BackImageTexture, size)
+            ? CardImageRenderer.RenderBack(
+                _card.CardType,
+                _card.BackImageTexture,
+                _card.BackImageSourcePath,
+                _card.BackImageScaleMode,
+                size)
             : CardImageRenderer.Render(_card, size, _elementIconOverrides, _powerIconOverride);
 
         return image;
@@ -339,6 +349,8 @@ public partial class CardPreviewControl : TextureRect
             GetTextureSignature(card.CardImageTexture),
             card.ImageScaleMode,
             GetTextureSignature(card.BackImageTexture),
+            GetSourceSignature(card.BackImageSourcePath),
+            card.BackImageScaleMode,
             GetTextureSignature(card.Element?.IconTexture),
             GetSourceSignature(CardImageRenderer.PowerIconPath),
             GetSourceSignature(CardImageRenderer.ArrowRightIconPath));

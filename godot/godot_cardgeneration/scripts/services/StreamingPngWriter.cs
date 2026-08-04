@@ -22,7 +22,7 @@ internal sealed class StreamingPngWriter : IDisposable
     private bool _completed;
     private bool _disposed;
 
-    public StreamingPngWriter(string outputPath, int width, int height)
+    public StreamingPngWriter(string outputPath, int width, int height, int dpi)
     {
         if (width <= 0 || height <= 0)
         {
@@ -44,6 +44,7 @@ internal sealed class StreamingPngWriter : IDisposable
         header[9] = 6;
         WriteChunk(_file, "IHDR", header);
         WriteChunk(_file, "sRGB", [0]);
+        WritePhysicalResolutionChunk(_file, dpi);
 
         _idatStream = new IdatChunkStream(_file);
         _compressor = new ZLibStream(_idatStream, CompressionLevel.Fastest, leaveOpen: true);
@@ -123,6 +124,53 @@ internal sealed class StreamingPngWriter : IDisposable
                 File.Delete(_temporaryPath);
             }
         }
+    }
+
+    public static void SetDpi(string pngPath, int dpi)
+    {
+        var temporaryPath = $"{pngPath}.dpi-{Guid.NewGuid():N}";
+        try
+        {
+            using (var input = new FileStream(pngPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var output = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            {
+                Span<byte> header = stackalloc byte[33];
+                input.ReadExactly(header);
+                if (!header[..8].SequenceEqual(PngSignature)
+                    || Encoding.ASCII.GetString(header.Slice(12, 4)) != "IHDR")
+                {
+                    throw new InvalidDataException($"File is not a supported PNG: {pngPath}");
+                }
+
+                output.Write(header);
+                WritePhysicalResolutionChunk(output, dpi);
+                input.CopyTo(output);
+            }
+
+            File.Move(temporaryPath, pngPath, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(temporaryPath))
+            {
+                File.Delete(temporaryPath);
+            }
+        }
+    }
+
+    private static void WritePhysicalResolutionChunk(Stream output, int dpi)
+    {
+        if (dpi <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(dpi), "DPI must be positive.");
+        }
+
+        var pixelsPerMeter = (uint)Math.Round(dpi / 0.0254);
+        Span<byte> physicalResolution = stackalloc byte[9];
+        BinaryPrimitives.WriteUInt32BigEndian(physicalResolution[..4], pixelsPerMeter);
+        BinaryPrimitives.WriteUInt32BigEndian(physicalResolution.Slice(4, 4), pixelsPerMeter);
+        physicalResolution[8] = 1;
+        WriteChunk(output, "pHYs", physicalResolution);
     }
 
     private static void WriteChunk(Stream output, string type, ReadOnlySpan<byte> data)

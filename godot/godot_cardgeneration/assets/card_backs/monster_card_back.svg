@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="750" height="1050" viewBox="0 0 750 1050" role="img" aria-labelledby="title desc">
-  <title id="title">Monster card back preview</title>
-  <desc id="desc">Symmetric monster card back with a watchful eye in a dark, vertically framed sigil.</desc>
+  <title id="title">Monster card back artwork</title>
+  <desc id="desc">Borderless monster card back artwork with a watchful eye in a dark sigil.</desc>
   <defs><radialGradient id="field" cx="50%" cy="50%" r="70%"><stop offset="0" stop-color="#251010"/><stop offset="0.62" stop-color="#171011"/><stop offset="1" stop-color="#070406"/></radialGradient><linearGradient id="blood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d88964"/><stop offset="0.46" stop-color="#743034"/><stop offset="1" stop-color="#a65b40"/></linearGradient></defs>
-  <rect x="20" y="20" width="710" height="1010" rx="48" fill="#050303"/><rect x="48" y="48" width="654" height="954" rx="38" fill="url(#field)" stroke="#7e3438" stroke-width="14"/><rect x="76" y="76" width="598" height="898" rx="26" fill="none" stroke="#3d2022" stroke-width="4" opacity="0.9"/>
+  <rect width="750" height="1050" fill="url(#field)"/>
   <g opacity="0.18" stroke="#b97860" stroke-width="5" fill="none"><ellipse cx="375" cy="525" rx="258" ry="380"/><ellipse cx="375" cy="525" rx="196" ry="300"/><path d="M193 256 L557 794 M557 256 L193 794"/><path d="M375 125 V925 M138 525 H612"/></g>
   <circle cx="375" cy="525" r="236" fill="#120808" stroke="url(#blood)" stroke-width="16"/><circle cx="375" cy="525" r="174" fill="none" stroke="#4f2a2d" stroke-width="20" opacity="0.95"/>
   <path d="M375 220 C475 355 550 425 550 525 C550 625 475 695 375 830 C275 695 200 625 200 525 C200 425 275 355 375 220 Z" fill="#170b0b" stroke="url(#blood)" stroke-width="18"/><path d="M375 285 C450 395 488 455 488 525 C488 595 450 655 375 765 C300 655 262 595 262 525 C262 455 300 395 375 285 Z" fill="#21100f" stroke="#b97860" stroke-width="7" opacity="0.9"/>

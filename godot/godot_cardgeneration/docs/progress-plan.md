@@ -87,8 +87,10 @@ Mål:
 * Støtte normale DPI-valg for printark. Gjort for `150`, `300`, `600` og `1200`.
 * Støtte valgfri speiling av baksideark for tosidig print. Gjort med `none`, `width`, `height` og `both`.
 * Lage nye nummererte ark automatisk når arket er fullt. Gjort.
-* Legge inn safe margin, bleed og kuttemerker. Gjenstår, men valgfri 10 cm målelinje for printskalering er gjort.
-* Lage DIY-eksport med kortbilder, printark og måleinformasjon. Delvis gjort som A4- og A3-printark basert på samme printarkexport med valgfri målelinje.
+* Legge inn safe margin, bleed og kuttemerker. `3 mm` bleed og trim/bleed-linjer på kalibreringsarket er gjort; egne produksjons-kuttemerker og safe-margin-overlay gjenstår.
+* Lage DIY-eksport med kortbilder, printark og måleinformasjon. Gjort som A4- og A3-printark basert på samme kompenserte printlayout med valgfri målelinje.
+* Legge til printerkalibrering. Gjort med `90-110%` uniform kompensasjon, slider/tallfelt, 10 cm-linje og tosidig mirror-testark.
+* Skille hjemmeprint fra produksjon. Gjort med default `home` som har hvitt 3 mm arbeidsfelt, valgfri `production` full bleed, proporsjonal `5:7`-rendering og fysisk DPI-metadata i PNG.
 
 ## Fase 7: Dataintegrasjon
 

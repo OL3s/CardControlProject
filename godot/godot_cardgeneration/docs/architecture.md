@@ -38,7 +38,7 @@ Godot Resource
 
 Elementikonene peker til importerte textures fra SVG-er under `assets/icons/elements/`. Rendereren bruker disse når de kan lastes, og tegner fallback-symboler når texture mangler.
 
-`CardResource` er felles base for alle kort. Den inneholder ID, korttype, teksturer for kortbilde og baksidebilde, samt `CardImageSourcePath` for bilde importert fra filsystemet. Rendereren bruker source path når `CardImageTexture` ikke er satt. `ImageScaleMode` lagrer hvordan frontillustrasjonen plasseres: `Fit` viser hele bildet med bevart sideforhold, `Stretch` fyller bildefeltet uten å bevare sideforholdet, og `Cover` bevarer sideforholdet mens bildet sentreres, zoomes og beskjæres til hele feltet er fylt. Eksisterende kort bruker `Stretch` som standard for å bevare tidligere rendereroppførsel. Visningsnavn, notater, beskrivelser og interne designkategorier er bevisst utelatt fra kortdata. Element er derimot eksplisitt, autoritativ kortmetadata.
+`CardResource` er felles base for alle kort. Den inneholder ID, korttype og frontillustrasjon som texture eller `CardImageSourcePath`. Rendereren bruker source path når `CardImageTexture` ikke er satt. `ImageScaleMode` lagrer hvordan frontillustrasjonen plasseres: `Fit` viser hele bildet med bevart sideforhold, `Stretch` fyller bildefeltet uten å bevare sideforholdet, og `Cover` bevarer sideforholdet mens bildet sentreres, zoomes og beskjæres til hele feltet er fylt. Eksisterende kort bruker `Stretch` som standard for å bevare tidligere rendereroppførsel. De tilsvarende back-feltene brukes internt når en deck-eid bakside sendes gjennom den delte previewkontrollen. Visningsnavn, notater, beskrivelser og interne designkategorier er bevisst utelatt fra kortdata. Element er derimot eksplisitt, autoritativ kortmetadata.
 
 `MonsterCardResource` har eksplisitt element, Tier 1-3, krav, grunnstyrke, bonuslinjer og eventuell effekt. Element, tier og krav er uavhengige felt. Tier renderer som én til tre kobberdiamanter ved elementmedaljongen.
 
@@ -50,9 +50,9 @@ Monsterkrav betales når kortet brukes. Bonuslinjer vurderes etterpå mot gjenv�
 
 Element skal leses direkte fra kortets metadata og skal ikke utledes fra kost-, krav- eller ressurslister. Den visuelle kontrakten for element- og ressursplassering ligger i [felles spesifikasjon for kortutseende](../../../shared/docs/card-appearance.md).
 
-En deck kan inneholde både terreng og monstre i samme 52-korts produkt. Printark renderer derfor bakside per korttype for hvert kort. `MonsterBackImageTexture` og `TerrainBackImageTexture` kan brukes som deck-spesifikke overrides per korttype.
+En deck kan inneholde både terreng og monstre i samme 52-korts produkt. Printark renderer derfor bakside per korttype for hvert kort. `MonsterBackImageSourcePath` og `TerrainBackImageSourcePath` velger deck-spesifikt artwork, med egne scale modes. Tomt path bruker default-SVG-en for korttypen. De eldre texture-feltene beholdes som fallback for allerede lagrede deckresources.
 
-`CardToolConfigResource` lagrer langvarige verktøyinnstillinger som default card, deck, output, format, papir, DPI, bakside-speiling, deck layout, gridkolonner og spacing. Default card er tom etter fabrikkreset; default deck er `default_deck`. Configen ligger som redigerbar Godot resource i `resources/config/card_tool_config.tres`.
+`CardToolConfigResource` lagrer langvarige verktøyinnstillinger som default card, deck, output, format, papir, DPI, bakside-speiling, print compensation, deck layout, gridkolonner og spacing. Default card er tom etter fabrikkreset; default deck er `default_deck`; print compensation er `100%`. Configen ligger som redigerbar Godot resource i `resources/config/card_tool_config.tres`.
 
 Configen er felles for GUI og CLI. GUI Settings-panelet og CLI-kommandoene `show-config`/`set-config`/`reset-config` leser og skriver samme resource.
 
@@ -69,6 +69,8 @@ CardToolService
   CardFactory
   DeckExportService
   SheetExportService
+  PrintSheetLayout
+  PrintCalibrationService
   DiyExportService
   DefaultDeckFactory
   ConfigRepository
@@ -87,7 +89,7 @@ Repository-implementasjonen kan lese `.tres` og `.res` rekursivt fra:
 * `user://resources/cards`
 * `user://resources/decks`
 
-Cards/Decks-listene viser både default resources og `user://resources/...`. Ved oppstart sørger `CardToolService.EnsureDefaultResources()` for at decken `default_deck` og alle kortene fra den finnes. Manglende defaultkort lagres under `user://resources/cards/default/...` med `default_`-prefix, og manglende defaultdeck lagres under `user://resources/decks/default/default_deck.tres`.
+Cards/Decks-listene viser både default resources og `user://resources/...`. Ved oppstart sørger `CardToolService.EnsureDefaultResources()` for at deckene `default_deck` og `default_test`, samt alle defaultkortene, finnes. Manglende defaultkort lagres under `user://resources/cards/default/...` med `default_`-prefix, og manglende defaultdecks lagres under `user://resources/decks/default/...`.
 
 Packaged default resources under `res://` er read-only. Repositoryene nekter å overskrive `res://` resources og genererte `user://resources/.../default` resources. Genererte defaultkort/decks under `user://resources/.../default` kan slettes og lages på nytt ved oppstart hvis de mangler. Endringer i defaults må lagres via `Save as new` eller duplicate, som skriver til vanlige user resource-mapper.
 
@@ -103,19 +105,25 @@ Render- og export-services skal eie all outputlogikk.
 * `grid`: ett samlet PNG-bilde med kortene i rutenett.
 * `strip`: ett langt vertikalt PNG-bilde.
 
-`SheetExportService` støtter A4 og A3 som printark. Den lager nummererte front- og baksideark. Kortene plasseres i pokerkortstørrelse, `63 x 88 mm`, beregnet fra valgt DPI. Baksidearket kan speiles langs width, height eller begge etter at baksidene er plassert. Printark kan også reservere en bunnstripe med en `10 cm` målelinje med centimeter-ticks for utskriftsskalering.
+`PrintSheetLayout` er autoritativ geometri for preview, vanlig eksport, memory-safe streaming og kalibreringsark. Den beregner A4/A3-flaten, kompensert `69 x 94 mm` produksjonsslot, det sentrerte `63 x 88 mm` trimområdet, `3 mm` bleed, gridkapasitet og slot-rektangler. Print compensation er en uniform `90-110%` skalering av trim, bleed og ankere. Front og bakside bruker de samme rektanglene før eventuell helarkspeiling.
+
+`SheetExportService` lager nummererte front- og baksideark fra denne layouten. `home` er default og lar det `3 mm` brede arbeidsfeltet være hvitt rundt en synlig `63 x 88 mm` kortsilhuett; `production` fyller det som full bleed. Baksidearket kan speiles langs width, height eller begge etter at baksidene er plassert. Printark kan reservere en bunnstripe med en kompensert `10 cm` målelinje med centimeter-ticks. `PrintCalibrationService` lager et tosidig 300 DPI-testark med solid trimlinje, stiplet bleed-linje, ett utelatt hjørnekort og mirror-guide for `none`, `width`, `height` og `both`.
 
 `DiyExportService` bruker samme printarkexport og lager både A4- og A3-varianter i egne undermapper.
 
-`shared/docs/terrain-cards.md` og `shared/docs/monster-cards.md` er source of truth for defaultkortene i **Elements: Conquora**. `DefaultDeckFactory` speiler disse tabellene og lager deck-startpunkter for GUI: tom deck og en default 52-korts deck med 20 terreng og 32 monstre. Hvert av de fire monsterelementene har 4 Tier 1-, 3 Tier 2- og 1 Tier 3-monster. Factoryen bruker eksisterende lagrede kortresources når `default_`-ID finnes, og lager ellers preset-kort med `default_`-prefix. De manglende preset-kortene lagres som card resources før decken `default_deck` lagres. En innholdsversjon rydder og regenererer bare genererte defaults når presetformatet endres.
+`shared/docs/terrain-cards.md` og `shared/docs/monster-cards.md` er source of truth for defaultkortene i **Elements: Conquora**. `DefaultDeckFactory` speiler disse tabellene og lager deck-startpunkter for GUI: tom deck og en default 52-korts deck med 20 terreng og 32 monstre. Den genererer også `default_test` med ett terrengkort og ett monsterkort for raske tester. Hvert av de fire monsterelementene har 4 Tier 1-, 3 Tier 2- og 1 Tier 3-monster. Factoryen bruker eksisterende lagrede kortresources når `default_`-ID finnes, og lager ellers preset-kort med `default_`-prefix. De manglende preset-kortene lagres som card resources før defaultdeckene lagres. En innholdsversjon rydder og regenererer bare genererte defaults når presetformatet endres.
+
+CLI-baserte utviklings- og regresjonstester skal normalt bruke `default_test` for å holde validering og eksport rask. `default_deck` brukes når alle kortvarianter må dekkes eller ved kritisk full-deck-sluttvalidering.
 
 DPI velges fra faste normalverdier: `150`, `300`, `600` og `1200`. `600 DPI` er default og print-master-kvalitet.
 
-Arkdelingen regnes slik: service-laget regner ut hvor mange `63 x 88 mm`-kort som får plass på valgt arkstørrelse ved valgt DPI, setter `cardsPerSheet = columns * rows`, og bruker `sheetCount = ceil(cardCount / cardsPerSheet)`. Dersom kortstokken ikke får plass på ett ark, genereres flere ark som `front_001`, `back_001`, `front_002`, `back_002` osv.
+Arkdelingen regnes fra den kompenserte `69 x 94 mm` produksjonssloten: `cardsPerSheet = columns * rows` og `sheetCount = ceil(cardCount / cardsPerSheet)`. Høyere kompensasjon kan derfor redusere antall kort per ark i stedet for å klippe ytterkort. Dersom kortstokken ikke får plass på ett ark, genereres flere ark som `front_001`, `back_001`, `front_002`, `back_002` osv.
 
 Når ett ukomprimert ark ville krevd mer enn `256 MiB` eller en fjerdedel av runtime sitt tilgjengelige minnebudsjett, bytter `SheetExportService` automatisk fra et helt `Image`-ark til memory-safe PNG-streaming. Streameren renderer én kortrekke om gangen, skriver filtrerte RGBA-scanlines direkte til chunkede `IDAT`-blokker og ferdigstiller via en midlertidig fil og atomisk rename. Front og bakside kjøres sekvensielt; high-DPI printark paralleliseres ikke fordi Godots image/resource-operasjoner og store kortbuffere ellers kan gi både stalls og unødvendige minnetopper. A3 ved `600` og `1200 DPI`, samt A4 ved `1200 DPI`, bruker normalt denne banen.
 
-`CardImageRenderer` bruker `750x1050` som kanonisk koordinatsystem, men kan rendere direkte til en mindre target-størrelse for GUI-preview. Lavnivåtegningen skalerer rektangler og radier mot faktisk bilde, slik at små preview-fliser ikke trenger full eksportoppløsning først.
+`CardImageRenderer` bruker `750x1050` som kanonisk koordinatsystem, men kan rendere direkte til en mindre target-størrelse for GUI-preview. Printinnhold skaleres proporsjonalt og sentreres i trimområdet, slik at `5:7`-designet ikke strekkes til det svakt avvikende `63:88`-forholdet. Lavnivåtegningen skalerer rektangler og radier mot faktisk bilde, slik at små preview-fliser ikke trenger full eksportoppløsning først.
+
+Vanlig PNG-lagring etterbehandles med en `pHYs`-chunk, og `StreamingPngWriter` skriver den samme oppløsningen direkte. Dermed har preview-uavhengige printark og kalibreringsark korrekt fysisk DPI-metadata i tillegg til riktige pixelmål.
 
 Deck-preview og deck-editor åpnes først etter at `SavedDecksScreen` har rendret nødvendige, unike preview-varianter direkte i den lille target-størrelsen. Arbeidet deles i batcher på opptil ti kort og kjøres med automatisk begrenset parallellitet; texture-readback serialiseres, mens uavhengig CPU-rendering kan fortsette parallelt. Ferdige `Image`-resultater lastes opp til `ImageTexture` på hovedtråden og legges i en prosesslokal cache med maksimalt 256 kompakte textures. Fulloppløste artwork-bilder beholdes derfor ikke i preview-cachen. Navigasjon skjer først når alle nødvendige thumbnails er klare, og loading-fremdrift vises på `Decks`-skjermen.
 
@@ -203,15 +211,17 @@ print_guides
 
 `transparent_canvas` er selve PNG-flaten utenfor kortet. Den skal være transparent, slik at kortet kan legges på andre bakgrunner uten en fast firkant rundt seg.
 
-Kortbakside bygges slik:
+Kortbakside bygges med samme ramme- og artwork-pipeline som forsiden:
 
 ```text
-base_background_or_border
-card_type_back_image
+transparent_canvas
+card_type_base_background
+card_type_frame
+back_artwork
 optional_print_guides
 ```
 
-Basebakgrunnen bruker separate, dempede nøytraltoner for monster og terreng. Kort uten image source path bruker samme grafittfargede placeholder for begge korttyper, slik at placeholderen ikke signaliserer et element. Et ikke-tomt path som ikke kan finnes eller lastes bruker en separat crossed-image-placeholder. Monster og terreng bruker hvert sitt eksplisitte element uavhengig av henholdsvis krav og produksjon. Elementplassering, medaljonger og terrenghjørner følger [felles spesifikasjon for kortutseende](../../../shared/docs/card-appearance.md).
+Basebakgrunnen og rammen bruker de samme typebaserte fargene, dimensjonene og avrundingsverdiene foran og bak. Baksideartwork er et kantløst bilde som skaleres med `Fit`, `Stretch` eller `Cover` i samme indre `598x898`-område som frontillustrasjonen. Deckens monster- og terrengbakside har egne source paths og scale modes; tomt path bruker det pakkede default-artworket. Kort uten front-image source path bruker samme grafittfargede placeholder for begge korttyper, slik at placeholderen ikke signaliserer et element. Et ikke-tomt frontpath som ikke kan finnes eller lastes bruker en separat crossed-image-placeholder. Monster og terreng bruker hvert sitt eksplisitte element uavhengig av henholdsvis krav og produksjon. Elementplassering, medaljonger og terrenghjørner følger [felles spesifikasjon for kortutseende](../../../shared/docs/card-appearance.md).
 
 Faktiske monster- og terrengbilder finnes ikke ennå. `assets/placeholders/` brukes som midlertidige bilder fram til de endelige bildene finnes.
 

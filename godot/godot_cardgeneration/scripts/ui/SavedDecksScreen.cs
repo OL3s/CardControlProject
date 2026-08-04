@@ -350,8 +350,20 @@ public partial class SavedDecksScreen : CardToolScreen
             }
         }
 
-        var monsterBack = new MonsterCardResource { Id = "monster_back_preview", BackImageTexture = deck.MonsterBackImageTexture };
-        var terrainBack = new TerrainCardResource { Id = "terrain_back_preview", BackImageTexture = deck.TerrainBackImageTexture };
+        var monsterBack = new MonsterCardResource
+        {
+            Id = "monster_back_preview",
+            BackImageTexture = deck.MonsterBackImageTexture,
+            BackImageSourcePath = deck.MonsterBackImageSourcePath,
+            BackImageScaleMode = deck.GetBackImageScaleMode(CardType.Monster)
+        };
+        var terrainBack = new TerrainCardResource
+        {
+            Id = "terrain_back_preview",
+            BackImageTexture = deck.TerrainBackImageTexture,
+            BackImageSourcePath = deck.TerrainBackImageSourcePath,
+            BackImageScaleMode = deck.GetBackImageScaleMode(CardType.Terrain)
+        };
         requests.Add(CardPreviewControl.CreateRenderRequest(monsterBack, true, DeckPreviewScreen.BackPreviewRenderSize));
         requests.Add(CardPreviewControl.CreateRenderRequest(terrainBack, true, DeckPreviewScreen.BackPreviewRenderSize));
         return requests;

@@ -76,8 +76,9 @@ public sealed class CliRunner
             "validate-cards" => _cardToolService.ValidateCards(),
             "validate-deck" => _cardToolService.ValidateDeck(options.DeckId),
             "export-deck" => _cardToolService.ExportDeck(options.DeckId, options.OutputPath, options.Format, options.Layout, options.Columns, options.Spacing, progress, ParseImageBackMode(options.BackImages)),
-            "export-sheet" => _cardToolService.ExportSheet(options.DeckId, options.OutputPath, options.Paper, options.Dpi, options.BackMirror, options.IncludeMeasurementGuide, progress, options.EasyPrintBacks),
-            "export-diy" => _cardToolService.ExportDiy(options.DeckId, options.OutputPath, options.Dpi, options.BackMirror, options.IncludeMeasurementGuide, progress),
+            "export-sheet" => _cardToolService.ExportSheet(options.DeckId, options.OutputPath, options.Paper, options.Dpi, options.BackMirror, options.IncludeMeasurementGuide, progress, options.EasyPrintBacks, options.PrintCompensationPercent, options.PrintMode),
+            "export-diy" => _cardToolService.ExportDiy(options.DeckId, options.OutputPath, options.Dpi, options.BackMirror, options.IncludeMeasurementGuide, progress, options.PrintCompensationPercent, options.PrintMode),
+            "export-print-test" => _cardToolService.ExportPrintCalibration(options.OutputPath, options.Paper, options.PrintCompensationPercent),
             "export-showcase" => _cardToolService.ExportShowcase(options.DeckId, options.OutputPath, options.Format, progress),
             _ => ToolResult.Fail($"Unknown command '{options.Command}'. Use --help to list commands.")
         };
@@ -107,8 +108,9 @@ public sealed class CliRunner
           validate-cards
           validate-deck --deck <deck_id>
           export-deck --deck <deck_id> --format png --layout individual --output <path>
-          export-sheet --deck <deck_id> --paper a4 --dpi 600 --back-mirror none --output <path>
-          export-diy --deck <deck_id> --dpi 600 --output <path>
+          export-sheet --deck <deck_id> --paper a4 --dpi 600 --print-mode home --back-mirror none --output <path>
+          export-diy --deck <deck_id> --dpi 600 --print-mode home --output <path>
+          export-print-test --paper a4 --print-compensation 100 --output <path>
           export-showcase --deck <deck_id> --format png --output <path>
 
         Shortcut flags are also supported:
@@ -126,6 +128,7 @@ public sealed class CliRunner
           --export-deck <deck_id>
           --export-sheet <deck_id>
           --export-diy <deck_id>
+          --export-print-test
           --export-showcase <deck_id>
 
         Deck PNG layouts:
@@ -151,15 +154,17 @@ public sealed class CliRunner
           both   Mirror the whole back sheet both ways.
 
         Print sheet options:
+          --print-mode <mode>  home uses a white work margin; production uses full 3 mm bleed (default: home).
           --measurement-guide  Add a 10 cm guide line with 1 cm ticks for print scaling checks.
           --easy-backs         Group fronts by card type and fill every paired back sheet.
+          --print-compensation <90-110>  Uniformly compensate card, work area, placement, and guide size (default: 100).
           --progress <mode>    Progress output: auto, always, or never (default: auto).
 
         Config:
           show-config prints the saved defaults.
           set-config stores supplied options as future defaults.
           reset-config restores factory settings defaults.
-          reset-content deletes saved cards/decks and regenerates default cards/deck.
+          reset-content deletes saved cards/decks and regenerates default cards/decks.
           Export commands use config defaults when flags are omitted.
         """;
     }

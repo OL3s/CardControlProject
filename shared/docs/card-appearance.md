@@ -14,7 +14,7 @@ Dette dokumentet er felles visuell source of truth for kort i **Elements: Conquo
 
 ## Felles Visuelt Språk
 
-Kortbaksidene etablerer det visuelle hovedspråket: mørke, lagdelte flater med tydelig dybde og avgrensning. Forsidene skal videreføre dette språket i rammer, paneler og bakgrunner uten å la elementfargene dominere hele kortet.
+Kortbaksidene bruker samme typebaserte ramme, marger, hjørner og bildeområde som forsiden. Baksidebildet er kun et kantløst artwork-lag innenfor denne felles rammen. Monster- og terrengkort beholder dermed identiske kanter på begge sider, mens det valgte baksidebildet kan byttes uten å bygge inn en ny ramme. De mørke, lagdelte baksideflatene etablerer fortsatt det visuelle hovedspråket.
 
 Elementikoner vises i lyse, svakt elementtonede medaljonger. Medaljongene skal ha tydelig outline, slik at ikonene beholder kontrast mot både illustrasjon og mørke flater.
 
@@ -51,4 +51,6 @@ Safe margin: minst 4 mm innenfor kuttkant
 Print-master: 600 DPI / 1630 x 2220 px
 ```
 
-Bakgrunner, rammer og illustrasjoner skal gå helt ut i bleed-området. Viktig tekst, ikoner og tall skal ligge innenfor safe margin. Bleed regnes utenfor ferdig kuttkant; safe margin regnes innenfor den.
+I `production`-modus fortsetter korttypens ytterste inkfarge gjennom bleed-området, mens den delte rammen og artworket beholder sin plassering innenfor trimområdet. Dermed gir små kutteavvik samme kantfarge i stedet for hvitt uten å flytte interne rammer eller safe-zone-innhold. Default `home`-modus lar det samme 3 mm-feltet være hvitt, slik at den avrundede kortkanten på trimgrensen er synlig for manuell kutting. Viktig tekst, ikoner og tall skal ligge innenfor safe margin. Bleed regnes utenfor ferdig kuttkant; safe margin regnes innenfor den.
+
+Printark bruker en kalibrerbar, uniform print compensation på `90-110%` for å motvirke automatisk printerskalering. Dette endrer størrelsen som rendres i filen, men ikke målet: trimomrisset skal fortsatt måle `63 x 88 mm`, bleed-omrisset `69 x 94 mm` og kontrollinjen `10 cm` på det ferdige utskriftsarket.

@@ -1,6 +1,8 @@
 using System;
+using System.Globalization;
 using CardGeneration.App;
 using CardGeneration.Resources;
+using CardGeneration.Services;
 
 namespace CardGeneration.Cli;
 
@@ -16,12 +18,14 @@ public sealed class CliOptions
     public string Paper { get; private set; } = "a4";
     public int Dpi { get; private set; } = 600;
     public string BackMirror { get; private set; } = "none";
+    public string PrintMode { get; private set; } = PrintSheetLayout.DefaultPrintMode;
     public string BackImages { get; private set; } = "none";
     public bool IncludeMeasurementGuide { get; private set; }
     public bool EasyPrintBacks { get; private set; }
     public string Layout { get; private set; } = "individual";
     public int Columns { get; private set; }
     public int Spacing { get; private set; } = 24;
+    public double PrintCompensationPercent { get; private set; } = PrintSheetLayout.DefaultCompensationPercent;
     public CliProgressMode ProgressMode { get; private set; } = CliProgressMode.Auto;
     public bool ShowHelp { get; private set; }
 
@@ -34,9 +38,11 @@ public sealed class CliOptions
     public bool HasPaper { get; private set; }
     public bool HasDpi { get; private set; }
     public bool HasBackMirror { get; private set; }
+    public bool HasPrintMode { get; private set; }
     public bool HasLayout { get; private set; }
     public bool HasColumns { get; private set; }
     public bool HasSpacing { get; private set; }
+    public bool HasPrintCompensationPercent { get; private set; }
 
     public static CliOptions Parse(string[] args)
     {
@@ -90,6 +96,10 @@ public sealed class CliOptions
                     options.BackMirror = ReadValue(args, ref index, "--back-mirror");
                     options.HasBackMirror = true;
                     break;
+                case "--print-mode":
+                    options.PrintMode = ReadValue(args, ref index, "--print-mode").ToLowerInvariant();
+                    options.HasPrintMode = true;
+                    break;
                 case "--backs":
                     options.BackImages = ReadValue(args, ref index, "--backs");
                     break;
@@ -110,6 +120,10 @@ public sealed class CliOptions
                 case "--spacing":
                     options.Spacing = int.Parse(ReadValue(args, ref index, "--spacing"));
                     options.HasSpacing = true;
+                    break;
+                case "--print-compensation":
+                    options.PrintCompensationPercent = double.Parse(ReadValue(args, ref index, "--print-compensation"), CultureInfo.InvariantCulture);
+                    options.HasPrintCompensationPercent = true;
                     break;
                 case "--progress":
                     options.ProgressMode = ParseProgressMode(ReadValue(args, ref index, "--progress"));
@@ -225,6 +239,9 @@ public sealed class CliOptions
                     }
 
                     break;
+                case "--export-print-test":
+                    options.Command = "export-print-test";
+                    break;
                 case "--export-showcase":
                     options.Command = "export-showcase";
                     if (TryReadOptionalValue(args, ref index, out var exportShowcaseDeckId))
@@ -305,6 +322,11 @@ public sealed class CliOptions
             BackMirror = config.DefaultBackMirror;
         }
 
+        if (!HasPrintMode)
+        {
+            PrintMode = config.DefaultPrintMode;
+        }
+
         if (!HasLayout)
         {
             Layout = config.DefaultDeckLayout;
@@ -319,6 +341,11 @@ public sealed class CliOptions
         {
             Spacing = config.DefaultSpacing;
         }
+
+        if (!HasPrintCompensationPercent)
+        {
+            PrintCompensationPercent = config.DefaultPrintCompensationPercent;
+        }
     }
 
     public CardToolConfigUpdate ToConfigUpdate()
@@ -332,9 +359,11 @@ public sealed class CliOptions
             DefaultPaper = HasPaper ? Paper : null,
             DefaultDpi = HasDpi ? Dpi : null,
             DefaultBackMirror = HasBackMirror ? BackMirror : null,
+            DefaultPrintMode = HasPrintMode ? PrintMode : null,
             DefaultDeckLayout = HasLayout ? Layout : null,
             DefaultGridColumns = HasColumns ? Columns : null,
-            DefaultSpacing = HasSpacing ? Spacing : null
+            DefaultSpacing = HasSpacing ? Spacing : null,
+            DefaultPrintCompensationPercent = HasPrintCompensationPercent ? PrintCompensationPercent : null
         };
     }
 
