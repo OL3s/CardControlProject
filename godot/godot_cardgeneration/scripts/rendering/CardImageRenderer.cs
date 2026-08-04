@@ -359,9 +359,6 @@ public static class CardImageRenderer
 
     private static void DrawTerrainPanels(Image image, TerrainCardResource card, IReadOnlyDictionary<ElementType, Texture2D>? elementIconOverrides, Texture2D? powerIconOverride)
     {
-        FillHexagon(image, new Vector2I(375, 525), 152, 176, new Color(0.25f, 0.14f, 0.065f, 0.92f));
-        FillHexagon(image, new Vector2I(375, 525), 140, 162, new Color(0.83f, 0.63f, 0.34f, 0.92f));
-        FillHexagon(image, new Vector2I(375, 525), 130, 150, new Color(0.055f, 0.038f, 0.022f, 0.94f));
         DrawElementIcon(image, card.Element, new Rect2I(263, 413, 224, 224), elementIconOverrides);
 
         DrawTerrainResourceCorner(image, card.ProducedResources, ElementType.Neutral, new Vector2I(92, 88), expandRight: true, elementIconOverrides: elementIconOverrides);
@@ -775,20 +772,6 @@ public static class CardImageRenderer
                 image.SetPixel(x, y, new Color(color.R, color.G, color.B, 0));
             }
         }
-    }
-
-    private static void FillHexagon(Image image, Vector2I center, int radiusX, int radiusY, Color color)
-    {
-        var points = new[]
-        {
-            new Vector2I(center.X, center.Y - radiusY),
-            new Vector2I(center.X + radiusX, center.Y - radiusY / 2),
-            new Vector2I(center.X + radiusX, center.Y + radiusY / 2),
-            new Vector2I(center.X, center.Y + radiusY),
-            new Vector2I(center.X - radiusX, center.Y + radiusY / 2),
-            new Vector2I(center.X - radiusX, center.Y - radiusY / 2)
-        };
-        FillPolygon(image, points, color);
     }
 
     private static void DrawMonsterTierDiamonds(Image image, int tier)

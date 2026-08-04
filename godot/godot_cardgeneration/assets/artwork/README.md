@@ -19,7 +19,7 @@ terrain/terrain_water_1_c.png
 The default deck already points to these paths. Until a master exists, its preview uses
 the missing-image diagnostic.
 
-## Procedural monster masters
+## Procedural masters
 
 The editable Pillow generator at `tools/generate_monster_artwork.py` implements all 32
 documented monster concepts as deterministic, background-only illustrations. It skips
@@ -32,5 +32,16 @@ python3 tools/generate_monster_artwork.py --id monster_grass_2_a --force
 python3 tools/generate_monster_artwork.py --element neutral --force
 ```
 
-The script renders directly to `monsters/` at `2360 x 3560`. Keep card frames, labels,
-icons, stats, and other gameplay details in the Godot renderer rather than the recipes.
+The terrain equivalent implements all 20 individually documented landscapes. Terrain
+recipes are rotationally balanced so the artwork remains valid after a `180` degree
+rotation:
+
+```bash
+python3 tools/generate_terrain_artwork.py
+python3 tools/generate_terrain_artwork.py --id terrain_grass_2_a --force
+python3 tools/generate_terrain_artwork.py --element neutral --force
+```
+
+The scripts render directly to `monsters/` and `terrain/` at `2360 x 3560`. Keep card
+frames, labels, icons, stats, the terrain element sigil, and other gameplay details in
+the Godot renderer rather than the recipes.
