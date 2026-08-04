@@ -34,6 +34,12 @@ Dokumentasjonen skrives på norsk. Kode, filnavn, mappenavn, kort-ID-er og tekni
 * [Fysisk versjon](physical/README.md) dokumenterer papirark, print-and-play, 3D-print og fysisk prototyping.
 * [Tabletop Simulator](tabletop_simulator/README.md) dokumenterer digital bordspill-playtesting i Tabletop Simulator.
 
+## Versjonstagger
+
+Versjonstagger markerer stabile kontrollpunkter før større endringer. Nye tagger dokumenteres her med en kort beskrivelse.
+
+* `v0.15.0` - Fungerende kortgenerator med standardkort, monster- og terrengillustrasjoner, korteksport, printark og kalibrering.
+
 ## Felles Dokumenter
 
 * `shared/docs/gameidea-working.md` er arbeidsdokumentet for regelavklaringer, revisjoner og åpne designvalg.
