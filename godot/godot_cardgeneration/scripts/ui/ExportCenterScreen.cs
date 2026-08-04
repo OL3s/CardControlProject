@@ -339,7 +339,7 @@ public partial class ExportCenterScreen : CardToolScreen
                 return;
             }
 
-            ShowImagePreviewPopup(result.Previews);
+            ShowImagePreviewPopup(result.Previews, "Print calibration preview", sheetSized: true);
             SetStatus($"Showing two-page {paper.ToUpperInvariant()} print calibration preview at {compensation:0.#}%.");
         }
         catch (Exception exception)
@@ -641,9 +641,9 @@ public partial class ExportCenterScreen : CardToolScreen
         SetStatus($"Showing image export preview with {previews.Count} image(s).");
     }
 
-    private void ShowImagePreviewPopup(IReadOnlyList<ImagePreviewItem> previews)
+    private void ShowImagePreviewPopup(IReadOnlyList<ImagePreviewItem> previews, string title = "Image export preview", bool sheetSized = false)
     {
-        var popup = new PopupPanel { Title = "Image export preview" };
+        var popup = new PopupPanel { Title = title };
         AddChild(popup);
 
         var margin = new MarginContainer();
@@ -656,14 +656,17 @@ public partial class ExportCenterScreen : CardToolScreen
         var scroll = new ScrollContainer
         {
             CustomMinimumSize = new Vector2(980, 680),
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Auto,
+            HorizontalScrollMode = sheetSized ? ScrollContainer.ScrollMode.Disabled : ScrollContainer.ScrollMode.Auto,
             VerticalScrollMode = ScrollContainer.ScrollMode.Auto
         };
         margin.AddChild(scroll);
 
-        Container previewList = previews.Count > 1
-            ? new GridContainer { Columns = 3, SizeFlagsHorizontal = SizeFlags.ExpandFill }
+        Container previewList = sheetSized
+            ? new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, SizeFlagsHorizontal = SizeFlags.ExpandFill }
+            : previews.Count > 1
+                ? new GridContainer { Columns = 3, SizeFlagsHorizontal = SizeFlags.ExpandFill }
             : new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        previewList.AddThemeConstantOverride("separation", sheetSized ? 16 : 8);
         scroll.AddChild(previewList);
 
         try
@@ -677,7 +680,7 @@ public partial class ExportCenterScreen : CardToolScreen
 
                 var texture = ImageTexture.CreateFromImage(preview.Image);
                 var imageSize = preview.Image.GetSize();
-                var displayWidth = previews.Count > 1 ? 280 : Math.Min(900, Math.Max(300, imageSize.X));
+                var displayWidth = sheetSized ? 460 : previews.Count > 1 ? 280 : Math.Min(900, Math.Max(300, imageSize.X));
                 var displayHeight = Math.Max(1, (int)Math.Round(displayWidth * imageSize.Y / (double)imageSize.X));
                 column.AddChild(new TextureRect
                 {
