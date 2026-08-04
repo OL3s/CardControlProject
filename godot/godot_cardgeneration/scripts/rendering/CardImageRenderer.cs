@@ -79,13 +79,15 @@ public static class CardImageRenderer
         Vector2I exportSize,
         Rect2I trimRect,
         IReadOnlyDictionary<ElementType, Texture2D>? elementIconOverrides,
-        Texture2D? powerIconOverride)
+        Texture2D? powerIconOverride,
+        bool fullBleed)
     {
         var image = CreateTargetImage(exportSize);
-        // The authored card edge is the type-specific outer ink, so extending it through the
-        // bleed prevents white seams without moving the internal frame or safe-zone content.
-        image.Fill(GetOuterInkColor(card.CardType));
-        using var trimImage = Render(card, trimRect.Size, elementIconOverrides, powerIconOverride);
+        image.Fill(fullBleed ? GetOuterInkColor(card.CardType) : new Color(0, 0, 0, 0));
+        using var trimImage = RenderPrintTrim(
+            trimRect.Size,
+            card.CardType,
+            size => Render(card, size, elementIconOverrides, powerIconOverride));
         image.BlendRect(trimImage, new Rect2I(Vector2I.Zero, trimImage.GetSize()), trimRect.Position);
         return image;
     }
@@ -112,15 +114,35 @@ public static class CardImageRenderer
         string backImageSourcePath,
         CardImageScaleMode scaleMode,
         Vector2I exportSize,
-        Rect2I trimRect)
+        Rect2I trimRect,
+        bool fullBleed)
     {
         var image = CreateTargetImage(exportSize);
-        // Back artwork is intentionally inset by the shared frame; only the outer edge ink
-        // continues through bleed so front and back keep identical trim geometry.
-        image.Fill(GetOuterInkColor(cardType));
-        using var trimImage = RenderBack(cardType, backImageTexture, backImageSourcePath, scaleMode, trimRect.Size);
+        image.Fill(fullBleed ? GetOuterInkColor(cardType) : new Color(0, 0, 0, 0));
+        using var trimImage = RenderPrintTrim(
+            trimRect.Size,
+            cardType,
+            size => RenderBack(cardType, backImageTexture, backImageSourcePath, scaleMode, size));
         image.BlendRect(trimImage, new Rect2I(Vector2I.Zero, trimImage.GetSize()), trimRect.Position);
         return image;
+    }
+
+    private static Image RenderPrintTrim(Vector2I trimSize, CardType cardType, Func<Vector2I, Image> renderContent)
+    {
+        var trimImage = CreateTargetImage(trimSize);
+        trimImage.Fill(new Color(0, 0, 0, 0));
+        // The visible card silhouette is the physical trim edge. Content stays at its authored
+        // 5:7 ratio inside the 63 x 88 mm target instead of being stretched independently.
+        FillRoundedRect(trimImage, new Rect2I(0, 0, PreviewWidth, PreviewHeight), 48, GetOuterInkColor(cardType));
+
+        var scale = Math.Min(trimSize.X / (double)PreviewWidth, trimSize.Y / (double)PreviewHeight);
+        var contentSize = new Vector2I(
+            Math.Max(1, (int)Math.Round(PreviewWidth * scale)),
+            Math.Max(1, (int)Math.Round(PreviewHeight * scale)));
+        using var content = renderContent(contentSize);
+        var position = (trimSize - contentSize) / 2;
+        trimImage.BlendRect(content, new Rect2I(Vector2I.Zero, contentSize), position);
+        return trimImage;
     }
 
     private static Image CreateTargetImage(Vector2I size)

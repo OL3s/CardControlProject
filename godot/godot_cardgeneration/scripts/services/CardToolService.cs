@@ -79,6 +79,7 @@ public sealed class CardToolService
         message.AppendLine($"- paper: {config.DefaultPaper}");
         message.AppendLine($"- dpi: {config.DefaultDpi}");
         message.AppendLine($"- back_mirror: {config.DefaultBackMirror}");
+        message.AppendLine($"- print_mode: {config.DefaultPrintMode}");
         message.AppendLine($"- deck_layout: {config.DefaultDeckLayout}");
         message.AppendLine($"- grid_columns: {config.DefaultGridColumns}");
         message.AppendLine($"- spacing: {config.DefaultSpacing}");
@@ -143,6 +144,17 @@ public sealed class CardToolService
             }
 
             config.DefaultBackMirror = update.DefaultBackMirror;
+        }
+
+        if (!string.IsNullOrWhiteSpace(update.DefaultPrintMode))
+        {
+            var printMode = update.DefaultPrintMode.ToLowerInvariant();
+            if (!PrintSheetLayout.IsSupportedPrintMode(printMode))
+            {
+                return ToolResult.Fail($"Print mode '{update.DefaultPrintMode}' is not supported. Use home or production.");
+            }
+
+            config.DefaultPrintMode = printMode;
         }
 
         if (!string.IsNullOrWhiteSpace(update.DefaultDeckLayout))
@@ -584,7 +596,7 @@ public sealed class CardToolService
         return _deckExportService.RenderPreviews(deck, layout, columns, spacing, out errorMessage, progress, backMode);
     }
 
-    public ToolResult ExportSheet(string? deckId, string outputPath, string paper, int dpi, string backMirror = "none", bool includeMeasurementGuide = false, Action<ExportProgress>? progress = null, bool easyPrintBacks = false, double printCompensationPercent = PrintSheetLayout.DefaultCompensationPercent)
+    public ToolResult ExportSheet(string? deckId, string outputPath, string paper, int dpi, string backMirror = "none", bool includeMeasurementGuide = false, Action<ExportProgress>? progress = null, bool easyPrintBacks = false, double printCompensationPercent = PrintSheetLayout.DefaultCompensationPercent, string printMode = PrintSheetLayout.DefaultPrintMode)
     {
         if (string.IsNullOrWhiteSpace(deckId))
         {
@@ -594,17 +606,17 @@ public sealed class CardToolService
         var deck = LoadDeckById(deckId);
         return deck is null
             ? ToolResult.Fail($"Deck '{deckId}' was not found.")
-            : _sheetExportService.ExportSheet(deck, outputPath, paper, dpi, backMirror, includeMeasurementGuide, progress, easyPrintBacks, printCompensationPercent);
+            : _sheetExportService.ExportSheet(deck, outputPath, paper, dpi, backMirror, includeMeasurementGuide, progress, easyPrintBacks, printCompensationPercent, printMode);
     }
 
-    public ToolResult ExportSheet(CardDeckResource deck, string outputPath, string paper, int dpi, string backMirror = "none", bool includeMeasurementGuide = false, Action<ExportProgress>? progress = null, bool easyPrintBacks = false, double printCompensationPercent = PrintSheetLayout.DefaultCompensationPercent)
+    public ToolResult ExportSheet(CardDeckResource deck, string outputPath, string paper, int dpi, string backMirror = "none", bool includeMeasurementGuide = false, Action<ExportProgress>? progress = null, bool easyPrintBacks = false, double printCompensationPercent = PrintSheetLayout.DefaultCompensationPercent, string printMode = PrintSheetLayout.DefaultPrintMode)
     {
-        return _sheetExportService.ExportSheet(deck, outputPath, paper, dpi, backMirror, includeMeasurementGuide, progress, easyPrintBacks, printCompensationPercent);
+        return _sheetExportService.ExportSheet(deck, outputPath, paper, dpi, backMirror, includeMeasurementGuide, progress, easyPrintBacks, printCompensationPercent, printMode);
     }
 
-    public IReadOnlyList<SheetPreviewPage>? RenderSheetPreviews(CardDeckResource deck, string paper, int dpi, string backMirror, bool includeMeasurementGuide, bool easyPrintBacks, out string errorMessage, Action<ExportProgress>? progress = null, double printCompensationPercent = PrintSheetLayout.DefaultCompensationPercent)
+    public IReadOnlyList<SheetPreviewPage>? RenderSheetPreviews(CardDeckResource deck, string paper, int dpi, string backMirror, bool includeMeasurementGuide, bool easyPrintBacks, out string errorMessage, Action<ExportProgress>? progress = null, double printCompensationPercent = PrintSheetLayout.DefaultCompensationPercent, string printMode = PrintSheetLayout.DefaultPrintMode)
     {
-        return _sheetExportService.RenderSheetPreviews(deck, paper, dpi, backMirror, includeMeasurementGuide, easyPrintBacks, out errorMessage, progress, printCompensationPercent);
+        return _sheetExportService.RenderSheetPreviews(deck, paper, dpi, backMirror, includeMeasurementGuide, easyPrintBacks, out errorMessage, progress, printCompensationPercent, printMode);
     }
 
     public ToolResult ExportPrintCalibration(string outputPath, string paper, double printCompensationPercent)
@@ -617,7 +629,7 @@ public sealed class CardToolService
         return _printCalibrationService.RenderPreviews(paper, printCompensationPercent, out errorMessage);
     }
 
-    public ToolResult ExportDiy(string? deckId, string outputPath, int dpi, string backMirror = "none", bool includeMeasurementGuide = false, Action<ExportProgress>? progress = null, double printCompensationPercent = PrintSheetLayout.DefaultCompensationPercent)
+    public ToolResult ExportDiy(string? deckId, string outputPath, int dpi, string backMirror = "none", bool includeMeasurementGuide = false, Action<ExportProgress>? progress = null, double printCompensationPercent = PrintSheetLayout.DefaultCompensationPercent, string printMode = PrintSheetLayout.DefaultPrintMode)
     {
         if (string.IsNullOrWhiteSpace(deckId))
         {
@@ -627,12 +639,12 @@ public sealed class CardToolService
         var deck = LoadDeckById(deckId);
         return deck is null
             ? ToolResult.Fail($"Deck '{deckId}' was not found.")
-            : _diyExportService.ExportDiy(deck, outputPath, dpi, backMirror, includeMeasurementGuide, progress, printCompensationPercent);
+            : _diyExportService.ExportDiy(deck, outputPath, dpi, backMirror, includeMeasurementGuide, progress, printCompensationPercent, printMode);
     }
 
-    public ToolResult ExportDiy(CardDeckResource deck, string outputPath, int dpi, string backMirror = "none", bool includeMeasurementGuide = false, Action<ExportProgress>? progress = null, double printCompensationPercent = PrintSheetLayout.DefaultCompensationPercent)
+    public ToolResult ExportDiy(CardDeckResource deck, string outputPath, int dpi, string backMirror = "none", bool includeMeasurementGuide = false, Action<ExportProgress>? progress = null, double printCompensationPercent = PrintSheetLayout.DefaultCompensationPercent, string printMode = PrintSheetLayout.DefaultPrintMode)
     {
-        return _diyExportService.ExportDiy(deck, outputPath, dpi, backMirror, includeMeasurementGuide, progress, printCompensationPercent);
+        return _diyExportService.ExportDiy(deck, outputPath, dpi, backMirror, includeMeasurementGuide, progress, printCompensationPercent, printMode);
     }
 
     public ToolResult ExportShowcase(string? deckId, string outputPath, string format, Action<ExportProgress>? progress = null)

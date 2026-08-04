@@ -14,7 +14,7 @@ public sealed class SheetExportService
     private static readonly int[] SupportedDpiValues = [150, 300, 600, 1200];
     private const long StreamingSheetThresholdBytes = 256L * 1024 * 1024;
 
-    public ToolResult ExportSheet(CardDeckResource deck, string outputPath, string paper, int dpi, string backMirror = "none", bool includeMeasurementGuide = false, Action<ExportProgress>? progress = null, bool easyPrintBacks = false, double printCompensationPercent = PrintSheetLayout.DefaultCompensationPercent)
+    public ToolResult ExportSheet(CardDeckResource deck, string outputPath, string paper, int dpi, string backMirror = "none", bool includeMeasurementGuide = false, Action<ExportProgress>? progress = null, bool easyPrintBacks = false, double printCompensationPercent = PrintSheetLayout.DefaultCompensationPercent, string printMode = PrintSheetLayout.DefaultPrintMode)
     {
         if (!IsSupportedDpi(dpi))
         {
@@ -25,6 +25,14 @@ public sealed class SheetExportService
         {
             return ToolResult.Fail($"Back mirror '{backMirror}' is not supported. Use none, width, height, or both.");
         }
+
+        printMode = printMode.ToLowerInvariant();
+        if (!PrintSheetLayout.IsSupportedPrintMode(printMode))
+        {
+            return ToolResult.Fail($"Print mode '{printMode}' is not supported. Use home or production.");
+        }
+
+        var fullBleed = printMode == "production";
 
         if (!PrintSheetLayout.TryCreate(paper, dpi, printCompensationPercent, includeMeasurementGuide, out var layout, out var layoutError))
         {
@@ -59,6 +67,8 @@ public sealed class SheetExportService
                 cards.Count,
                 pagePlans,
                 layout,
+                fullBleed,
+                printMode,
                 progress);
         }
 
@@ -80,7 +90,7 @@ public sealed class SheetExportService
                         var card = pagePlan.FrontCards[slotIndex];
                         progress?.Invoke(new ExportProgress(currentProgress, totalProgress, $"Rendering front {frontCardsPlaced + 1}/{cards.Count}: {card.Id}"));
                         var position = layout.GetSlotRect(slotIndex).Position;
-                        using var frontImage = CardImageRenderer.RenderPrint(card, layout.CardSize, layout.TrimRect, deck.GetElementIconOverrides(), deck.PowerIconTexture);
+                        using var frontImage = CardImageRenderer.RenderPrint(card, layout.CardSize, layout.TrimRect, deck.GetElementIconOverrides(), deck.PowerIconTexture, fullBleed);
                         frontSheet.BlendRect(frontImage, new Rect2I(Vector2I.Zero, frontImage.GetSize()), position);
                         currentProgress++;
                         frontCardsPlaced++;
@@ -93,10 +103,10 @@ public sealed class SheetExportService
                         DrawMeasurementGuide(frontSheet, layout);
                     }
 
-                    var frontError = frontSheet.SavePng(frontPath);
-                    if (frontError != Error.Ok)
+                    var frontError = SavePrintPng(frontSheet, frontPath, dpi);
+                    if (frontError is not null)
                     {
-                        return ToolResult.Fail($"Failed to save front sheet {frontPath}: {frontError}.");
+                        return ToolResult.Fail(frontError);
                     }
                 }
 
@@ -108,7 +118,7 @@ public sealed class SheetExportService
                         var cardType = pagePlan.FilledBackType ?? pagePlan.FrontCards[slotIndex].CardType;
                         progress?.Invoke(new ExportProgress(currentProgress, totalProgress, $"Placing back slot {slotIndex + 1}/{backSlotCount} on page {sheetIndex + 1}/{sheetCount}"));
                         var position = layout.GetSlotRect(slotIndex).Position;
-                        var backImage = GetBackImage(cardType, deck, layout, backImages);
+                        var backImage = GetBackImage(cardType, deck, layout, backImages, fullBleed);
                         backSheet.BlendRect(backImage, new Rect2I(Vector2I.Zero, backImage.GetSize()), position);
                         currentProgress++;
                         progress?.Invoke(new ExportProgress(currentProgress, totalProgress, $"Placed back slot {slotIndex + 1}/{backSlotCount} on page {sheetIndex + 1}/{sheetCount}"));
@@ -122,10 +132,10 @@ public sealed class SheetExportService
                     }
 
                     var backPath = Path.Combine(outputDirectory, $"{deck.Id}_{layout.PaperName}_{dpi}dpi_back_{sheetIndex + 1:000}.png");
-                    var backError = backSheet.SavePng(backPath);
-                    if (backError != Error.Ok)
+                    var backError = SavePrintPng(backSheet, backPath, dpi);
+                    if (backError is not null)
                     {
-                        return ToolResult.Fail($"Failed to save back sheet {backPath}: {backError}.");
+                        return ToolResult.Fail(backError);
                     }
                 }
             }
@@ -139,10 +149,10 @@ public sealed class SheetExportService
         }
 
         var modeDescription = easyPrintBacks ? " easy-back" : string.Empty;
-        return ToolResult.Ok($"Exported {sheetCount} {layout.PaperName.ToUpperInvariant()} {dpi} DPI{modeDescription} front/back sheet pair(s) at {layout.CompensationPercent:0.#}% print compensation for deck '{deck.Id}' to {outputDirectory}.");
+        return ToolResult.Ok($"Exported {sheetCount} {printMode} {layout.PaperName.ToUpperInvariant()} {dpi} DPI{modeDescription} front/back sheet pair(s) at {layout.CompensationPercent:0.#}% print compensation for deck '{deck.Id}' to {outputDirectory}.");
     }
 
-    public IReadOnlyList<SheetPreviewPage>? RenderSheetPreviews(CardDeckResource deck, string paper, int dpi, string backMirror, bool includeMeasurementGuide, bool easyPrintBacks, out string errorMessage, Action<ExportProgress>? progress = null, double printCompensationPercent = PrintSheetLayout.DefaultCompensationPercent)
+    public IReadOnlyList<SheetPreviewPage>? RenderSheetPreviews(CardDeckResource deck, string paper, int dpi, string backMirror, bool includeMeasurementGuide, bool easyPrintBacks, out string errorMessage, Action<ExportProgress>? progress = null, double printCompensationPercent = PrintSheetLayout.DefaultCompensationPercent, string printMode = PrintSheetLayout.DefaultPrintMode)
     {
         errorMessage = string.Empty;
         if (!IsSupportedDpi(dpi))
@@ -156,6 +166,15 @@ public sealed class SheetExportService
             errorMessage = $"Back mirror '{backMirror}' is not supported. Use none, width, height, or both.";
             return null;
         }
+
+        printMode = printMode.ToLowerInvariant();
+        if (!PrintSheetLayout.IsSupportedPrintMode(printMode))
+        {
+            errorMessage = $"Print mode '{printMode}' is not supported. Use home or production.";
+            return null;
+        }
+
+        var fullBleed = printMode == "production";
 
         var cards = ExpandDeckCards(deck);
         if (cards.Count == 0)
@@ -193,7 +212,7 @@ public sealed class SheetExportService
                         var card = pagePlan.FrontCards[slotIndex];
                         progress?.Invoke(new ExportProgress(currentProgress, totalProgress, $"Rendering preview front {frontCardsRendered + 1}/{cards.Count}: {card.Id}"));
                         var position = layout.GetSlotRect(slotIndex).Position;
-                        var frontImage = CardImageRenderer.RenderPrint(card, layout.CardSize, layout.TrimRect, deck.GetElementIconOverrides(), deck.PowerIconTexture);
+                        var frontImage = CardImageRenderer.RenderPrint(card, layout.CardSize, layout.TrimRect, deck.GetElementIconOverrides(), deck.PowerIconTexture, fullBleed);
                         frontSheet.BlendRect(frontImage, new Rect2I(Vector2I.Zero, frontImage.GetSize()), position);
                         frontImage.Dispose();
                         currentProgress++;
@@ -207,7 +226,7 @@ public sealed class SheetExportService
                         var cardType = pagePlan.FilledBackType ?? pagePlan.FrontCards[slotIndex].CardType;
                         progress?.Invoke(new ExportProgress(currentProgress, totalProgress, $"Rendering preview back {slotIndex + 1}/{backSlotCount} on page {sheetIndex + 1}/{sheetCount}"));
                         var position = layout.GetSlotRect(slotIndex).Position;
-                        var backImage = GetBackImage(cardType, deck, layout, backImages);
+                        var backImage = GetBackImage(cardType, deck, layout, backImages, fullBleed);
                         backSheet.BlendRect(backImage, new Rect2I(Vector2I.Zero, backImage.GetSize()), position);
                         currentProgress++;
                         progress?.Invoke(new ExportProgress(currentProgress, totalProgress, $"Rendered preview back {slotIndex + 1}/{backSlotCount} on page {sheetIndex + 1}/{sheetCount}"));
@@ -305,6 +324,8 @@ public sealed class SheetExportService
         int totalFrontCards,
         IReadOnlyList<SheetPagePlan> pagePlans,
         PrintSheetLayout layout,
+        bool fullBleed,
+        string printMode,
         Action<ExportProgress>? progress)
     {
         var totalBackCards = easyPrintBacks ? pagePlans.Count * layout.CardsPerSheet : totalFrontCards;
@@ -327,6 +348,7 @@ public sealed class SheetExportService
                     totalProgress,
                     ref currentProgress,
                     ref frontCardsRendered,
+                    fullBleed,
                     progress);
 
                 var backSlotCount = pagePlan.FilledBackType.HasValue ? layout.CardsPerSheet : pagePlan.FrontCards.Count;
@@ -348,6 +370,7 @@ public sealed class SheetExportService
                     pagePlans.Count,
                     totalProgress,
                     ref currentProgress,
+                    fullBleed,
                     progress);
             }
         }
@@ -357,7 +380,7 @@ public sealed class SheetExportService
         }
 
         var modeDescription = easyPrintBacks ? " easy-back" : string.Empty;
-        return ToolResult.Ok($"Exported {pagePlans.Count} {layout.PaperName.ToUpperInvariant()} {layout.Dpi} DPI{modeDescription} front/back sheet pair(s) at {layout.CompensationPercent:0.#}% print compensation with memory-safe streaming for deck '{deck.Id}' to {outputDirectory}.");
+        return ToolResult.Ok($"Exported {pagePlans.Count} {printMode} {layout.PaperName.ToUpperInvariant()} {layout.Dpi} DPI{modeDescription} front/back sheet pair(s) at {layout.CompensationPercent:0.#}% print compensation with memory-safe streaming for deck '{deck.Id}' to {outputDirectory}.");
     }
 
     private static void WriteStreamingFrontSheet(
@@ -369,9 +392,10 @@ public sealed class SheetExportService
         int totalProgress,
         ref int currentProgress,
         ref int frontCardsRendered,
+        bool fullBleed,
         Action<ExportProgress>? progress)
     {
-        using var writer = new StreamingPngWriter(outputPath, layout.SheetSize.X, layout.SheetSize.Y);
+        using var writer = new StreamingPngWriter(outputPath, layout.SheetSize.X, layout.SheetSize.Y, layout.Dpi);
         var scanline = new byte[checked(layout.SheetSize.X * 4)];
         var activeRow = int.MinValue;
         CardPixelBuffer[] rowBuffers = [];
@@ -389,7 +413,7 @@ public sealed class SheetExportService
                 activeRow = layoutRow;
                 rowBuffers = layoutRow < 0
                     ? []
-                    : RenderFrontCardRow(cards, layoutRow, layout, deck);
+                    : RenderFrontCardRow(cards, layoutRow, layout, deck, fullBleed);
                 foreach (var buffer in rowBuffers)
                 {
                     currentProgress++;
@@ -430,11 +454,12 @@ public sealed class SheetExportService
         int pageCount,
         int totalProgress,
         ref int currentProgress,
+        bool fullBleed,
         Action<ExportProgress>? progress)
     {
         var flipX = backMirror is "width" or "both";
         var flipY = backMirror is "height" or "both";
-        using var writer = new StreamingPngWriter(outputPath, layout.SheetSize.X, layout.SheetSize.Y);
+        using var writer = new StreamingPngWriter(outputPath, layout.SheetSize.X, layout.SheetSize.Y, layout.Dpi);
         var scanline = new byte[checked(layout.SheetSize.X * 4)];
         var activeRow = int.MinValue;
         CardPixelBuffer[] rowBuffers = [];
@@ -447,7 +472,7 @@ public sealed class SheetExportService
                 activeRow = layoutRow;
                 rowBuffers = layoutRow < 0
                     ? []
-                    : GetBackCardRow(cardTypes, layoutRow, layout, deck, backBuffers);
+                    : GetBackCardRow(cardTypes, layoutRow, layout, deck, backBuffers, fullBleed);
                 foreach (var buffer in rowBuffers)
                 {
                     currentProgress++;
@@ -483,7 +508,8 @@ public sealed class SheetExportService
         IReadOnlyList<CardResource> cards,
         int layoutRow,
         PrintSheetLayout layout,
-        CardDeckResource deck)
+        CardDeckResource deck,
+        bool fullBleed)
     {
         var firstSlot = layoutRow * layout.Columns;
         var count = Math.Min(layout.Columns, Math.Max(0, cards.Count - firstSlot));
@@ -496,7 +522,7 @@ public sealed class SheetExportService
         for (var index = 0; index < count; index++)
         {
             var card = cards[firstSlot + index];
-            using var image = CardImageRenderer.RenderPrint(card, layout.CardSize, layout.TrimRect, deck.GetElementIconOverrides(), deck.PowerIconTexture);
+            using var image = CardImageRenderer.RenderPrint(card, layout.CardSize, layout.TrimRect, deck.GetElementIconOverrides(), deck.PowerIconTexture, fullBleed);
             buffers[index] = new CardPixelBuffer(card.Id, image.GetData());
         }
 
@@ -508,7 +534,8 @@ public sealed class SheetExportService
         int layoutRow,
         PrintSheetLayout layout,
         CardDeckResource deck,
-        Dictionary<CardType, CardPixelBuffer> cache)
+        Dictionary<CardType, CardPixelBuffer> cache,
+        bool fullBleed)
     {
         var firstSlot = layoutRow * layout.Columns;
         var count = Math.Min(layout.Columns, Math.Max(0, cardTypes.Count - firstSlot));
@@ -524,7 +551,8 @@ public sealed class SheetExportService
                     deck.GetBackImageSourcePath(cardType),
                     deck.GetBackImageScaleMode(cardType),
                     layout.CardSize,
-                    layout.TrimRect);
+                    layout.TrimRect,
+                    fullBleed);
                 buffer = new CardPixelBuffer(cardType.ToString(), image.GetData());
                 cache[cardType] = buffer;
             }
@@ -624,6 +652,25 @@ public sealed class SheetExportService
         return sheet;
     }
 
+    private static string? SavePrintPng(Image image, string outputPath, int dpi)
+    {
+        var saveError = image.SavePng(outputPath);
+        if (saveError != Error.Ok)
+        {
+            return $"Failed to save print sheet {outputPath}: {saveError}.";
+        }
+
+        try
+        {
+            StreamingPngWriter.SetDpi(outputPath, dpi);
+            return null;
+        }
+        catch (Exception exception)
+        {
+            return $"Saved print sheet but failed to write {dpi} DPI metadata to {outputPath}: {exception.Message}";
+        }
+    }
+
     private static void DrawMeasurementGuide(Image sheet, PrintSheetLayout layout)
     {
         var lineLength = layout.GetMeasurementGuideLength();
@@ -664,7 +711,7 @@ public sealed class SheetExportService
         return cards;
     }
 
-    private static Image GetBackImage(CardType cardType, CardDeckResource deck, PrintSheetLayout layout, Dictionary<CardType, Image> backImages)
+    private static Image GetBackImage(CardType cardType, CardDeckResource deck, PrintSheetLayout layout, Dictionary<CardType, Image> backImages, bool fullBleed)
     {
         if (!backImages.TryGetValue(cardType, out var backImage))
         {
@@ -674,7 +721,8 @@ public sealed class SheetExportService
                 deck.GetBackImageSourcePath(cardType),
                 deck.GetBackImageScaleMode(cardType),
                 layout.CardSize,
-                layout.TrimRect);
+                layout.TrimRect,
+                fullBleed);
             backImages[cardType] = backImage;
         }
 

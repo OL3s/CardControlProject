@@ -51,6 +51,6 @@ Safe margin: minst 4 mm innenfor kuttkant
 Print-master: 600 DPI / 1630 x 2220 px
 ```
 
-Korttypens ytterste inkfarge fortsetter gjennom bleed-området, mens den delte rammen og artworket beholder sin plassering innenfor trimområdet. Dermed gir små kutteavvik samme kantfarge i stedet for hvitt uten å flytte interne rammer eller safe-zone-innhold. Viktig tekst, ikoner og tall skal ligge innenfor safe margin. Bleed regnes utenfor ferdig kuttkant; safe margin regnes innenfor den.
+I `production`-modus fortsetter korttypens ytterste inkfarge gjennom bleed-området, mens den delte rammen og artworket beholder sin plassering innenfor trimområdet. Dermed gir små kutteavvik samme kantfarge i stedet for hvitt uten å flytte interne rammer eller safe-zone-innhold. Default `home`-modus lar det samme 3 mm-feltet være hvitt, slik at den avrundede kortkanten på trimgrensen er synlig for manuell kutting. Viktig tekst, ikoner og tall skal ligge innenfor safe margin. Bleed regnes utenfor ferdig kuttkant; safe margin regnes innenfor den.
 
 Printark bruker en kalibrerbar, uniform print compensation på `90-110%` for å motvirke automatisk printerskalering. Dette endrer størrelsen som rendres i filen, men ikke målet: trimomrisset skal fortsatt måle `63 x 88 mm`, bleed-omrisset `69 x 94 mm` og kontrollinjen `10 cm` på det ferdige utskriftsarket.

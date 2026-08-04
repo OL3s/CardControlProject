@@ -38,11 +38,21 @@ public sealed class PrintCalibrationService
             {
                 return ToolResult.Fail($"Failed to save print calibration front page {frontPath}: {frontError}.");
             }
+            var frontMetadataError = TrySetDpi(frontPath);
+            if (frontMetadataError is not null)
+            {
+                return ToolResult.Fail(frontMetadataError);
+            }
 
             var backError = pages[1].Image.SavePng(backPath);
             if (backError != Error.Ok)
             {
                 return ToolResult.Fail($"Failed to save print calibration back page {backPath}: {backError}.");
+            }
+            var backMetadataError = TrySetDpi(backPath);
+            if (backMetadataError is not null)
+            {
+                return ToolResult.Fail(backMetadataError);
             }
 
             return ToolResult.Ok($"Exported two-page {paper.ToUpperInvariant()} print calibration test at {printCompensationPercent:0.#}% compensation to {outputDirectory}.");
@@ -50,6 +60,19 @@ public sealed class PrintCalibrationService
         finally
         {
             DisposePages(pages);
+        }
+    }
+
+    private static string? TrySetDpi(string outputPath)
+    {
+        try
+        {
+            StreamingPngWriter.SetDpi(outputPath, ExportDpi);
+            return null;
+        }
+        catch (Exception exception)
+        {
+            return $"Saved calibration sheet but failed to write {ExportDpi} DPI metadata to {outputPath}: {exception.Message}";
         }
     }
 

@@ -16,6 +16,12 @@ public sealed class PrintSheetLayout
     public const double MinCompensationPercent = 90.0;
     public const double MaxCompensationPercent = 110.0;
     public const double DefaultCompensationPercent = 100.0;
+    public const string DefaultPrintMode = "home";
+
+    public static bool IsSupportedPrintMode(string printMode)
+    {
+        return printMode is "home" or "production";
+    }
 
     private PrintSheetLayout(
         string paperName,

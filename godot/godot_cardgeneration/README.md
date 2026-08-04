@@ -50,7 +50,7 @@ Korteditoren støtter felles kortfelt, image source path, preview, lagring og PN
 
 Deckeditoren støtter deck-ID, tilgjengelige kort på tvers av korttyper, deck entries med antall, `Save` og `Save New`. Monster- og terrengbakside velges som egne deck-eide artwork source paths med `Fit`, `Stretch` eller `Cover`; tomt path bruker default-artworket. Venstre side viser lagrede kort som preview-fliser i en horisontal scrollrad med ikonknapper for å legge til én kopi eller velge flere kort. Høyre side viser deckinnhold som preview-fliser med ikonknapper for slett, dupliser og multiselect. Eksport gjøres bare fra `Export`-skjermen. En deck er et ferdig produkt med både monster- og terrengkort.
 
-`Export` er eneste eksportflate og eksporterer alltid en deck, med to eksporttyper: `Images` og `Print`. Images eksporterer en deck som individuelle bilder, grid eller strip, og kan forhåndsvises uten å skrive filer. Kort alene eksporteres ikke, siden ikoner, power-glyph og baksider er deck-eid. `Back Images` kan utelate baksider, legge til baksiden for hver korttype som faktisk brukes, eller legge til begge baksidetypene. Baksidene kommer først i rekkefølgen Monster og Terrain. Print lager nummererte A4- eller A3-ark med `63 x 88 mm` trimområde og `3 mm` bleed på alle sider. Normal print beholder samme kortplassering foran og bak. `Easy backs` grupperer forsidene etter korttype og fyller alle plassene på det tilhørende baksidearket; dette bruker mer papir og blekk, men krever ikke speiling eller nøyaktig slot-alignment. Print compensation kan justeres fra `90-110%` og skalerer kort, bleed, grid og 10 cm-linjen samlet for å motvirke printerskalering. Export har også preview og eksport av et tosidig kalibreringsark som viser mål og finner riktig mirror-valg. Verdiene starter fra lagrede defaults, men kan endres direkte i Export for den ene eksporten uten å lagres som nye defaults.
+`Export` er eneste eksportflate og eksporterer alltid en deck, med to eksporttyper: `Images` og `Print`. Images eksporterer en deck som individuelle bilder, grid eller strip, og kan forhåndsvises uten å skrive filer. Kort alene eksporteres ikke, siden ikoner, power-glyph og baksider er deck-eid. `Back Images` kan utelate baksider, legge til baksiden for hver korttype som faktisk brukes, eller legge til begge baksidetypene. Baksidene kommer først i rekkefølgen Monster og Terrain. Print lager nummererte A4- eller A3-ark med `63 x 88 mm` trimområde i et `69 x 94 mm` slot. Default `home` lar 3 mm-feltet være hvitt; `production` fyller det som bleed. Normal print beholder samme kortplassering foran og bak. `Easy backs` grupperer forsidene etter korttype og fyller alle plassene på det tilhørende baksidearket; dette bruker mer papir og blekk, men krever ikke speiling eller nøyaktig slot-alignment. Print compensation kan justeres fra `90-110%` og skalerer kort, arbeidsfelt, grid og 10 cm-linjen samlet for å motvirke printerskalering. Export har også preview og eksport av et tosidig kalibreringsark som viser mål og finner riktig mirror-valg. Verdiene starter fra lagrede defaults, men kan endres direkte i Export for den ene eksporten uten å lagres som nye defaults.
 
 Export-knappen åpner Godots file dialog i valgt/default exportmappe. Cancel avbryter eksporten, og Save eller mappevalg starter eksporten.
 
@@ -114,7 +114,14 @@ Begreper:
 * Ferdig kortstørrelse er størrelsen etter kutting.
 * Bleed er ekstra bildeområde utenfor kuttekanten, slik at små kutteavvik ikke gir hvite kanter.
 * Eksportert kortstørrelse er ferdig kortstørrelse pluss bleed på alle sider.
-* Godot jobber i piksler, ikke ekte DPI. `600 DPI` betyr her at `1630 x 2220 px` printes som `69 x 94 mm`.
+* `600 DPI` betyr at produksjonssloten er `1630 x 2220 px` for `69 x 94 mm`. Print-PNG-er lagrer også fysisk DPI-metadata, slik at utskriftsprogrammer kan tolke arkstørrelsen korrekt.
+
+Printmodus:
+
+* `home` er default. Den beholder et hvitt `3 mm` arbeidsfelt rundt `63 x 88 mm`-kortet, slik at den avrundede ytterkanten er synlig og kan følges ved manuell kutting.
+* `production` fyller arbeidsfeltet med korttypens ytterfarge som full bleed. Denne modusen er beregnet for profesjonell produksjon og maskinkutting.
+
+Kortinnholdet beholder det kanoniske `750 x 1050`-formatets `5:7`-forhold i begge moduser. Det sentreres i det eksakte `63 x 88 mm` trimområdet uten uavhengig horisontal og vertikal strekking, mens den synlige kortsilhuetten følger trimgrensen.
 
 DPI skal velges fra faste normalverdier i eksportmenyen:
 

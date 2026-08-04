@@ -23,6 +23,7 @@ public partial class ExportCenterScreen : CardToolScreen
     private OptionButton _layout = null!;
     private OptionButton _paper = null!;
     private OptionButton _dpi = null!;
+    private OptionButton _printMode = null!;
     private OptionButton _backMirror = null!;
     private CheckBox _easyPrintBacks = null!;
     private CheckBox _measurementGuide = null!;
@@ -102,6 +103,9 @@ public partial class ExportCenterScreen : CardToolScreen
         SelectOption(_paper, config.DefaultPaper);
         _dpi = AddOptionButton(_printOptions, "Print DPI", ["150", "300", "600", "1200"]);
         SelectOption(_dpi, config.DefaultDpi.ToString());
+        _printMode = AddOptionButton(_printOptions, "Print Mode", ["home", "production"]);
+        SelectOption(_printMode, config.DefaultPrintMode);
+        _printMode.TooltipText = "Home leaves the 3 mm work margin white for visible manual cutting. Production fills it as full bleed.";
         AddPrintCompensationControl(_printOptions, config.DefaultPrintCompensationPercent);
         _backMirror = AddOptionButton(_printOptions, "Back Mirror", ["none", "width", "height", "both"]);
         SelectOption(_backMirror, config.DefaultBackMirror);
@@ -555,10 +559,11 @@ public partial class ExportCenterScreen : CardToolScreen
             var backMirror = GetSelectedText(_backMirror);
             var includeMeasurementGuide = _measurementGuide.ButtonPressed;
             var easyPrintBacks = _easyPrintBacks.ButtonPressed;
+            var printMode = GetSelectedText(_printMode);
             var modeSuffix = easyPrintBacks ? "_easy_backs" : string.Empty;
-            var sheetOutputPath = ResolveMultiOutputPath(outputPath, $"{selectedDeck.Id}_{paper}_{dpi}dpi{modeSuffix}_sheets");
+            var sheetOutputPath = ResolveMultiOutputPath(outputPath, $"{selectedDeck.Id}_{paper}_{dpi}dpi_{printMode}{modeSuffix}_sheets");
             var printCompensationPercent = _printCompensationValue.Value;
-            return () => CardToolService.ExportSheet(selectedDeck, sheetOutputPath, paper, dpi, backMirror, includeMeasurementGuide, progress, easyPrintBacks, printCompensationPercent);
+            return () => CardToolService.ExportSheet(selectedDeck, sheetOutputPath, paper, dpi, backMirror, includeMeasurementGuide, progress, easyPrintBacks, printCompensationPercent, printMode);
         }
 
         var layout = GetSelectedText(_layout);
@@ -708,10 +713,11 @@ public partial class ExportCenterScreen : CardToolScreen
         var backMirror = GetSelectedText(_backMirror);
         var includeMeasurementGuide = _measurementGuide.ButtonPressed;
         var easyPrintBacks = _easyPrintBacks.ButtonPressed;
+        var printMode = GetSelectedText(_printMode);
         var printCompensationPercent = _printCompensationValue.Value;
         var result = await Task.Run(() =>
         {
-            var previewPages = CardToolService.RenderSheetPreviews(previewDeck, paper, dpi, backMirror, includeMeasurementGuide, easyPrintBacks, out var error, ReportExportProgress, printCompensationPercent);
+            var previewPages = CardToolService.RenderSheetPreviews(previewDeck, paper, dpi, backMirror, includeMeasurementGuide, easyPrintBacks, out var error, ReportExportProgress, printCompensationPercent, printMode);
             return (Pages: previewPages, Error: error);
         });
         var pages = result.Pages;
@@ -940,6 +946,7 @@ public partial class ExportCenterScreen : CardToolScreen
         _layout.Disabled = disabled;
         _paper.Disabled = disabled;
         _dpi.Disabled = disabled;
+        _printMode.Disabled = disabled;
         _easyPrintBacks.Disabled = disabled;
         _backMirror.Disabled = disabled || _easyPrintBacks.ButtonPressed;
         _measurementGuide.Disabled = disabled;

@@ -180,6 +180,12 @@ Eksportere printark:
 godot --headless --path godot/godot_cardgeneration -- --command export-sheet --deck monster_cards --paper a4 --dpi 600 --output output/sheets
 ```
 
+Default er blekkbesparende hjemmeprint. Velg full produksjonsbleed eksplisitt:
+
+```sh
+godot --headless --path godot/godot_cardgeneration -- --command export-sheet --deck monster_cards --paper a4 --dpi 600 --print-mode production --output output/sheets
+```
+
 Speile baksidearket venstre/høyre for tosidig print:
 
 ```sh
@@ -233,11 +239,11 @@ monster_cards_a4_600dpi_front_002.png
 monster_cards_a4_600dpi_back_002.png
 ```
 
-Hvert produksjonskort bruker et `69 x 94 mm` slot: `63 x 88 mm` ferdig trimområde med `3 mm` bleed på alle sider. `--print-compensation` godtar `90-110%` og skalerer trim, bleed, gridankere og 10 cm-linjen samlet; default er `100%`. En deck kan inneholde flere korttyper, så baksiden renderes per korttype for hvert kort. Front- og baksideark bruker de samme slot-rektanglene; speiling skjer på hele baksidearket etter at alle baksider er plassert. `--measurement-guide` reserverer en bunnstripe og tegner kontrollinjen med centimeter-ticks.
+Hvert kort bruker et `69 x 94 mm` slot med et sentrert `63 x 88 mm` trimområde. `--print-mode home` er default og lar de ytre `3 mm` være hvite for blekkbesparende manuell kutting. `--print-mode production` fyller området med kortets ytterfarge som full bleed. Kortinnholdet beholder sitt kanoniske `5:7`-forhold uten strekking i begge moduser. `--print-compensation` godtar `90-110%` og skalerer trim, arbeidsfelt, gridankere og 10 cm-linjen samlet; default er `100%`. En deck kan inneholde flere korttyper, så baksiden renderes per korttype for hvert kort. Front- og baksideark bruker de samme slot-rektanglene; speiling skjer på hele baksidearket etter at alle baksider er plassert. `--measurement-guide` reserverer en bunnstripe og tegner kontrollinjen med centimeter-ticks.
 
 Kalibreringsarket utelater nederste-høyre kort på begge sider. Baksiden er alltid uspeilet. Etter fysisk duplex-print holdes arket mot lys: manglende bakside øverst venstre betyr `both`, øverst høyre `height`, nederst venstre `width`, og nederst høyre `none`. Juster kompensasjonen til solid trimomriss måler `63 x 88 mm` og kontrollinjen måler `10 cm`.
 
-Store printark bruker automatisk memory-safe PNG-streaming i stedet for å allokere hele arket som én RGBA-buffer. Dette gjelder normalt A3 ved `600`/`1200 DPI` og A4 ved `1200 DPI`. Arkene skrives fortsatt sekvensielt og atomisk til de samme PNG-filnavnene; funksjonen endrer ikke layout, speiling eller målelinjen.
+Store printark bruker automatisk memory-safe PNG-streaming i stedet for å allokere hele arket som én RGBA-buffer. Dette gjelder normalt A3 ved `600`/`1200 DPI` og A4 ved `1200 DPI`. Arkene skrives fortsatt sekvensielt og atomisk til de samme PNG-filnavnene; funksjonen endrer ikke layout, printmodus, speiling eller målelinjen. Både vanlig og streamet eksport skriver korrekt fysisk DPI-metadata i PNG-filen.
 
 `--easy-backs` grupperer forsidene etter korttype og fyller alle slots på hvert tilhørende baksideark. Modusen bruker mer papir og blekk, men gjør slot-alignment og `--back-mirror` unødvendig; speiling ignoreres når easy backs er aktivert.
 
@@ -324,9 +330,11 @@ Felt som brukes som defaults:
 * `DefaultPaper`
 * `DefaultDpi`
 * `DefaultBackMirror`
+* `DefaultPrintMode`
 * `DefaultDeckLayout`
 * `DefaultGridColumns`
 * `DefaultSpacing`
+* `DefaultPrintCompensationPercent`
 
 Default card er tom etter fabrikkreset; default deck er `default_deck`. CLI bruker configverdier når tilsvarende flagg ikke er oppgitt. Direkte CLI-flagg overstyrer config for den ene kjøringen uten å lagre endringen. `set-config` lagrer bare feltene som oppgis.
 

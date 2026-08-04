@@ -9,6 +9,7 @@ public sealed class CardToolConfigUpdate
     public string? DefaultPaper { get; init; }
     public int? DefaultDpi { get; init; }
     public string? DefaultBackMirror { get; init; }
+    public string? DefaultPrintMode { get; init; }
     public string? DefaultDeckLayout { get; init; }
     public int? DefaultGridColumns { get; init; }
     public int? DefaultSpacing { get; init; }
